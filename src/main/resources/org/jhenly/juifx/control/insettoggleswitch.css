@@ -1,0 +1,51 @@
+/*******************************************************************************
+ *                                                                             *
+ * InsetToggleSwitch                                                           *
+ *                                                                             *
+ ******************************************************************************/
+.inset-toggle-switch {
+    -thumb-move-animation-time: 200;
+}
+
+.inset-toggle-switch .label {
+    -fx-font-size: 1em;
+    -fx-text-fill: #202020;
+    -fx-padding: 0 0 0 4;
+}
+
+.inset-toggle-switch .thumb {
+    -fx-background-color: #fafafa;
+    -fx-background-insets: 0, 1, 2;
+    -fx-background-radius: 1.0em;
+    -fx-padding: 0.75em;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 1, 0.1, 0.0, 1.0);
+    -fx-alignment: CENTER;
+    -fx-content-display: LEFT;
+}
+
+.inset-toggle-switch .thumb-area {
+    -fx-background-radius: 1em;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #7ab7fa, #989899);
+    -fx-background-insets: 0, 1;
+}
+
+.inset-toggle-switch:hover .thumb {
+    -fx-color: -fx-hover-base
+}
+
+.inset-toggle-switch:selected .thumb-area {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #7ab7fa 60%, #989899 40%);
+    -fx-background-insets: 0, 1;
+}
+
+.inset-toggle-switch:selected .thumb {
+	-fx-background-color: #007bff;
+}
+
+.inset-toggle-switch .thumb-area {
+    -fx-padding: 0.5em 1.333333em 0.5em 1.333333em;
+}
+
+.inset-toggle-switch:disabled {
+    -fx-opacity: 0.4;
+}

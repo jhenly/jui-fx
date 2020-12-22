@@ -1,0 +1,106 @@
+/******************************************************************************
+ *                                                                            *
+ * TopPromptTextField                                                         *
+ *                                                                            *
+ ******************************************************************************/
+
+.top-prompt-text-field {
+	-prompt-transition-duration: 1.0;
+	-prompt-translate-x: -4.0;
+	-prompt-translate-y: 0.0;
+	-prompt-scale-x: 0.9;
+	-prompt-scale-y: 0.9;
+	
+	/* TopPromptTextField colors */
+	-color-window-background: #f4f4f6;
+    -color-textfield-text: #1f1f1f;
+    -color-textfield-background-focus: #ececee;
+    -color-textfield-invalid-red: #f44336;
+    -color-textfield-border: #8e8e8f;
+    -color-textfield-border-hover: #202020;
+    -color-prompt-text: #70787d;
+    -color-prompt-settled: #096bd4;
+    -color-default-text: #70787d;
+    -color-underline: #007bff;	
+    -color-disabled-text: #b7bbbe;
+    
+	-prompt-text-color: -color-prompt-text;
+	-textfield-text-color: -color-textfield-text;
+}
+
+.top-prompt-text-field .prompt-pane .prompt {
+	-fx-text-fill: -prompt-text-color;
+}
+
+.top-prompt-text-field:settled .prompt-pane .prompt {
+    -prompt-text-color: -color-prompt-text;
+}
+
+.top-prompt-text-field:settled:focused .prompt-pane .prompt {
+    -prompt-text-color: -color-prompt-settled;
+}
+
+.top-prompt-text-field:focused .prompt-pane .prompt {
+    -prompt-text-color: -color-prompt-settled;
+}
+
+.top-prompt-text-field:settled .text-field:focused {
+    -prompt-text-color: -color-prompt-settled;
+	-fx-background-color: -color-textfield-background-focus, -color-textfield-border-hover;
+	-fx-background-insets: 0 0 2 0, 0;
+
+    a-fx-border-width: 0 0 2 0;
+}
+
+.top-prompt-text-field .text-field {
+    -fx-text-fill: -textfield-text-color;
+    -fx-prompt-text-fill: -color-prompt-text;
+    -fx-insets: 0;
+    -fx-padding: 8 0 4 0;
+    -fx-background-color: -color-textfield-border, -color-window-background;
+    -fx-background-insets: 0, 0 0 2 0;
+    -fx-background-radius: 0;
+
+    a-fx-border-width: 0 0 2 0;
+    a-fx-border-color: -color-textfield-border;
+}
+
+.top-prompt-text-field .text-field:focused, 
+.top-prompt-text-field .text-field:text-field-has-focus {
+    
+    -fx-prompt-text-fill: transparent;
+}
+
+.top-prompt-text-field .text-field:hover {
+    -fx-background-color: transparent, -color-textfield-border-hover;
+    -fx-backround-insets: 0, 0 0 2 0;
+}
+
+.top-prompt-text-field .default-pane .default-stub {
+    -fx-text-fill: -color-default-text;
+    -fx-font-size: 0.8em;
+    -fx-padding: 4 0 10 0;
+}
+
+.top-prompt-text-field .default-pane .default-text {
+    -fx-text-fill: -color-default-text;
+    -fx-font-size: 0.8em;
+    -fx-padding: 4 0 10 0;
+}
+
+.top-prompt-text-field .underline {
+    -fx-stroke: -color-underline;
+    -fx-stroke-width: 2;
+}
+
+.top-prompt-text-field:disabled {
+	-prompt-text-color: -color-disabled-text;
+	-textfield-color-text: -color-disabled-text;
+}
+
+.top-prompt-text-field:disabled .text-field {
+	-fx-border-style: hidden hidden dotted hidden;
+}
+
+
+
