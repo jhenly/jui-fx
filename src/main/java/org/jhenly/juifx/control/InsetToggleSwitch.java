@@ -57,6 +57,7 @@ import javafx.scene.control.Skin;
  *
  * @author ControlsFX (original {@code ToggleSwitch})
  * @author Jonathan Henly ({@code InsetToggleSwitch})
+ * @version 0.0.1
  */
 public class InsetToggleSwitch extends Labeled {
 
@@ -65,27 +66,49 @@ public class InsetToggleSwitch extends Labeled {
      * Constructors                                                            *
      *                                                                         *
      **************************************************************************/
+
+    // hey hey hey
     
     /**
-     * Creates an {@code InsetToggleSwitch} instance with an empty string for
-     * its label.
+     * Creates an {@code InsetToggleSwitch} instance without a label and in the
+     * not-selected state.
      */
-    public InsetToggleSwitch() {
-        initialize();
-    }
+    public InsetToggleSwitch() { this(false); }
+    
     
     /**
-     * Creates an {@code InsetToggleSwitch} instance  with the specified label.
+     * Creates an {@code InsetToggleSwitch} instance in the specified selected
+     * state and without a label.
      *
-     * @param text - the label string of the control.
+     * @param selected - the selected state of this {@code InsetToggleSwitch}
+     *        instance
      */
-    public InsetToggleSwitch(String text) {
-        super(text);
-        initialize();
-    }
+    public InsetToggleSwitch(boolean selected) { super(); initialize(selected); }
+
+    /**
+     * Creates an {@code InsetToggleSwitch} instance with the specified label
+     * and in the not-selected state.
+     *
+     * @param text - the label string of the control
+     */
+    public InsetToggleSwitch(String text) { this(text, false); }
+
+    /**
+     * Creates an {@code InsetToggleSwitch} instance in the specified selected
+     * state with a specified label.
+     *
+     * @param text - the label string of the control
+     * @param selected - the selected state of this {@code InsetToggleSwitch}
+     *        instance
+     */
+    public InsetToggleSwitch(String text, boolean selected) { super(text); initialize(selected); }
+    
     
     /** All constructors use this method. */
-    private void initialize() { getStyleClass().add(DEFAULT_STYLE_CLASS); }
+    private void initialize(boolean selected) {
+        getStyleClass().add(DEFAULT_STYLE_CLASS);
+        setSelected(selected);
+    }
     
     
     /***************************************************************************
@@ -96,27 +119,18 @@ public class InsetToggleSwitch extends Labeled {
     
     // --- selected
     /** Indicates whether the {@code InsetToggleSwitch} is selected. */
-    private BooleanProperty selected;
-
-    public final BooleanProperty selectedProperty() {
-        if (selected == null) {
-            selected = new BooleanPropertyBase()
-            {
-                @Override
-                protected void invalidated() {
-                    final Boolean v = get();
-                    pseudoClassStateChanged(PSEUDO_CLASS_SELECTED, v);
-                }
-                @Override
-                public Object getBean() { return InsetToggleSwitch.this; }
-                @Override
-                public String getName() { return "selected"; }
-            };
-        }
-        return selected;
-    }
+    private BooleanProperty selected = new BooleanPropertyBase()
+    {
+        @Override
+        protected void invalidated() { final Boolean v = get(); pseudoClassStateChanged(PSEUDO_CLASS_SELECTED, v); }
+        @Override
+        public Object getBean() { return InsetToggleSwitch.this; }
+        @Override
+        public String getName() { return "selected"; }
+    };
+    public final BooleanProperty selectedProperty() { return selected; }
     public final void setSelected(boolean value) { selectedProperty().set(value); }
-    public final boolean isSelected() { return selected == null ? false : selected.get(); }
+    public final boolean isSelected() { return selected.get(); }
 
 
     /**************************************************************************
@@ -138,10 +152,13 @@ public class InsetToggleSwitch extends Labeled {
             fireEvent(new ActionEvent());
         }
     }
-    
+
+
     /** {@inheritDoc} */
     @Override
-    protected Skin<?> createDefaultSkin() { return new InsetToggleSwitchSkin(this); }
+    protected Skin<?> createDefaultSkin() {
+        return new InsetToggleSwitchSkin(this);
+    }
     
     
     /***************************************************************************

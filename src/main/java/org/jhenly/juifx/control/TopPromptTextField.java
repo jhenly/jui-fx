@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.jhenly.juifx.control.skin.TopPromptTextFieldSkin;
 
-import javafx.beans.DefaultProperty;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -18,7 +17,6 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.collections.ObservableList;
 import javafx.css.CssMetaData;
 import javafx.css.PseudoClass;
 import javafx.css.Styleable;
@@ -28,7 +26,6 @@ import javafx.css.converter.SizeConverter;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
@@ -38,10 +35,13 @@ import javafx.scene.control.TextField;
 
 
 /**
+ * This control behaves exactly like a {@link TextField}, however this control's
+ * text prompt moves above the text field when focused.
+ * <p>
  *
  * @author Jonathan Henly
+ * @version 0.0.1
  */
-@DefaultProperty("children")
 public class TopPromptTextField extends Control {
     /**
      * The default value for {@link #promptTransitionDurationProperty()
@@ -70,9 +70,9 @@ public class TopPromptTextField extends Control {
     public static final double DEFAULT_PROMPT_SCALE_Y = 0.9;
     
     /**
-     * The default value for {@link #useDefaultTextProperty() useDefaultText}.
+     * The default value for {@link #useDefaultValueProperty() useDefaultText}.
      */
-    public static final boolean DEFAULT_USE_DEFAULT_TEXT = false;
+    public static final boolean DEFAULT_USE_DEFAULT_VALUE = false;
 
     /**
      * The default value for {@link #usePromptAsPromptTextProperty() usePromptAsPromptText}.
@@ -110,7 +110,7 @@ public class TopPromptTextField extends Control {
         initialize();
         setPrompt(prompt);
         setDefaultStub(stub);
-        setDefaultText(text);
+        setDefaultValue(text);
     }
     
     /** Helper method used by constructors. */
@@ -178,31 +178,113 @@ public class TopPromptTextField extends Control {
     public final void setDefaultStub(Labeled value) { defaultStub.set(value); }
     
     
-    /* --- Default Text --- */
-    private ObjectProperty<Labeled> defaultText = new SimpleObjectProperty<>(TopPromptTextField.this, "defaultText"); //$NON-NLS-1$ ;
+    /* --- Default Value --- */
+    private ObjectProperty<Labeled> defaultValue = new SimpleObjectProperty<>(TopPromptTextField.this, "defaultText"); //$NON-NLS-1$ ;
     /**
      * The {@linkplain Labeled} that is placed under this
      * {@code TopPromptTextField}'s {@code TextField}.
      * <p>
-     * This is used to show the default value or input after the textfield's initial
-     * contents have changed.
+     * This is used to show the default value or input after the text field's
+     * initial contents have changed.
      *
-     * @return an {@code ObjectProperty} wrapping the {@linkplain Labeled} that is
-     *         placed under the textfield.
+     * @return an {@code ObjectProperty} wrapping the {@linkplain Labeled} that
+     *         is placed under the text field.
      */
-    public final ObjectProperty<Labeled> defaultTextProperty() { return defaultText; }
+    public final ObjectProperty<Labeled> defaultValueProperty() { return defaultValue; }
     /**
-     * @return the {@linkplain Labeled} that is placed under the textfield, or
+     * @return the {@linkplain Labeled} that is placed under the text field, or
      *         {@code null} if it was not set
      */
-    public final Labeled getDefaultText() { return defaultText.get(); }
+    public final Labeled getDefaultValue() { return defaultValue.get(); }
     /**
-     * Sets the {@linkplain Labeled} that is placed under the textfield.
+     * Sets the {@linkplain Labeled} that is placed under the text field.
      *
-     * @param value - the {@linkplain Labeled} that is placed under the textfield
+     * @param value - the {@linkplain Labeled} that is placed under the
+     *        text field
      */
-    public final void setDefaultText(Labeled value) { defaultText.set(value); }
+    public final void setDefaultValue(Labeled value) { defaultValue.set(value); }
+
+
+    /* --- Scene Builder Label Setters --- */
+
+    /* --- Prompt Text --- */
+    public final StringProperty promptTextProperty() {
+        if (promptText == null) {
+            promptText = new SimpleStringProperty(TopPromptTextField.this, "promptText"); //$NON-NLS-1$
+        }
+        return promptText;
+    }
+    private StringProperty promptText;
+    public final String getPromptText() { return promptText == null ? null : promptText.get(); }
+    public final void setPromptText(String value) {
+        // only change the label if the new value is different
+        Label valLabel = createLabelIfValueIsDifferent(value, promptTextProperty().get());
+        if (valLabel == VALUE_IS_NOT_DIFFERENT) { return; }
+
+        // set use prompt as prompt text to false if removing prompt
+        if (valLabel == null) { usePromptAsPromptTextProperty().set(false); }
+
+        promptTextProperty().set(value);
+        setPrompt(valLabel);
+    }
+
+    /* --- Default Stub Text --- */
+    public final StringProperty defaultStubTextProperty() {
+        if (defaultStubText == null) {
+            defaultStubText = new SimpleStringProperty(TopPromptTextField.this, "defaultStubText"); //$NON-NLS-1$
+        }
+        return defaultStubText;
+    }
+    private StringProperty defaultStubText;
+    public final String getDefaultStubText() { return defaultStubText == null ? null : defaultStubText.get(); }
+    public final void setDefaultStubText(String value) {
+        // only change the label if the new value is different
+        Label valLabel = createLabelIfValueIsDifferent(value, defaultStubTextProperty().get());
+        if (valLabel == VALUE_IS_NOT_DIFFERENT) { return; }
+        
+        defaultStubTextProperty().set(value);
+        setDefaultStub(valLabel);
+    }
+
+    /* --- Default Value Text --- */
+    public final StringProperty defaultValueTextProperty() {
+        if (defaultValueText == null) {
+            defaultValueText = new SimpleStringProperty(TopPromptTextField.this, "defaultValueText", null); //$NON-NLS-1$
+        }
+        return defaultValueText;
+    }
+    private StringProperty defaultValueText;
+    public final String getDefaultValueText() { return defaultValueText == null ? null : defaultValueText.get(); }
+    public final void setDefaultValueText(String value) {
+        // only change the label if the new value is different
+        Label valLabel = createLabelIfValueIsDifferent(value, defaultValueTextProperty().get());
+        if (valLabel == VALUE_IS_NOT_DIFFERENT) { return; }
+        
+        // set use default value to false if removing default value
+        if (valLabel == null) { useDefaultValueProperty().set(false); }
+        
+        defaultValueTextProperty().set(value);
+        setDefaultValue(valLabel);
+    }
     
+    /**
+     * Helper object used to denote that set*Text() methods should return
+     * without doing anything.
+     */
+    private static final Label VALUE_IS_NOT_DIFFERENT = new Label();
+
+    /** helper method used by set*Text() methods */
+    private Label createLabelIfValueIsDifferent(String newValue, String oldValue) {
+        // treat null value the same as empty value
+        String nValue = (newValue == null) ? "" : newValue;
+        String oValue = (oldValue == null) ? "" : oldValue;
+        
+        // don't do anything if new value isn't different
+        if (nValue.equals(oValue)) { return VALUE_IS_NOT_DIFFERENT; }
+
+        // empty value means no label, therefore return null
+        return nValue.equals("") ? null : new Label(nValue);
+    }
     
     /* --- Use Prompt As Prompt Text --- */
     /**
@@ -249,69 +331,65 @@ public class TopPromptTextField extends Control {
     public final boolean getUsePromptAsPromptText() {
         return usePromptAsPromptText == null ? false : usePromptAsPromptText.get();
     }
-    
-    
-    /* --- Default Stub Text --- */
-    public final StringProperty defaultStubTextProperty() {
-        if (defaultStubText == null) {
-            defaultStubText = new SimpleStringProperty(TopPromptTextField.this, "defaultStubText"); //$NON-NLS-1$
-        }
-        return defaultStubText;
-    }
-    private StringProperty defaultStubText;
-    public final String getDefaultStubText() { return defaultStubText == null ? null : defaultStubText.get(); }
-    public final void setDefaultStubText(String value) {
-        defaultStubTextProperty().set(value);
-        setDefaultStub(new Label(value));
-    }
-    
-    
-    /* --- Use Default Text --- */
-    private BooleanProperty useDefaultText;
+
+    /* --- Use Default Value --- */
+
+    private BooleanProperty useDefaultValue;
+
     /**
-     * Specifies whether or not to fill the underlying {@code TextField} instance
-     * with {@linkplain #defaultTextProperty() defaultText's} text.
+     * Specifies whether or not to fill the underlying {@code TextField}
+     * instance with {@linkplain #defaultValueProperty() defaultValue's}
+     * text.
      *
-     * @return the fill textfield with under text property
+     * @return the use default value property
      */
-    public final BooleanProperty useDefaultTextProperty() {
-        if (useDefaultText == null) {
-            useDefaultText =
-            new SimpleBooleanProperty(TopPromptTextField.this, "useDefaultText", DEFAULT_USE_DEFAULT_TEXT) //$NON-NLS-1$
+    public final BooleanProperty useDefaultValueProperty() {
+        if (useDefaultValue == null) {
+            useDefaultValue =
+            new SimpleBooleanProperty(TopPromptTextField.this, "useDefaultValue", DEFAULT_USE_DEFAULT_VALUE) //$NON-NLS-1$
             {
                 private boolean oldValue = get();
                 @Override
                 protected void invalidated() {
                     boolean value = get();
-                    if (getDefaultText() == null) {
+                    if (getDefaultValue() == null) {
                         if (isBound()) { unbind(); }
                         set(oldValue);
-                        throw new IllegalArgumentException("default text is null.");
+                        throw new IllegalArgumentException("default value is null.");
                     }
                     oldValue = value;
+
+                    if (value) {
+                        String tfText = tfTextProperty().get();
+                        if (tfText == null || tfText.isEmpty()) {
+                            tfTextProperty().set(defaultValueProperty().get().getText());
+                        }
+                    }
                 }
             };
         }
-        return useDefaultText;
+        return useDefaultValue;
     }
     /**
-     * Specifies whether or not to fill the underlying {@code TextField} instance
-     * with {@linkplain #defaultTextProperty() defaultText's} text.
+     * Specifies whether or not to fill the underlying {@code TextField}
+     * instance with {@linkplain #defaultValueProperty() defaultValue's}
+     * text.
      *
-     * @param value - whether or not to fill the textfield with
-     *        {@linkplain #defaultTextProperty() defaultText's} text
+     * @param value - whether or not to fill the text field with
+     *        {@linkplain #defaultValueProperty() defaultValue's} text
      */
-    public final void setUseDefaultText(boolean value) { useDefaultTextProperty().set(value); }
+    public final void setUseDefaultValue(boolean value) { useDefaultValueProperty().set(value); }
+
     /**
      * Whether or not to fill the underlying {@code TextField} instance with
-     * {@linkplain #defaultTextProperty() defaultText's} text.
+     * {@linkplain #defaultValueProperty() defaultValue's} text.
      *
      * @return {@code true} if the textfield should use
-     *         {@linkplain #defaultTextProperty() defaultText's} text, otherwise
+     *         {@linkplain #defaultValueProperty() defaultValue's} text, otherwise
      *         {@code false}
      */
-    public final boolean getUseDefaultText() {
-        return useDefaultText == null ? DEFAULT_USE_DEFAULT_TEXT : useDefaultText.get();
+    public final boolean getUseDefaultValue() {
+        return useDefaultValue == null ? DEFAULT_USE_DEFAULT_VALUE : useDefaultValue.get();
     }
     
     
@@ -343,22 +421,15 @@ public class TopPromptTextField extends Control {
     public final boolean isSettled() { return settled != null ? settled.get() : false; }
 
 
-    /* --- TextField --- */
-    /**
-     * {@code ObjectProperty} wrapping this {@code TopPromptTextField}
-     * instance's {@link TextField}.
-     */
-    private ObjectProperty<TextField> textField;
-    public final ObjectProperty<TextField> textFieldProperty() {
-        if (textField == null) {
-            textField = new SimpleObjectProperty<>(TopPromptTextField.this, "textField"); //$NON-NLS-1$
-        }
-        return textField;
-    }
-    public final TextField getTextField() { return textField == null ? null : textField.get(); }
-    public final void setTextField(TextField textfield) { textFieldProperty().setValue(textfield); }
+    /* --- Text Field Properties --- */
     
     /* --- TextField Editable --- */
+    /**
+     * The editable property associated with this {@code TopPromptTextField}
+     * instance's text field.
+     * <p>
+     * The text field is editable by default.
+     */
     private BooleanProperty tfEditable;
     public final BooleanProperty tfEditableProperty() {
         if (tfEditable == null) {
@@ -407,10 +478,6 @@ public class TopPromptTextField extends Control {
     public final Pos getTFAlignment() { return tfAlignment == null ? Pos.CENTER_LEFT : tfAlignment.get(); }
     public final void setTFAlignment(Pos value) { tfAlignmentProperty().set(value); }
     
-    // TASK check if this property is shown in Scene Builder then remove
-    // public final StringProperty textBlankProperty() { return
-    // skin.getTextField().textProperty(); }
-    
     /* --- TextField Preferred Column Count --- */
     private IntegerProperty tfPrefColumnCount;
     public final IntegerProperty tfPrefColumnCountProperty() {
@@ -425,22 +492,11 @@ public class TopPromptTextField extends Control {
     }
     public final void setTFPrefColumnCount(int value) { tfPrefColumnCountProperty().set(value); }
     
-    /* --- TextField Visible --- */
-    private BooleanProperty tfVisible;
-    public final BooleanProperty tfVisibleProperty() {
-        if (tfVisible == null) {
-            tfVisible = new SimpleBooleanProperty(TopPromptTextField.this, "tfVisible", true); //$NON-NLS-1$
-        }
-        return tfVisible;
-    }
-    public final boolean isTFVisible() { return tfVisible == null ? true : tfVisible.get(); }
-    public final void setTFVisible(boolean value) { tfVisibleProperty().set(value); }
-    
     /* --- TextField OnAction --- */
     /**
      * The action handler associated with this {@code TopPromptTextField} instance's
      * text field, or {@code null} if no action handler is assigned.
-     *
+     * <p>
      * The action handler is normally called when the user types the ENTER key.
      */
     private ObjectProperty<EventHandler<ActionEvent>> onTFAction;
@@ -539,7 +595,7 @@ public class TopPromptTextField extends Control {
      *
      * @param value - the new ending X-translate coordinate
      */
-    private final void setPromptTranslateX(double value) {
+    public final void setPromptTranslateX(double value) {
         promptTranslateXProperty().setValue(value);
     }
     /**
@@ -580,7 +636,7 @@ public class TopPromptTextField extends Control {
      *
      * @param value - the new ending Y-translate coordinate
      */
-    private final void setPromptTranslateY(double value) {
+    public final void setPromptTranslateY(double value) {
         promptTranslateYProperty().setValue(value);
     }
     /**
@@ -632,7 +688,7 @@ public class TopPromptTextField extends Control {
      *
      * @param value - the prompt's new ending X-scale value
      */
-    private final void setPromptScaleX(double value) {
+    public final void setPromptScaleX(double value) {
         promptScaleXProperty().setValue(value);
     }
     /**
@@ -684,7 +740,7 @@ public class TopPromptTextField extends Control {
      *
      * @param value - the prompt's new ending Y-scale value
      */
-    private final void setPromptScaleY(double value) {
+    public final void setPromptScaleY(double value) {
         promptScaleYProperty().setValue(value);
     }
     /**
@@ -701,14 +757,11 @@ public class TopPromptTextField extends Control {
      * Methods                                                                 *
      *                                                                         *
      **************************************************************************/
-
-    // convenience reference to this control's skin
-    private TopPromptTextFieldSkin skin;
     
     /** {@inheritDoc} */
     @Override
     protected Skin<?> createDefaultSkin() {
-        skin = new TopPromptTextFieldSkin(this)
+        return new TopPromptTextFieldSkin(this)
         {
             @Override
             public ObjectProperty<Labeled> promptProperty() {
@@ -719,20 +772,10 @@ public class TopPromptTextField extends Control {
                 return TopPromptTextField.this.defaultStubProperty();
             }
             @Override
-            public ObjectProperty<Labeled> defaultTextProperty() {
-                return TopPromptTextField.this.defaultTextProperty();
+            public ObjectProperty<Labeled> defaultValueProperty() {
+                return TopPromptTextField.this.defaultValueProperty();
             }
         };
-        
-        return skin;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public ObservableList<Node> getChildren() {
-        if (skin != null) { return skin.getChildren(); }
-        
-        return super.getChildren();
     }
 
 
@@ -747,8 +790,8 @@ public class TopPromptTextField extends Control {
     
     /** CSS ':settled' signals that the prompt is settled above the textfield */
     private static final PseudoClass SETTLED_PSEUDO_CLASS = PseudoClass.getPseudoClass("settled"); //$NON-NLS-1$
-    /** CSS ':editable' signals that the textfield is editable */
-    private static final PseudoClass EDITABLE_PSEUDO_CLASS = PseudoClass.getPseudoClass("editable"); //$NON-NLS-1$
+    /** CSS ':not-editable' signals that the textfield is not editable */
+    private static final PseudoClass NOT_EDITABLE_PSEUDO_CLASS = PseudoClass.getPseudoClass("not-editable"); //$NON-NLS-1$
 
     /** {@inheritDoc} */
     @Override
@@ -760,7 +803,7 @@ public class TopPromptTextField extends Control {
     private static class StyleableProperties {
 
         /* --- Prompt Translate Duration --- */
-        private static final String PROMPT_T_D = "-prompt-transission-duration"; //$NON-NLS-1$
+        private static final String PROMPT_T_D = "-prompt-transition-duration"; //$NON-NLS-1$
         private static final CssMetaData<TopPromptTextField, Number> PROMPT_TRANSLATE_DURATION =
         new CssMetaData<TopPromptTextField, Number>(PROMPT_T_D, SizeConverter.getInstance(),
             DEFAULT_PROMPT_TRANSLATE_DURATION)
@@ -791,7 +834,7 @@ public class TopPromptTextField extends Control {
         };
 
         /* --- Prompt Translate Y --- */
-        private static final String PROMPT_T_Y = "-pormpt-translate-y"; //$NON-NLS-1$
+        private static final String PROMPT_T_Y = "-prompt-translate-y"; //$NON-NLS-1$
         private static final CssMetaData<TopPromptTextField, Number> PROMPT_TRANSLATE_Y =
         new CssMetaData<TopPromptTextField, Number>(PROMPT_T_Y, SizeConverter.getInstance(), DEFAULT_PROMPT_TRANSLATE_Y)
         {

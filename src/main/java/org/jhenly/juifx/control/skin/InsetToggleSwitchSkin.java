@@ -48,7 +48,17 @@ import javafx.util.Duration;
 
 
 /**
- * Basic Skin implementation for the {@link InsetToggleSwitch}
+ * Basic skin implementation for the {@link InsetToggleSwitch}.
+ * <p>
+ * <b>Note:</b> This class is heavily based, on ControlFX's
+ * <a href='https://github.com/controlsfx/controlsfx/blob/master/controlsfx/src/main/java/impl/org/controlsfx/skin/ToggleSwitchSkin.java' target='_top'>{@code ToggleSwitchSkin}</a>.
+ * There are only minor differences, like the placement
+ * of the {@code Label} and the thumb area color transition.
+ * <p>
+ *
+ * @author ControlsFX (original {@code ToggleSwitchSkin})
+ * @author Jonathan Henly ({@code InsetToggleSwitchSkin})
+ * @version 0.0.1
  */
 public class InsetToggleSwitchSkin extends SkinBase<InsetToggleSwitch> {
     
