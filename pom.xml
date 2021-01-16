@@ -5,7 +5,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   
-  <groupId>org.jhenly</groupId>
+  <groupId>com.jhenly</groupId>
   <artifactId>jui-fx</artifactId>
   <version>0.0.2</version>
 
@@ -134,7 +134,7 @@
             </descriptorRefs>
             <archive>
               <manifest>
-                <mainClass>org.jhenly.juifx.Main</mainClass>
+                <mainClass>com.jhenly.juifx.Main</mainClass>
               </manifest>
             </archive>
           </configuration>
@@ -163,7 +163,7 @@
             <executable>${java.home}/bin/java</executable>           
             <!-- used to test different 'public static void main(String[] args)' classes without changing pom.xml -->   
             <!-- via: 'clean javafx:run "-Dfoo=sample.Main"' -->
-            <mainClass>org.jhenly.juifx.${foo}</mainClass>
+            <mainClass>com.jhenly.juifx.${foo}</mainClass>
             
           </configuration>
         </plugin>
@@ -180,5 +180,17 @@
     </repository>
   </distributionManagement>
 
+  <!-- use the following to install into a user's local repository -->
+  <!-- 
+    mvn install:install-file -Dfile=[PATH-TO-JAR]/jui-fx-[VERS].jar -DgroupId=com.jhenly -DartifactId=jui-fx -Dversion=[VER] -Dpackaging=jar
+  -->
+  <!-- use the following to install into a project specific repository -->
+  <!-- 
+    mvn deploy:deploy-file -DgroupId=com.jhenly -DartifactId=jui-fx -Dversion=[VERS] -Durl=file:./jui-fx/ -DrepositoryId=jui-fx -DupdateReleaseInfo=true -Dfile=[FILE_PATH] -Dpackaging=jar
+  -->
+  <!-- for example:
+    mvn deploy:deploy-file -DgroupId=com.jhenly -DartifactId=jui-fx -Dversion=0.0.2 -Durl=file:./jui-fx/ -DrepositoryId=jui-fx -DupdateReleaseInfo=true -Dfile="../jui-fx/target/jui-fx-0.0.2.jar" -Dpackaging=jar
+   -->
+  
 </project>
 

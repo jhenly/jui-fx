@@ -23,14 +23,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.jhenly.juifx.control.skin;
+package com.jhenly.juifx.control.skin;
 
 import java.util.ArrayList;
 //import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.jhenly.juifx.control.InsetToggleSwitch;
+import com.jhenly.juifx.control.InsetToggleSwitch;
 
 import javafx.animation.Animation;
 import javafx.animation.TranslateTransition;

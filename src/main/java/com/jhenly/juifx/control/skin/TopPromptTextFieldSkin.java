@@ -1,6 +1,6 @@
-package org.jhenly.juifx.control.skin;
+package com.jhenly.juifx.control.skin;
 
-import org.jhenly.juifx.control.TopPromptTextField;
+import com.jhenly.juifx.control.TopPromptTextField;
 
 import javafx.animation.Animation;
 import javafx.animation.ScaleTransition;

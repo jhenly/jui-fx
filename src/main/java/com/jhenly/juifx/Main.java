@@ -1,9 +1,9 @@
-package org.jhenly.juifx;
+package com.jhenly.juifx;
 
 import java.io.IOException;
 
-import org.jhenly.juifx.control.InsetToggleSwitch;
-import org.jhenly.juifx.control.TopPromptTextField;
+import com.jhenly.juifx.control.InsetToggleSwitch;
+import com.jhenly.juifx.control.TopPromptTextField;
 
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;

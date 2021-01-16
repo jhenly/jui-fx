@@ -23,9 +23,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.jhenly.juifx.control;
+package com.jhenly.juifx.control;
 
-import org.jhenly.juifx.control.skin.InsetToggleSwitchSkin;
+import com.jhenly.juifx.control.skin.InsetToggleSwitchSkin;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.BooleanPropertyBase;

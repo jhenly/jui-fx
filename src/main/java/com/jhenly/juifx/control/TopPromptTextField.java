@@ -1,10 +1,10 @@
-package org.jhenly.juifx.control;
+package com.jhenly.juifx.control;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.jhenly.juifx.control.skin.TopPromptTextFieldSkin;
+import com.jhenly.juifx.control.skin.TopPromptTextFieldSkin;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
