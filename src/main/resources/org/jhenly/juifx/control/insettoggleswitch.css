@@ -47,7 +47,7 @@
 
 .inset-toggle-switch .thumb-area { -fx-padding: 0.5em 1.333333em 0.5em 1.333333em; }
 
-.inset-toggle-switch:disabled { -fx-opacity: 0.6; }
+.inset-toggle-switch:disabled { -fx-opacity: 0.4; }
 .inset-toggle-switch:disabled .thumb { -fx-background-color: -color-thumb; }
 .inset-toggle-switch:disabled .thumb-area { -fx-background-color: -color-thumb-area; }
 

@@ -7,7 +7,7 @@
   
   <groupId>org.jhenly</groupId>
   <artifactId>jui-fx</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
 
   <name>Anti-Sleep</name>
   <description>Custom JavaFX controls, containers and everything else.</description>

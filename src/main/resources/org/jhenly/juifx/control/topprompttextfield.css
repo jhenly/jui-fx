@@ -43,12 +43,6 @@
     -prompt-text-color: -color-prompt-settled;
 }
 
-.top-prompt-text-field:settled .text-field:focused {
-    -prompt-text-color: -color-prompt-settled;
-	-fx-background-color: -color-textfield-border-hover, -color-textfield-background-focus;
-	a-fx-background-insets: 0, 0 0 2 0;
-}
-
 .top-prompt-text-field .text-field {
     -fx-text-fill: -textfield-text-color;
     -fx-font-size: 1em;
@@ -56,8 +50,19 @@
     -fx-insets: 0;
     -fx-padding: 8 0 4 0;
     -fx-background-color: -color-textfield-border, -color-window-background;
-    -fx-background-insets: 0, 0 0 2 0;
+    -fx-background-insets: 0, 0 0 1 0;
     -fx-background-radius: 0;
+}
+
+.top-prompt-text-field .text-field:hover {
+    -fx-background-color: -color-textfield-border-hover, -color-window-background;
+    -fx-background-insets: 0, 0 0 2 0;
+}
+
+.top-prompt-text-field:settled .text-field:focused {
+    -prompt-text-color: -color-prompt-settled;
+    -fx-background-color: -color-textfield-border-hover, -color-textfield-background-focus;
+    -fx-background-insets: 0, 0 0 2 0;
 }
 
 .top-prompt-text-field .text-field:focused, 
@@ -65,16 +70,11 @@
     -fx-prompt-text-fill: transparent;
 }
 
-.top-prompt-text-field .text-field:hover {
-    -fx-background-color: -color-textfield-border-hover, -color-window-background;
-    a-fx-backround-insets: 0, 0 0 2 0;
-}
-
 .top-prompt-text-field:focused:not-editable,
 .top-prompt-text-field:not-editable .text-field:focused,
 .top-prompt-text-field:not-editable .text-field:hover {
 	-fx-background-color: -color-textfield-border, -color-window-background;
-    a-fx-backround-insets: 0, 0 0 2 0;
+    -fx-backround-insets: 0, 0 0 2 0;
 }
 
 .top-prompt-text-field:not-editable .text-field:focused,
@@ -95,9 +95,7 @@
 }
 
 .top-prompt-text-field:disabled {
-	a-prompt-text-color: -color-disabled-text;
 	-textfield-text-color: -color-disabled-text;
-	a-default-text-color: -color-disabled-text;
 }
 
 .top-prompt-text-field:disabled .text-field { 
