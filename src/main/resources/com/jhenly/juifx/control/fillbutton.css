@@ -1,0 +1,33 @@
+/*******************************************************************************
+ *                                                                             *
+ * FillButton                                                                  *
+ *                                                                             *
+ ******************************************************************************/
+.fill-button {
+    /*
+     * Default Values:
+     * -fill-enabled: true;
+     * -fill-duration: 100.0;
+     * -fill-from: #f4f4f6;
+     * -fill-to: #70787d;
+    */
+    
+    -fx-background-color: #dfdfdf, #a0a0a0, #f4f4f6;
+    -fx-background-insets:  0, 1, 2 2 2 2;
+    -fx-background-radius: 1em, 1em, 1em;
+    -fx-padding: 0.333333em 0.666667em 0.333333em 0.666667em; /* 4 8 4 8 */
+    -fx-text-fill: -fx-text-base-color;
+    -fx-alignment: CENTER;
+    -fx-content-display: LEFT;
+    
+    -jui-fill-from: "dfdfdf, a0a0a0, f4f4f6";/* #ececec, #ffffff, #010101; dfdfdf, d0d0d0, */
+    -jui-fill-to: "cfcfcf, 9f9f9f, afafaf";
+}
+
+.fill-button:selected,
+.fill-button:focused:selected {
+    -fx-color: -fx-pressed-base;
+    -fx-background-color: -fx-outer-border, #acacac, #cccccc;
+    -fx-background-insets: 0, 2, 4;
+    -fx-background-radius: 3px, 3px, 3px;
+}

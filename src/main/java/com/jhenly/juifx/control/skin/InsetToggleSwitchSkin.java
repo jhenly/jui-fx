@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, 2020 ControlsFX All rights reserved.
+ * Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -7,21 +7,20 @@
  * list of conditions and the following disclaimer. * Redistributions in binary
  * form must reproduce the above copyright notice, this list of conditions and
  * the following disclaimer in the documentation and/or other materials provided
- * with the distribution. * Neither the name of ControlsFX, any associated
- * website, nor the names of its contributors may be used to endorse or promote
- * products derived from this software without specific prior written
- * permission.
+ * with the distribution. * Neither the name of JuiFX, any associated website,
+ * nor the names of its contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL CONTROLSFX BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * ARE DISCLAIMED. IN NO EVENT SHALL JUIFX BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+ * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package com.jhenly.juifx.control.skin;
 
@@ -58,7 +57,7 @@ import javafx.util.Duration;
  *
  * @author ControlsFX (original {@code ToggleSwitchSkin})
  * @author Jonathan Henly ({@code InsetToggleSwitchSkin})
- * @version 0.0.1
+ * @since JuiFX 0.1
  */
 public class InsetToggleSwitchSkin extends SkinBase<InsetToggleSwitch> {
     
@@ -91,22 +90,22 @@ public class InsetToggleSwitchSkin extends SkinBase<InsetToggleSwitch> {
      */
     public InsetToggleSwitchSkin(InsetToggleSwitch control) {
         super(control);
-
+        
         thumb = new StackPane();
         thumbArea = new StackPane();
         label = new Label();
         labelContainer = new StackPane();
         transition = new TranslateTransition(Duration.millis(getThumbMoveAnimationTime()), thumb);
         transition.setFromX(0.0);
-
+        
         label.textProperty().bind(control.textProperty());
         getChildren().addAll(thumbArea, thumb, labelContainer);
         labelContainer.getChildren().addAll(label);
         StackPane.setAlignment(label, Pos.CENTER_LEFT);
-
+        
         thumb.getStyleClass().setAll("thumb");
         thumbArea.getStyleClass().setAll("thumb-area");
-
+        
         thumbArea.setOnMouseReleased(event -> mousePressedOnInsetToggleSwitch(control));
         thumb.setOnMouseReleased(event -> mousePressedOnInsetToggleSwitch(control));
         labelContainer.setOnMouseReleased(event -> {
@@ -205,49 +204,43 @@ public class InsetToggleSwitchSkin extends SkinBase<InsetToggleSwitch> {
     
     /** {@inheritDoc} */
     @Override
-    protected double
-    computeMinWidth(double height, double topInset, double rightInset, double bottomInset, double leftInset)
-    {
+    protected double computeMinWidth(double height, double topInset, double rightInset, double bottomInset,
+        double leftInset) {
         return leftInset + thumbArea.prefWidth(-1) + label.prefWidth(-1) + rightInset;
     }
     
     /** {@inheritDoc} */
     @Override
-    protected double
-    computeMinHeight(double width, double topInset, double rightInset, double bottomInset, double leftInset)
-    {
+    protected double computeMinHeight(double width, double topInset, double rightInset, double bottomInset,
+        double leftInset) {
         return topInset + Math.max(thumb.prefHeight(-1), label.prefHeight(-1)) + bottomInset;
     }
     
     /** {@inheritDoc} */
     @Override
-    protected double
-    computePrefWidth(double height, double topInset, double rightInset, double bottomInset, double leftInset)
-    {
+    protected double computePrefWidth(double height, double topInset, double rightInset, double bottomInset,
+        double leftInset) {
         return leftInset + thumbArea.prefWidth(-1) + label.prefWidth(-1) + 20 + rightInset;
     }
     
     /** {@inheritDoc} */
     @Override
-    protected double
-    computePrefHeight(double width, double topInset, double rightInset, double bottomInset, double leftInset)
-    {
+    protected double computePrefHeight(double width, double topInset, double rightInset, double bottomInset,
+        double leftInset) {
         return topInset + Math.max(thumb.prefHeight(-1), label.prefHeight(-1)) + bottomInset;
     }
     
     /** {@inheritDoc} */
     @Override
-    protected double
-    computeMaxWidth(double height, double topInset, double rightInset, double bottomInset, double leftInset)
-    {
+    protected double computeMaxWidth(double height, double topInset, double rightInset, double bottomInset,
+        double leftInset) {
         return getSkinnable().prefWidth(height);
     }
     
     /** {@inheritDoc} */
     @Override
-    protected double
-    computeMaxHeight(double width, double topInset, double rightInset, double bottomInset, double leftInset)
-    {
+    protected double computeMaxHeight(double width, double topInset, double rightInset, double bottomInset,
+        double leftInset) {
         return getSkinnable().prefHeight(width);
     }
     
@@ -283,30 +276,30 @@ public class InsetToggleSwitchSkin extends SkinBase<InsetToggleSwitch> {
     
     // --- Thumb Move Animation Time
     private static class StyleableProperties {
-        private static final CssMetaData<InsetToggleSwitch, Number> THUMB_MOVE_ANIMATION_TIME =
-        new CssMetaData<InsetToggleSwitch, Number>("-thumb-move-animation-time", SizeConverter.getInstance(), 200)
-        {
-            @Override
-            public boolean isSettable(InsetToggleSwitch its) {
-                final InsetToggleSwitchSkin skin = (InsetToggleSwitchSkin) its.getSkin();
-                return skin.thumbMoveAnimationTime == null || !skin.thumbMoveAnimationTime.isBound();
-            }
-            @Override
-            public StyleableProperty<Number> getStyleableProperty(InsetToggleSwitch its) {
-                final InsetToggleSwitchSkin skin = (InsetToggleSwitchSkin) its.getSkin();
-                return (StyleableProperty<Number>) skin.thumbMoveAnimationTimeProperty();
-            }
-        };
+        private static final CssMetaData<InsetToggleSwitch, Number> THUMB_MOVE_ANIMATION_TIME
+            = new CssMetaData<InsetToggleSwitch, Number>("-thumb-move-animation-time", SizeConverter.getInstance(), 200)
+            {
+                @Override
+                public boolean isSettable(InsetToggleSwitch its) {
+                    final InsetToggleSwitchSkin skin = (InsetToggleSwitchSkin) its.getSkin();
+                    return skin.thumbMoveAnimationTime == null || !skin.thumbMoveAnimationTime.isBound();
+                }
+                @Override
+                public StyleableProperty<Number> getStyleableProperty(InsetToggleSwitch its) {
+                    final InsetToggleSwitchSkin skin = (InsetToggleSwitchSkin) its.getSkin();
+                    return (StyleableProperty<Number>) skin.thumbMoveAnimationTimeProperty();
+                }
+            };
         
         private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
         static {
-            final List<CssMetaData<? extends Styleable, ?>> styleables =
-            new ArrayList<>(SkinBase.getClassCssMetaData());
+            final List<CssMetaData<? extends Styleable, ?>> styleables
+                = new ArrayList<>(SkinBase.getClassCssMetaData());
             styleables.add(THUMB_MOVE_ANIMATION_TIME);
             STYLEABLES = Collections.unmodifiableList(styleables);
         }
     }
-
+    
     /**
      * Gets the CssMetaData associated with this class, which may include the
      * CssMetaData of its superclasses.

@@ -60,14 +60,12 @@ import javafx.scene.control.Skin;
  * @version 0.0.1
  */
 public class InsetToggleSwitch extends Labeled {
-
+    
     /***************************************************************************
      *                                                                         *
-     * Constructors                                                            *
+     * Constructor(s)                                                          *
      *                                                                         *
      **************************************************************************/
-
-    // hey hey hey
     
     /**
      * Creates an {@code InsetToggleSwitch} instance without a label and in the
@@ -84,7 +82,7 @@ public class InsetToggleSwitch extends Labeled {
      *        instance
      */
     public InsetToggleSwitch(boolean selected) { super(); initialize(selected); }
-
+    
     /**
      * Creates an {@code InsetToggleSwitch} instance with the specified label
      * and in the not-selected state.
@@ -92,7 +90,7 @@ public class InsetToggleSwitch extends Labeled {
      * @param text - the label string of the control
      */
     public InsetToggleSwitch(String text) { this(text, false); }
-
+    
     /**
      * Creates an {@code InsetToggleSwitch} instance in the specified selected
      * state with a specified label.
@@ -131,8 +129,8 @@ public class InsetToggleSwitch extends Labeled {
     public final BooleanProperty selectedProperty() { return selected; }
     public final void setSelected(boolean value) { selectedProperty().set(value); }
     public final boolean isSelected() { return selected.get(); }
-
-
+    
+    
     /**************************************************************************
      *                                                                        *
      * Methods                                                                *
@@ -152,8 +150,8 @@ public class InsetToggleSwitch extends Labeled {
             fireEvent(new ActionEvent());
         }
     }
-
-
+    
+    
     /** {@inheritDoc} */
     @Override
     protected Skin<?> createDefaultSkin() {

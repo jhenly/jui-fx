@@ -1,0 +1,28 @@
+/*******************************************************************************
+ *                                                                             *
+ * Main                                                                        *
+ *                                                                             *
+ ******************************************************************************/
+ 
+ .selectable-button {
+     a-fx-background-color: #acacac, #949494;
+     a-fx-background-insets: 0, 1;
+     a-fx-background-radius: 1, 2;
+ }
+ 
+ .selectable-button:armed {
+     a-fx-background-color: #acacac, #f4f4f4;
+ }
+ 
+ .selectable-button:selected {
+     a-fx-background-color: #acacac, #fafafa;
+ }
+ 
+ .fill-button {
+     -fill-duration: 300ms;
+ }
+ 
+ .fill-button:selected {
+     a-fx-background-color: #acacac, #fff;
+ }
+ 
