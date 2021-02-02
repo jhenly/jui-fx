@@ -29,7 +29,7 @@ import com.jhenly.juifx.animation.MultiFillTransition;
 import com.jhenly.juifx.animation.SingleFillTransition;
 import com.jhenly.juifx.control.FillButton;
 import com.jhenly.juifx.control.Fillable;
-import com.jhenly.juifx.layout.Fill;
+import com.jhenly.juifx.fill.Fill;
 
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;

@@ -1,4 +1,4 @@
-package com.jhenly.juifx.layout;
+package com.jhenly.juifx.fill;
 
 import java.util.Arrays;
 import java.util.Locale;

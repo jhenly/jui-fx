@@ -14,8 +14,11 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.jhenly.juifx.layout;
+package com.jhenly.juifx.fill;
 
+import java.util.List;
+
+import com.jhenly.juifx.control.Fillable;
 import com.jhenly.juifx.util.Utils;
 
 import javafx.scene.paint.Color;
@@ -50,9 +53,32 @@ public abstract class FillHelper {
         fillAccessor.setHelper(fill, fillHelper);
     }
     
-    public static Color[] getCssInitial(Fill fill) {
-        return fillAccessor.getCssInitial(fill);
+    public static Color[] getCssInitial() { return fillAccessor.getCssInitial(); }
+    
+    public static boolean bgFillSpansContainSpecial(Fill fill) { return fillAccessor.bgFillSpansContainSpecial(fill); }
+    
+    public static boolean textFillSpanIsSpecial(Fill fill) { return fillAccessor.textFillSpanIsSpecial(fill); }
+    
+    public static boolean shapeFillSpanIsSpecial(Fill fill) { return fillAccessor.shapeFillSpanIsSpecial(fill); }
+    
+    public static boolean strokeFillSpanIsSpecial(Fill fill) { return fillAccessor.strokeFillSpanIsSpecial(fill); }
+    
+    public static FillSpan getTextFillSpanFromSpecial(Fill fill, Fillable fillable) {
+        return fillAccessor.getTextFillSpanFromSpecial(fill, fillable);
     }
+    
+    public static FillSpan getShapeFillSpanFromSpecial(Fill fill, Fillable fillable) {
+        return fillAccessor.getShapeFillSpanFromSpecial(fill, fillable);
+    }
+    
+    public static FillSpan getStrokeFillSpanFromSpecial(Fill fill, Fillable fillable) {
+        return fillAccessor.getStrokeFillSpanFromSpecial(fill, fillable);
+    }
+    
+    public static List<FillSpan> getBgFillSpansFromSpecial(Fill fill, Fillable fillable) {
+        return fillAccessor.getBgFillSpansFromSpecial(fill, fillable);
+    }
+    
     
     /**************************************************************************
      *                                                                        *
@@ -75,7 +101,18 @@ public abstract class FillHelper {
     public interface FillAccessor {
         FillHelper getHelper(Fill fill);
         void setHelper(Fill fill, FillHelper fillHelper);
-        Color[] getCssInitial(Fill fill);
+        
+        Color[] getCssInitial();
+        
+        boolean textFillSpanIsSpecial(Fill fill);
+        boolean shapeFillSpanIsSpecial(Fill fill);
+        boolean strokeFillSpanIsSpecial(Fill fill);
+        boolean bgFillSpansContainSpecial(Fill fill);
+        
+        FillSpan getTextFillSpanFromSpecial(Fill fill, Fillable fillable);
+        FillSpan getShapeFillSpanFromSpecial(Fill fill, Fillable fillable);
+        FillSpan getStrokeFillSpanFromSpecial(Fill fill, Fillable fillable);
+        List<FillSpan> getBgFillSpansFromSpecial(Fill fill, Fillable fillable);
     }
     
 }

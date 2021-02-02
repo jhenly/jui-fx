@@ -1,12 +1,12 @@
-package com.jhenly.juifx.css;
+package com.jhenly.juifx.fill.css;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.jhenly.juifx.layout.Fill;
-import com.jhenly.juifx.layout.Fill.FillType;
-import com.jhenly.juifx.layout.FillConverter;
+import com.jhenly.juifx.fill.Fill;
+import com.jhenly.juifx.fill.FillConverter;
+import com.jhenly.juifx.fill.Fill.FillType;
 
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;

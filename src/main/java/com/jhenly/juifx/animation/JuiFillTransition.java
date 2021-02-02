@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.jhenly.juifx.control.Fillable;
-import com.jhenly.juifx.layout.Fill;
+import com.jhenly.juifx.fill.Fill;
 
 import javafx.animation.Transition;
 import javafx.beans.binding.BooleanBinding;

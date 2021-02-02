@@ -18,9 +18,9 @@ package com.jhenly.juifx.control;
 
 import java.util.List;
 
-import com.jhenly.juifx.layout.Fill;
-import com.jhenly.juifx.layout.FillConverter;
-import com.jhenly.juifx.layout.FillSpan;
+import com.jhenly.juifx.fill.Fill;
+import com.jhenly.juifx.fill.FillConverter;
+import com.jhenly.juifx.fill.FillSpan;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -29,6 +29,8 @@ import javafx.css.Styleable;
 import javafx.css.StyleableProperty;
 import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.Shape;
 import javafx.util.Duration;
 
 /**
@@ -138,7 +140,18 @@ public interface Fillable<T> extends Styleable {
     
     ObjectProperty<Background> backgroundProperty();
     Background getBackground();
-    void setBackground(Background background);
+    void setBackground(Background value);
+    
+    ObjectProperty<Paint> textFillProperty();
+    Paint getTextFill();
+    void setTextFill(Paint value);
+    
+    ObjectProperty<Shape> shapeProperty();
+    Shape getShape();
+    
+    ObjectProperty<Paint> strokeProperty();
+    Paint getStroke();
+    void setStroke(Paint value);
     
     
     /**************************************************************************
@@ -186,9 +199,5 @@ public interface Fillable<T> extends Styleable {
     */
     default List<CssMetaData<? extends Styleable, ?>> getControlCssMetaData() { return getFillableCssMetaData(); }
     
-    
-    static abstract class FillHelper {
-        
-    }
     
 }

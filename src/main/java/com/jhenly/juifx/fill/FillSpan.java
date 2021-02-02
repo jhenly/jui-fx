@@ -14,17 +14,13 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.jhenly.juifx.layout;
+package com.jhenly.juifx.fill;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javafx.animation.Interpolatable;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
 import javafx.scene.paint.Color;
 
 /**
@@ -46,7 +42,7 @@ import javafx.scene.paint.Color;
  * @see Fill
  * @see Color
  */
-public final class FillSpan implements Interpolatable<Color> {
+public class FillSpan implements Interpolatable<Color> {
     
     /**************************************************************************
      *                                                                        *
@@ -55,8 +51,8 @@ public final class FillSpan implements Interpolatable<Color> {
      *************************************************************************/
     
     /** Lazy, thread safe instantiation. */
-    private static final class Holder {
-        static final FillSpan NULL_ARGS_INSTANCE = new FillSpan(Color.TRANSPARENT);
+    static final class Holder {
+        static final FillSpan NULL_ARGS_INSTANCE = new FillSpan();
         static final List<FillSpan> NULL_LIST_ARGS_INSTANCE = List.of(NULL_ARGS_INSTANCE);
     }
     /**
@@ -65,7 +61,7 @@ public final class FillSpan implements Interpolatable<Color> {
      * @return the {@code FillSpan} associated with {@code null} fill-from
      *         and fill-to arguments
      */
-    static FillSpan getNullArgsInstance() { return Holder.NULL_ARGS_INSTANCE; }
+    static final FillSpan getNullArgsInstance() { return Holder.NULL_ARGS_INSTANCE; }
     /**
      * Gets the {@code FillSpan[]} associated with {@code null}
      * {@link #of(Color[], Color[]) FillSpan.of(from[], to[])} arguments.
@@ -77,27 +73,15 @@ public final class FillSpan implements Interpolatable<Color> {
     
     /**************************************************************************
      *                                                                        *
-     * Special Specifiers                                                     *
-     *                                                                        *
-     *************************************************************************/
-    
-    static final Color INHERIT = new Color(0.0, 0.0, 0.0, 0.0);
-    static final Color USE_BG = new Color(0.1, 0.0, 0.0, 0.0);
-    static final Color USE_TEXT = new Color(0.1, 0.1, 0.0, 0.0);
-    static final Color USE_SHAPE = new Color(0.1, 0.1, 0.1, 0.0);
-    
-    
-    /**************************************************************************
-     *                                                                        *
      * Private Members                                                        *
      *                                                                        *
      *************************************************************************/
     
     // fill-from and fill-to colors
-    private Color from, to;
-    private boolean fromEqualsTo;
+    private final Color from, to;
+    private final boolean fromEqualsTo;
     // pre-compute hash
-    private int hash;
+    private final int hash;
     
     
     /**************************************************************************
@@ -105,6 +89,16 @@ public final class FillSpan implements Interpolatable<Color> {
      * Constructor(s)                                                         *
      *                                                                        *
      *************************************************************************/
+    
+    /**
+     * Do not use this constructor, this constructor is only invoked to create
+     * the {@code FillSpan} used by {@link Holder#NULL_ARGS_INSTANCE}.
+     */
+    private FillSpan() {
+        this.from = this.to = new Color(0.0, 0.0, 0.0, 0.0);
+        this.fromEqualsTo = true;
+        this.hash = 1;
+    }
     
     /**
      * Creates a {@code FillSpan} with the specified fill-from and fill-to
@@ -115,7 +109,7 @@ public final class FillSpan implements Interpolatable<Color> {
      * @param from - the fill-from color
      * @param to - the fill-to color
      */
-    private FillSpan(Color from, Color to) {
+    FillSpan(Color from, Color to) {
         this.fromEqualsTo = from.equals(to);
         if (this.fromEqualsTo) {
             this.from = this.to = from;
@@ -141,7 +135,7 @@ public final class FillSpan implements Interpolatable<Color> {
      * 
      * @param same - the color to set both fill-from and fill-to to
      */
-    private FillSpan(Color same) {
+    FillSpan(Color same) {
         this.fromEqualsTo = true;
         this.from = this.to = same;
         
@@ -239,13 +233,7 @@ public final class FillSpan implements Interpolatable<Color> {
         if (obj == this) { return true; }
         if (obj == null || !(obj instanceof FillSpan)) { return false; }
         
-        return equals((FillSpan) obj);
-    }
-    
-    // implementation specific equals method
-    private boolean equals(FillSpan that) {
-        // 'that' cannot be null!
-        
+        FillSpan that = (FillSpan) obj;
         if (this.hash != that.hash) { return false; }
         if (this.fromEqualsTo != that.fromEqualsTo) { return false; }
         
@@ -290,18 +278,18 @@ public final class FillSpan implements Interpolatable<Color> {
             return getNullArgsInstance();
         } else if (!fromIsNull && toIsNull) {
             // if 'to' is null then use a fill span of fill-from to fill-from
-            return FillSpanCache.get(from);
+            return getFromCache(from);
         } else if (fromIsNull && !toIsNull) {
             // if 'from' is null then use a fill span of fill-to to fill-to
-            return FillSpanCache.get(to);
+            return getFromCache(to);
         }
         
         if (from.equals(to)) {
             // if they equal then use a fill span of fill-from to fill-from
-            return FillSpanCache.get(from);
+            return getFromCache(from);
         }
         
-        return FillSpanCache.get(from, to);
+        return getFromCache(from, to);
     }
     
     /**
@@ -348,166 +336,6 @@ public final class FillSpan implements Interpolatable<Color> {
         }
         
         return createList(from, to);
-    }
-    
-    /**
-     * Clears the cache of {@link FillSpan} instances.
-     * <p>
-     * <b>Note:</b> this method is a no-op if called after
-     * {@link #disposeOfCache()}.
-     */
-    public static final void clearCache() { FillSpanCache.getCache().clear(); }
-    
-    /**
-     * Disposes of the cache of {@link FillSpan} instances.
-     * <p>
-     * This method should only be used when no more {@code FillSpan} instances
-     * are needed (for instance, when shutting down or exiting an application).
-     * <p>
-     * <b>Note:</b> subsequent calls to this method will have no effect,
-     * however other methods in this class will exhibit undefined behavior if
-     * called after this method.
-     */
-    public static final void disposeOfCache() { FillSpanCache.getCache().dispose(); }
-    
-    
-    /**************************************************************************
-     *                                                                        *
-     * Package Static API                                                     *
-     *                                                                        *
-     *************************************************************************/
-    
-    static final List<FillSpan> replaceUseBgWithBgFills(List<FillSpan> spans, Background bg) {
-        
-        if (spans == null || spans.isEmpty()) { return Holder.NULL_LIST_ARGS_INSTANCE; }
-        if (bg == null || bg.getFills() == null) { return spans; }
-        
-        return replaceWithBgFillsHelper(spans, bg.getFills());
-    }
-    
-    private static final List<FillSpan> replaceWithBgFillsHelper(List<FillSpan> spans, List<BackgroundFill> bgFills) {
-        final int bgFillsSize = bgFills.size();
-        final int spansSize = spans.size();
-        
-        if (bgFillsSize > spansSize) {
-            return replaceHelperBgLarger(spans, bgFills);
-        } else if (bgFillsSize < spansSize) {
-            //
-            return replaceHelperBgSmaller(spans, bgFills);
-        } else {
-            return replaceHelperBgSameSize(spans, bgFills);
-        }
-        
-    }
-    
-    private static final Color getBgFillColor(Color color, List<BackgroundFill> fills, int index) {
-        if (color != USE_BG) { return color; }
-        
-        try {
-            return (Color) fills.get(index).getFill();
-        } catch (Exception e) {
-            return USE_BG;
-        }
-    }
-    
-    private static final List<FillSpan> replaceHelperBgSameSize(List<FillSpan> spans, List<BackgroundFill> bgFills) {
-        final int size = spans.size();
-        final Color[] fromColors = new Color[size];
-        final Color[] toColors = new Color[size];
-        
-        for (int i = 0; i < size; i++) {
-            final FillSpan span = spans.get(size - i);
-            
-            Color newFrom = getBgFillColor(span.from, bgFills, size - i);
-            Color newTo = getBgFillColor(span.to, bgFills, size - i);
-            
-            final boolean fromFail = newFrom == USE_BG;
-            final boolean toFail = newTo == USE_BG;
-            
-            if (fromFail && toFail) {
-                newFrom = newTo = Color.TRANSPARENT;
-            } else if (!fromFail && toFail) {
-                newTo = newFrom;
-            } else if (fromFail && !toFail) {
-                newFrom = newTo;
-            }
-            
-            fromColors[(size - 1) - i] = newFrom;
-            toColors[(size - 1) - i] = newTo;
-        }
-        
-        return of(fromColors, toColors);
-    }
-    
-    private static final List<FillSpan> replaceHelperBgLarger(List<FillSpan> spans, List<BackgroundFill> bgFills) {
-        final int ssize = spans.size();
-        final int bgSize = bgFills.size();
-        final Color[] fromColors = new Color[ssize];
-        final Color[] toColors = new Color[ssize];
-        
-        for (int i = 0; i < ssize; i++) {
-            final FillSpan span = spans.get(ssize - i);
-            
-            Color newFrom = getBgFillColor(span.from, bgFills, bgSize - i);
-            Color newTo = getBgFillColor(span.to, bgFills, bgSize - i);
-            
-            final boolean fromFail = newFrom == USE_BG;
-            final boolean toFail = newTo == USE_BG;
-            
-            if (fromFail && toFail) {
-                newFrom = newTo = Color.TRANSPARENT;
-            } else if (!fromFail && toFail) {
-                newTo = newFrom;
-            } else if (fromFail && !toFail) {
-                newFrom = newTo;
-            }
-            
-            fromColors[(ssize - 1) - i] = newFrom;
-            toColors[(ssize - 1) - i] = newTo;
-        }
-        
-        return of(fromColors, toColors);
-    }
-    
-    private static final List<FillSpan> replaceHelperBgSmaller(List<FillSpan> spans, List<BackgroundFill> bgFills) {
-        final int ssize = spans.size();
-        final int bgSize = bgFills.size();
-        final Color[] fromColors = new Color[ssize];
-        final Color[] toColors = new Color[ssize];
-        
-        for (int i = 0; i < bgSize; i++) {
-            final FillSpan span = spans.get(ssize - i);
-            
-            Color newFrom = getBgFillColor(span.from, bgFills, bgSize - i);
-            Color newTo = getBgFillColor(span.to, bgFills, bgSize - i);
-            
-            final boolean fromFail = newFrom == USE_BG;
-            final boolean toFail = newTo == USE_BG;
-            
-            if (fromFail && toFail) {
-                newFrom = newTo = Color.TRANSPARENT;
-            } else if (!fromFail && toFail) {
-                newTo = newFrom;
-            } else if (fromFail && !toFail) {
-                newFrom = newTo;
-            }
-            
-            fromColors[(ssize - 1) - i] = newFrom;
-            toColors[(ssize - 1) - i] = newTo;
-        }
-        
-        // copy remaining span colors, replace USE_BG with TRANSPARENT
-        for (int i = 0, n = ssize - bgSize; i < n; i++) {
-            final FillSpan span = spans.get(i);
-            
-            Color from = (span.from == USE_BG) ? Color.TRANSPARENT : span.from;
-            Color to = (span.to == USE_BG) ? Color.TRANSPARENT : span.to;
-            
-            fromColors[i] = from;
-            toColors[i] = to;
-        }
-        
-        return of(fromColors, toColors);
     }
     
     
@@ -564,114 +392,30 @@ public final class FillSpan implements Interpolatable<Color> {
      *                                                                        *
      *************************************************************************/
     
-    /** Class that caches {@code FillSpan} instances. */
-    private static final class FillSpanCache {
-        
-        // lazy, thread safe instantiation
-        private static final class Holder {
-            static final FillSpanCache INSTANCE = new FillSpanCache();
-        }
-        
-        /** 
-         * Gets the cache of {@link FillSpan} instances.
-         * @return the cache of {@code FillSpan} instances
-         */
-        static final FillSpanCache getCache() { return Holder.INSTANCE; }
-        
-        /**
-         * Gets a {@code FillSpan} with the specified colors from this cache if
-         * the cache contains it, otherwise a new {@code FillSpan} is created
-         * with the specified colors, then added to the cache and returned.
-         * 
-         * @param from - the fill-from color
-         * @param to - the fill-to color
-         * @return a new {@code FillSpan} created from the specified colors, or
-         *         a previously cached {@code FillSpan} with the specified
-         *         colors
-         */
-        static final FillSpan get(Color from, Color to) { return Holder.INSTANCE.getOrPut(from, to); }
-        
-        /**
-         * Gets a {@code FillSpan} that has the same fill-from and fill-to
-         * color from this cache if the cache contains it, otherwise a new
-         * {@code FillSpan} is created with the specified color, added to the
-         * cache and returned.
-         * 
-         * @param same - the fill-from and fill-to color
-         * @return a new {@code FillSpan} created from the specified color, or
-         *         a previously cached {@code FillSpan} with the specified
-         *         color
-         */
-        static final FillSpan get(Color same) { return Holder.INSTANCE.getOrPut(same); }
-        
-        
-        // the FillSpan cache
-        private Map<FillSpan, FillSpan> cache;
-        
-        // creates cache, only one cache is created via Holder.INSTANCE
-        private FillSpanCache() { cache = new HashMap<>(); }
-        
-        /**
-         * Gets a {@code FillSpan} with the specified colors from this cache if
-         * the cache contains it, otherwise a new {@code FillSpan} is created
-         * with the specified colors, added to the cache and returned.
-         * 
-         * @param from - the fill-from color
-         * @param to - the fill-to color
-         * @return a new {@code FillSpan} created from the specified colors, or
-         *         a previously cached {@code FillSpan} with the specified
-         *         colors
-         */
-        final FillSpan getOrPut(Color from, Color to) {
-            if (from == USE_BG || to == USE_BG) {
-                // don't cache fill spans with USE_BACKGROUND
-                return new FillSpan(from, to);
-            }
-            
-            return getOrPut(new FillSpan(from, to));
-        }
-        
-        /**
-         * Gets a {@code FillSpan} that has the same fill-from and fill-to
-         * color from this cache if the cache contains it, otherwise a new
-         * {@code FillSpan} is created with the specified color, added to the
-         * cache and returned.
-         * 
-         * @param same - the fill-from and fill-to color
-         * @return a new {@code FillSpan} created from the specified color, or
-         *         a previously cached {@code FillSpan} with the specified
-         *         color
-         */
-        final FillSpan getOrPut(Color same) {
-            // don't cache fill spans with USE_BACKGROUND
-            if (same == USE_BG) { return new FillSpan(same); }
-            
-            return getOrPut(new FillSpan(same));
-            
-        }
-        
-        private final FillSpan getOrPut(FillSpan span) {
-            FillSpan ret = cache.get(span);
-            if (ret == null) {
-                ret = span;
-                cache.put(ret, ret);
-            }
-            
-            return ret;
-        }
-        
-        /** Clears the {@code FillSpanCache}. */
-        final void clear() {
-            if (cache != null) { cache.clear(); }
-        }
-        
-        /** CLears and sets {@code FillSpanCache#cache} to {@code null}. */
-        final void dispose() {
-            clearCache();
-            cache = null;
-        }
-        
-    } // class FillSpanCache
+    /**
+     * Gets a {@code FillSpan} with the specified colors from this cache if
+     * the cache contains it, otherwise a new {@code FillSpan} is created
+     * with the specified colors, then added to the cache and returned.
+     * 
+     * @param from - the fill-from color
+     * @param to - the fill-to color
+     * @return a new {@code FillSpan} created from the specified colors, or
+     *         a previously cached {@code FillSpan} with the specified
+     *         colors
+     */
+    static final FillSpan getFromCache(Color from, Color to) { return FillSpanCache.get(new FillSpan(from, to)); }
     
+    /**
+     * Gets a {@code FillSpan} that has the same fill-from and fill-to color
+     * from this cache if the cache contains it, otherwise a new
+     * {@code FillSpan} is created with the specified color, added to the
+     * cache and returned.
+     * 
+     * @param same - the fill-from and fill-to color
+     * @return a new {@code FillSpan} created from the specified color, or
+     *         a previously cached {@code FillSpan} with the specified
+     *         color
+     */
+    static final FillSpan getFromCache(Color same) { return FillSpanCache.get(new FillSpan(same)); }
     
 }

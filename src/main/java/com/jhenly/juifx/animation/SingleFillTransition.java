@@ -28,8 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.jhenly.juifx.control.Fillable;
-import com.jhenly.juifx.layout.Fill;
-import com.jhenly.juifx.layout.FillSpan;
+import com.jhenly.juifx.fill.Fill;
+import com.jhenly.juifx.fill.FillSpan;
 
 import javafx.animation.FillTransition;
 import javafx.scene.layout.Background;

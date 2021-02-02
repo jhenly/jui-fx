@@ -21,11 +21,13 @@ import java.util.Collections;
 import java.util.List;
 
 import com.jhenly.juifx.control.skin.FillButtonSkin;
-import com.jhenly.juifx.layout.Fill;
-import com.jhenly.juifx.layout.FillSpan;
+import com.jhenly.juifx.fill.Fill;
+import com.jhenly.juifx.fill.FillHelper;
+import com.jhenly.juifx.fill.FillSpan;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.css.CssMetaData;
 import javafx.css.PseudoClass;
 import javafx.css.StyleOrigin;
@@ -39,6 +41,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Skin;
 import javafx.scene.control.SkinBase;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.util.Duration;
 
 /**
@@ -197,7 +200,7 @@ public class FillButton extends SelectableButton implements Fillable {
     
     /* --- fill --- */
     @Override
-    public final ObjectProperty<Fill> fillProperty() {
+    public ObjectProperty<Fill> fillProperty() {
         if (fill == null) {
             fill = new StyleableObjectProperty<Fill>(Fill.getDefault())
             {
@@ -205,9 +208,23 @@ public class FillButton extends SelectableButton implements Fillable {
                 private boolean fillSetByCss = false;
                 
                 @Override
+                public void set(Fill v) {
+                    
+                    // check if any of fill's FillSpans have special identifiers
+                    boolean textHasSpecial = FillHelper.textFillSpanIsSpecial(v);
+                    boolean shapeHasSpecial = FillHelper.shapeFillSpanIsSpecial(v);
+                    boolean strokeHasSpecial = FillHelper.strokeFillSpanIsSpecial(v);
+                    boolean bgHasSpecial = FillHelper.bgFillSpansContainSpecial(v);
+                    
+                    FillSpan textSpan = textHasSpecial ? 
+                    
+                    super.set(v);
+                }
+                @Override
                 public void applyStyle(StyleOrigin newOrigin, Fill value) {
                     // 'super.applyStyle' calls 'set' which might throw if value
                     // is bound, have to ensure 'fill' is reset
+                    
                     try {
                         fillSetByCss = true;
                         super.applyStyle(newOrigin, value);
@@ -233,6 +250,22 @@ public class FillButton extends SelectableButton implements Fillable {
     public final Fill getFill() { return fill == null ? Fill.getDefault() : fill.get(); }
     private ObjectProperty<Fill> fill;
     
+    @Override
+    public ObjectProperty<Paint> strokeProperty() {
+        if (stroke == null) {
+            stroke = new SimpleObjectProperty<Paint>(FillButton.this, "stroke", Color.TRANSPARENT);
+//            final Shape shape = getShape();
+//            if (shape != null) {
+//                stroke.bind(shape.strokeProperty());
+//            }
+        }
+        return stroke;
+    }
+    @Override
+    public void setStroke(Paint value) { stroke.set(value); }
+    @Override
+    public Paint getStroke() { return stroke == null ? null : stroke.get(); }
+    private ObjectProperty<Paint> stroke;
     
     /***************************************************************************
      *                                                                         *
