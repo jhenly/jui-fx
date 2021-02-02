@@ -2,6 +2,7 @@ package com.jhenly.juifx.util.replacer;
 
 import com.jhenly.juifx.util.Replacer;
 
+
 /**
  * This class provides a skeletal implementation of the {@link Replacer}
  * interface and incorporates a <i>dispose-after-replace</i> mechanism to help
@@ -18,15 +19,20 @@ public abstract class AbstractReplacer<T> implements Replacer<T> {
     /**
      * Constructor used by implementing classes that assigns {@link #toReplace}
      * to the specified object.
-     * @param toReplace - the object to replace some aspect(s) of, or to
-     *        replace entirely
      */
-    protected AbstractReplacer(T toReplace) { this.toReplace = toReplace; }
+    protected AbstractReplacer() {}
     
     @Override
-    public final T replace() {
-        final T ret = replaceImpl();
-        dispose();
+    public final T replace(T toReplace) {
+        this.toReplace = toReplace;
+        final T ret;
+        
+        try {
+            ret = replaceImpl(toReplace);
+        } finally {
+            dispose();
+        }
+        
         return ret;
     }
     
@@ -37,9 +43,10 @@ public abstract class AbstractReplacer<T> implements Replacer<T> {
      * Implementing classes should put their replacement related logic in this
      * method and, preferably, use the {@code protected} member
      * {@link #toReplace} to do replacements.
+     * @param 
      * @return the object with some aspect(s) replaced, or replaced entirely
      */
-    protected abstract T replaceImpl();
+    protected abstract T replaceImpl(T toReplace);
     
     /**
      * Method to help out the garbage collector, called after
@@ -47,6 +54,6 @@ public abstract class AbstractReplacer<T> implements Replacer<T> {
      * <p>
      * This method simply assigns {@link #toReplace} to {@code null}.
      */
-    protected void dispose() { toReplace = null; }
+    protected void dispose() {}
     
 }
