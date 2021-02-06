@@ -55,6 +55,7 @@ public abstract class FillHelper {
     
     public static Color[] getCssInitial() { return fillAccessor.getCssInitial(); }
     
+    
     public static boolean bgFillSpansContainSpecial(Fill fill) { return fillAccessor.bgFillSpansContainSpecial(fill); }
     
     public static boolean textFillSpanIsSpecial(Fill fill) { return fillAccessor.textFillSpanIsSpecial(fill); }
@@ -103,6 +104,8 @@ public abstract class FillHelper {
         void setHelper(Fill fill, FillHelper fillHelper);
         
         Color[] getCssInitial();
+        
+        boolean hasSpecial(Fill fill);
         
         boolean textFillSpanIsSpecial(Fill fill);
         boolean shapeFillSpanIsSpecial(Fill fill);

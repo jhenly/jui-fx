@@ -1,3 +1,19 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package com.jhenly.juifx.fill;
 
 import java.util.Arrays;
@@ -12,6 +28,12 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Font;
 
+/**
+ * Converts the CSS 
+ * 
+ * @author Jonathan Henly
+ * @since JuiFX 1.0
+ */
 public class FillConverter extends StyleConverter<ParsedValue[], Fill> {
     
     public static final StyleConverter<ParsedValue[], Fill> INSTANCE = new FillConverter();
@@ -23,8 +45,13 @@ public class FillConverter extends StyleConverter<ParsedValue[], Fill> {
         static final SequenceConverter SEQUENCE_INSTANCE = new SequenceConverter();
         static final Color PARSE_ERROR_COLOR = new Color(0.0, 0.0, 0.0, 1.0); // Color.BLACK
         static final Color[] NULL_EMPTY = new Color[] {};
+        
+        private Holder() { throw new IllegalAccessError("a Holder class should not be instantiated"); }
     }
-    
+    /**
+     * Gets the {@link FillConverter} singleton converter instance.
+     * @return the singleton converter instance
+     */
     public static StyleConverter<ParsedValue[], Fill> getInstance() { return INSTANCE; }
     
     @Override
@@ -33,12 +60,13 @@ public class FillConverter extends StyleConverter<ParsedValue[], Fill> {
         Color[] fillFroms = (Color[]) convertedValues.get(Fill.FILL_FROM);
         Color[] fillTos = (Color[]) convertedValues.get(Fill.FILL_TO);
         
-        System.out
-            .println("fillFroms: " + fillFroms + "  fillFroms == NULL_EMPTY: " + (fillFroms == Holder.NULL_EMPTY));
+        System.out.println("fillFroms: " + fillFroms + "  fillFroms == NULL_EMPTY: "
+            + (fillFroms == StringSequenceConverter.ErrorHolder.NULL_EMPTY));
         
         final boolean hasFroms = (fillFroms != null && fillFroms.length != 0);
         final boolean hasTos = (fillTos != null && fillTos.length != 0);
         
+        // use USE_BG if 'to' colors were specified but 'from' colors were not
         if (!hasFroms && hasTos) {
             fillFroms = new Color[fillTos.length];
             Arrays.fill(fillFroms, FillSpan.USE_BG);
@@ -47,19 +75,24 @@ public class FillConverter extends StyleConverter<ParsedValue[], Fill> {
         return new Fill(FillSpan.of(fillFroms, fillTos));
     }
     
-    private FillConverter() {
-        // super();
-    }
+    private FillConverter() {}
     
     @Override
     public String toString() { return "FillConverter"; }
     
+    
+    /**************************************************************************
+     *                                                                        *
+     * Fill Color Converter                                                   *
+     *                                                                        *
+     *************************************************************************/
+    
     /**
-     * Converts a string to a Color objects.
+     * Converts a string to a Color object.
      */
     public static final class FillColorConverter extends StyleConverter<String, Color> {
         
-        // lazy, thread-safe instatiation
+        // lazy, thread-safe instantiation
         public static StyleConverter<String, Color> getInstance() { return Holder.FILL_COLOR_INSTANCE; }
         
         @Override
@@ -85,19 +118,35 @@ public class FillConverter extends StyleConverter<ParsedValue[], Fill> {
         @Override
         public String toString() { return "FillConverter.FillColorConverter"; }
         
-    }
+    } // class FillColorConverter
     
+    
+    /**************************************************************************
+     *                                                                        *
+     * String Sequence Converter                                              *
+     *                                                                        *
+     *************************************************************************/
     
     /** Converts a string of colors to an array of Color objects. */
     public static final class StringSequenceConverter extends StyleConverter<String, Color[]> {
-        
-        public static StringSequenceConverter getInstance() { return Holder.STRING_SEQUENCE_INSTANCE; }
+        // lazy, thread-safe instantiation
+        private static class Holder {
+            static final StringSequenceConverter INSTANCE = new StringSequenceConverter();
+            
+            private Holder() { throw new IllegalAccessError("a Holder class should not be instantiated"); }
+        }
+        /**
+         * Gets the {@link StringSequenceConverter} singleton converter
+         * instance.
+         * @return the singleton converter instance
+         */
+        public static StringSequenceConverter getInstance() { return Holder.INSTANCE; }
         
         /** {@inheritDoc} */
         @Override
         public Color[] convert(ParsedValue<String, Color[]> value, Font font) {
             Object val = value.getValue();
-            if (val == null) { return Holder.NULL_EMPTY; }
+            if (val == null) { return ErrorHolder.NULL_EMPTY; }
             
             // if we get a color then just return an array with that color
             if (val instanceof Color) { return new Color[] { (Color) val }; }
@@ -106,16 +155,16 @@ public class FillConverter extends StyleConverter<ParsedValue[], Fill> {
             if (val instanceof String) {
                 
                 final String cleanValue = ((String) val).strip().toLowerCase(Locale.ENGLISH);
-                if (cleanValue.isEmpty()) { return Holder.NULL_EMPTY; }
+                if (cleanValue.isEmpty()) { return ErrorHolder.NULL_EMPTY; }
                 
                 final String[] strColors = cleanValue.split("[\\s,]+");
-                if (strColors.length == 0) { return Holder.NULL_EMPTY; }
+                if (strColors.length == 0) { return ErrorHolder.NULL_EMPTY; }
                 
                 return parseColors(strColors, cleanValue);
             }
             
             System.err.println("JuiFX CSS error, unable to parse color(s)");
-            return Holder.NULL_EMPTY;
+            return ErrorHolder.NULL_EMPTY;
         }
         
         /** Parses array of color strings to an array of colors. */
@@ -140,14 +189,29 @@ public class FillConverter extends StyleConverter<ParsedValue[], Fill> {
                 return Color.web('#' + color);
             } catch (Exception e) {
                 System.err.println("JuiFX CSS error, could not parse color '#" + color + "' in '" + cleanValue + "'");
-                return Holder.PARSE_ERROR_COLOR;
+                return ErrorHolder.PARSE_ERROR_COLOR;
             }
+        }
+        
+        // lazy, thread-safe instantiation
+        private static class ErrorHolder {
+            static final Color[] NULL_EMPTY = new Color[] {};
+            static final Color PARSE_ERROR_COLOR = new Color(0.0, 0.0, 0.0, 1.0); // Color.BLACK
+            
+            private ErrorHolder() { throw new IllegalAccessError("an ErrorHolder class should not be instantiated"); }
         }
         
         @Override
         public String toString() { return "FillConverter.StringSequenceConverter"; }
         
-    }
+    } // class StringSequenceConverter
+    
+    
+    /**************************************************************************
+     *                                                                        *
+     * Sequence Converter                                                     *
+     *                                                                        *
+     *************************************************************************/
     
     /**
      * Converts an array of parsed values to an array of Color objects.
@@ -184,6 +248,7 @@ public class FillConverter extends StyleConverter<ParsedValue[], Fill> {
             return "FillConverter.SequenceConverter";
         }
         
-    }
+    } // class SequenceConverter
     
-}
+    
+} // class FillConverter

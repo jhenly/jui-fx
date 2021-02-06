@@ -53,6 +53,8 @@ public class Fill {
     private static class Holder {
         static final Color NULL_BG_FILL_SPAN = Color.TRANSPARENT;
         static final List<FillSpan> FILL_SPANS_NULL_EMPTY = List.of();
+        
+        private Holder() { throw new IllegalAccessError("a Holder class should not be instantiated"); }
     }
     /**
     * Returns empty list of {@link FillSpan} when constructor's
@@ -166,10 +168,13 @@ public class Fill {
 //    private final FillType type;
     
     /** List of this fill's fill spans. */
-    private final List<FillSpan> bgSpans;
     private final FillSpan textSpan;
     private final FillSpan shapeSpan;
     private final FillSpan strokeSpan;
+    private final List<FillSpan> bgSpans;
+    private final List<FillSpan> bdSpans; // border spans
+    
+    private final boolean hasSpecial; // signals that the fill has special spans
     
     /**
      * Cached hash for improved performance on subsequent hash or equality
@@ -185,41 +190,56 @@ public class Fill {
      **************************************************************************/
     
     /**
-     * Creates a new {@code Fill} with the specified text, shape, stroke and
-     * background {@link FillSpan} instances.
+     * Creates a new {@code Fill} with the specified text, shape, stroke,
+     * background and border {@link FillSpan} instances.
      * <p>
      * {@code null} parameters are allowed. If all parameters are {@code null}
      * then the constructed {@code Fill} will be empty.
      * <p>
-     * If the specified array of background {@code FillSpan} instances is
-     * {@code null} or empty, or if the specified array only contains
-     * {@code null} instances, then this {@code Fill} instance's background
-     * fill spans will be {@code null}.
-     * Any {@code null} background {@code FillSpan} instances will be replaced
-     * by a {@code FillSpan} instance with a <i>fill-from</i> and
-     * <i>fill-to</i> of {@link Color#TRANSPARENT}.
+     * If a specified list of {@code FillSpan} instances is {@code null} or
+     * empty, or if the list only contains {@code null} instances, then this
+     * {@code Fill} instance's respective fill spans will be {@code null}. Any
+     * {@code null} {@code FillSpan} instances in the list will be replaced by
+     * a {@code FillSpan} instance with a <i>fill-from</i> and <i>fill-to</i>
+     * of {@link Color#TRANSPARENT}.
      *
      * @param textFillSpan - the text fill span
      * @param shapeFillSpan - the shape fill span
      * @param strokeFillSpan - the stroke fill span
-     * @param bgFillSpans - array of {@code FillSpan} instances, if {@code null}
-     *        or empty, or contains only {@code null} instances, then
-     *        background fill spans will be {@code null}
+     * @param bgFillSpans - array of {@code FillSpan} instances, if
+     *        {@code null} or empty, or contains only {@code null} instances,
+     *        then background fill spans will be {@code null}, any {@code null}
+     *        elements will be replaced by a {@code FillSpan} with a fill-from
+     *        and fill-to of {@code Color.TRANSPARENT}
+     * @param borderFillSpans - array of {@code FillSpan} instances, if
+     *        {@code null} or empty, or contains only {@code null} instances,
+     *        then border fill spans will be {@code null}, any {@code null}
+     *        elements will be replaced by a {@code FillSpan} with a fill-from
+     *        and fill-to of {@code Color.TRANSPARENT}
      */
-    public Fill(FillSpan textFillSpan, FillSpan shapeFillSpan, FillSpan strokeFillSpan, FillSpan... bgFillSpans) {
+    public Fill(FillSpan textFillSpan, FillSpan shapeFillSpan, FillSpan strokeFillSpan, FillSpan[] bgFillSpans,
+        FillSpan[] borderFillSpans) {
         // used to precompute the hash code
         int preHash = 23;
+        // used to signal that the fill has specials
+        boolean preHasSpecial = false;
         
-        // assign text fill span and add to preHash
+        // assign text fill span, add to preHash and check for special
         textSpan = textFillSpan;
         preHash += (textSpan == null) ? 0 : 11 * preHash + textSpan.hashCode();
-        // assign shape fill span and add to preHash
+        preHasSpecial = FillSpanHelper.fillSpanIsSpecial(textSpan);
+        
+        // assign shape fill span, add to preHash and check for special
         shapeSpan = shapeFillSpan;
         preHash += (shapeSpan == null) ? 0 : 13 * preHash + shapeSpan.hashCode();
-        // assign stroke fill span and add to preHash
+        preHasSpecial |= FillSpanHelper.fillSpanIsSpecial(shapeSpan);
+        
+        // assign stroke fill span, add to preHash and check for special
         strokeSpan = strokeFillSpan;
         preHash += (strokeSpan == null) ? 0 : 17 * preHash + strokeSpan.hashCode();
+        preHasSpecial |= FillSpanHelper.fillSpanIsSpecial(strokeSpan);
         
+        // check and possibly create list of background fill spans
         if (bgFillSpans == null || bgFillSpans.length == 0) {
             bgSpans = null;
         } else {
@@ -229,10 +249,13 @@ public class Fill {
             // used to replace nulls and create unmodifiable list
             List<FillSpan> tmpSpans = new ArrayList<>(bgFillSpans.length);
             
-            // check for any null fill spans or for all null fill spans
+            // replace any null fill spans and check for all null fill spans
             int nullCount = 0;
             for (int i = 0; i < bgFillSpans.length; i++) {
                 FillSpan span = bgFillSpans[i];
+                
+                // check if span is special before null check
+                preHasSpecial |= FillSpanHelper.fillSpanIsSpecial(strokeSpan);
                 
                 if (span == null) {
                     nullCount++;
@@ -255,76 +278,87 @@ public class Fill {
             
         }
         
+        // check and possibly create list of border fill spans
+        if (borderFillSpans == null || borderFillSpans.length == 0) {
+            bdSpans = null;
+        } else {
+            // keep separate hash for bdSpans in case array is filled with null
+            int borderSpansHash = 19;
+            
+            // used to replace nulls and create unmodifiable list
+            List<FillSpan> tmpSpans = new ArrayList<>(borderFillSpans.length);
+            
+            // replace any null fill spans and check for all null fill spans
+            int nullCount = 0;
+            for (int i = 0; i < borderFillSpans.length; i++) {
+                FillSpan span = borderFillSpans[i];
+                
+                // check if span is special before null check
+                preHasSpecial |= FillSpanHelper.fillSpanIsSpecial(strokeSpan);
+                
+                if (span == null) {
+                    nullCount++;
+                    // replace null fill span with Color.BLACK fill span
+                    span = FillSpan.getNullArgsInstance();
+                }
+                
+                borderSpansHash = 31 * borderSpansHash + span.hashCode();
+                tmpSpans.add(span);
+            }
+            
+            // if not all null, set bdSpans to unmodifiable list and add hash
+            if (nullCount < (borderFillSpans.length - 1)) {
+                bdSpans = Collections.unmodifiableList(tmpSpans);
+                preHash += borderSpansHash;
+            } else {
+                // if given all null fill spans then set bdSpans to null
+                bdSpans = null;
+            }
+            
+        }
+        
+        // set if any fill span instances were special
+        hasSpecial = preHasSpecial;
+        
         // set hash to precomputed hash
-        hash = preHash;
+        hash = preHash + (hasSpecial ? 1 : 0);
     }
     
     /**
-     * Convenience constructor that only sets the background {@link FillSpan}
-     * instances.
+     * Creates a new {@code Fill} with the specified text, shape, stroke,
+     * background and border {@link FillSpan} instances.
      * <p>
-     * This constructor simply does the following:<pre>
-     * this(null, null, null, bgFillSpans)</pre>
-     * 
-     * @param bgFillSpans - array of background {@code FillSpan} instances, if
-     *        {@code null} or empty or only containing {@code null} instances,
-     *        then background fill spans will be {@code null}, any {@code null}
-     *        {@code FillSpan} instances will be replaced by a {@code FillSpan}
-     *         with a fill-from and fill-to of {@link Color#TRANSPARENT}
-     */
-    public Fill(FillSpan... bgFillSpans) {
-        this(null, null, null, bgFillSpans);
-    }
-    
-    /**
-     * Convenience constructor that only sets the background {@link FillSpan}
-     * instances.
+     * {@code null} parameters are allowed. If all parameters are {@code null}
+     * then the constructed {@code Fill} will be empty.
      * <p>
-     * This constructor simply does the following:<pre>
-     * this(bgFillSpans == null ? null : bgFillSpans.toArray(new FillSpan[bgFillSpans.size()]))</pre>
-     * 
-     * @param bgFillSpans - list of background {@code FillSpan} instances, if
-     *        {@code null} or empty or only containing {@code null} instances,
-     *        then background fill spans will be {@code null}, any {@code null}
-     *        {@code FillSpan} instances will be replaced by a {@code FillSpan}
-     *         with a fill-from and fill-to of {@link Color#TRANSPARENT}
-     */
-    public Fill(List<FillSpan> bgFillSpans) {
-        this(bgFillSpans == null ? null : bgFillSpans.toArray(new FillSpan[bgFillSpans.size()]));
-    }
-    
-    /**
-     * Convenience constructor that sets the text and background
-     * {@link FillSpan} instances.
-     * <p>
-     * This constructor simply does the following:<pre>
-     * this(textFillSpan, null, null, bgFillSpans)</pre>
-     * 
-     * @param textFillSpan - the text fill span
-     * @param bgFillSpans - array of background {@code FillSpan} instances, if
-     *        {@code null} or empty or only containing {@code null} instances,
-     *        then background fill spans will be {@code null}, any {@code null}
-     *        {@code FillSpan} instances will be replaced by a {@code FillSpan}
-     *         with a fill-from and fill-to of {@link Color#TRANSPARENT}
-     */
-    public Fill(FillSpan textFillSpan, FillSpan... bgFillSpans) {
-        this(null, null, null, bgFillSpans);
-    }
-    
-    /**
-     * Convenience constructor that sets the text, shape and stroke
-     * {@link FillSpan} instances, and sets the background fill spans to
-     * {@code null}.
-     * <p>
-     * This constructor simply does the following:<pre>
-     * this(textFillSpan, shapeFillSpan, strokeFillSpan, (FillSpan[]) null)</pre>
-     * 
+     * If a specified list of {@code FillSpan} instances is {@code null} or
+     * empty, or if the list only contains {@code null} instances, then this
+     * {@code Fill} instance's respective fill spans will be {@code null}. Any
+     * {@code null} {@code FillSpan} instances in the list will be replaced by
+     * a {@code FillSpan} instance with a <i>fill-from</i> and <i>fill-to</i>
+     * of {@link Color#TRANSPARENT}.
+     *
      * @param textFillSpan - the text fill span
      * @param shapeFillSpan - the shape fill span
      * @param strokeFillSpan - the stroke fill span
+     * @param bgFillSpans - list of {@code FillSpan} instances, if {@code null}
+     *        or empty, or contains only {@code null} instances, then
+     *        background fill spans will be {@code null}, any {@code null}
+     *        elements will be replaced by a {@code FillSpan} with a fill-from
+     *        and fill-to of {@code Color.TRANSPARENT}
+     * @param borderFillSpans - list of {@code FillSpan} instances, if
+     *        {@code null} or empty, or contains only {@code null} instances,
+     *        then border fill spans will be {@code null}, any {@code null}
+     *        elements will be replaced by a {@code FillSpan} with a fill-from
+     *        and fill-to of {@code Color.TRANSPARENT}
      */
-    public Fill(FillSpan textFillSpan, FillSpan shapeFillSpan, FillSpan strokeFillSpan) {
-        this(textFillSpan, shapeFillSpan, strokeFillSpan, (FillSpan[]) null);
+    public Fill(FillSpan textFillSpan, FillSpan shapeFillSpan, FillSpan strokeFillSpan, List<FillSpan> bgFillSpans,
+        List<FillSpan> borderFillSpans) {
+        this(textFillSpan, shapeFillSpan, strokeFillSpan,
+            (bgFillSpans == null || bgFillSpans.isEmpty()) ? (FillSpan[]) null
+                : bgFillSpans.toArray(new FillSpan[bgFillSpans.size()]),
+            (borderFillSpans == null || borderFillSpans.isEmpty()) ? (FillSpan[]) null
+                : borderFillSpans.toArray(new FillSpan[borderFillSpans.size()]));
     }
     
     
@@ -347,14 +381,6 @@ public class Fill {
      *         otherwise {@code false}
      */
     public final boolean hasFillSpans() { return !bgSpans.isEmpty(); }
-    
-    /**
-     * Gets whether or not this {@code Fill} instance contains any background
-     * {@link FillSpan} instances.
-     * @return {@code true} if this {@code Fill} instance has background fill
-     *         span(s), otherwise {@code false}
-     */
-    public final boolean hasBgFillSpans() { return !bgSpans.isEmpty(); }
     
     /**
      * Gets whether or not this {@code Fill} instance contains a text
@@ -381,6 +407,22 @@ public class Fill {
     public final boolean hasStrokeFillSpan() { return shapeSpan != null; }
     
     /**
+     * Gets whether or not this {@code Fill} instance contains any background
+     * {@link FillSpan} instances.
+     * @return {@code true} if this {@code Fill} instance has background fill
+     *         span(s), otherwise {@code false}
+     */
+    public final boolean hasBgFillSpans() { return !bgSpans.isEmpty(); }
+    
+    /**
+     * Gets whether or not this {@code Fill} instance contains any background
+     * {@link FillSpan} instances.
+     * @return {@code true} if this {@code Fill} instance has background fill
+     *         span(s), otherwise {@code false}
+     */
+    public final boolean hasBorderFillSpans() { return !bgSpans.isEmpty(); }
+    
+    /**
      * Gets the list of {@link FillSpan} instances making up this {@code Fill}.
      * <p>
      * <b>Note:</b> This List is unmodifiable and immutable. It will never be
@@ -391,19 +433,6 @@ public class Fill {
      * @see Collections#unmodifiableList(List)
      */
     public final List<FillSpan> getFillSpans() { return bgSpans; }
-    
-    /**
-     * Gets the list of background {@link FillSpan} instances making up this
-     * {@code Fill}.
-     * <p>
-     * <b>Note:</b> This List is unmodifiable and immutable. It will never be
-     * {@code null}. The elements of this list will also never be {@code null}.
-     * 
-     * @return the list of {@code FillSpan} instances making up this
-     *         {@code Fill}
-     * @see Collections#unmodifiableList(List)
-     */
-    public final List<FillSpan> getBgFillSpans() { return bgSpans; }
     
     /**
      * Gets the text {@link FillSpan} instance in this {@code Fill}, if it has
@@ -420,7 +449,7 @@ public class Fill {
      * @return the shape {@code FillSpan} instance or {@code null}
      * @see Collections#unmodifiableList(List)
      */
-    final FillSpan getShapeFillSpan() { return shapeSpan; }
+    public final FillSpan getShapeFillSpan() { return shapeSpan; }
     
     /**
      * Gets the stroke {@link FillSpan} instance in this {@code Fill}, if it
@@ -429,6 +458,32 @@ public class Fill {
      * @return the stroke {@code FillSpan} instance or {@code null}
      */
     public final FillSpan getStrokeFillSpan() { return strokeSpan; }
+    
+    /**
+     * Gets the list of background {@link FillSpan} instances making up this
+     * {@code Fill}.
+     * <p>
+     * <b>Note:</b> This List is unmodifiable and immutable. It will never be
+     * {@code null}. The elements of this list will also never be {@code null}.
+     * 
+     * @return the list of background{@code FillSpan} instances making up this
+     *         {@code Fill}
+     * @see Collections#unmodifiableList(List)
+     */
+    public final List<FillSpan> getBgFillSpans() { return bgSpans; }
+    
+    /**
+     * Gets the list of border {@link FillSpan} instances making up this
+     * {@code Fill}.
+     * <p>
+     * <b>Note:</b> This List is unmodifiable and immutable. It will never be
+     * {@code null}. The elements of this list will also never be {@code null}.
+     * 
+     * @return the list of border {@code FillSpan} instances making up this
+     *         {@code Fill}
+     * @see Collections#unmodifiableList(List)
+     */
+    public final List<FillSpan> getBorderFillSpans() { return bdSpans; }
     
     /**
      * Gets a {@link FillSpan} from the specified index.
@@ -457,15 +512,23 @@ public class Fill {
         
         // because the hash is cached, this can be a very fast check
         if (this.hash != that.hash) { return false; }
+        if (this.hasSpecial != that.hasSpecial) { return false; }
         
-        // same hash, so now we check member equality
-        if (this.textSpan != that.textSpan) { return false; }
-        if (this.shapeSpan != that.shapeSpan) { return false; }
-        if (this.strokeSpan != that.strokeSpan) { return false; }
-        if (!this.bgSpans.equals(that.bgSpans)) { return false; }
-        
-        return true;
+        // if cache of fill spans is enabled then reference equality can be used
+        return FillSpanHelper.fillSpanListsAreEqual(this.bgSpans, that.bgSpans)
+            && FillSpanHelper.fillSpansAreEqual(this.textSpan, that.textSpan)
+            && FillSpanHelper.fillSpansAreEqual(this.shapeSpan, that.shapeSpan)
+            && FillSpanHelper.fillSpanListsAreEqual(this.bdSpans, that.bdSpans)
+            && FillSpanHelper.fillSpansAreEqual(this.strokeSpan, that.strokeSpan);
     }
+    
+    /**
+     * Gets whether or not this {@code Fill} instance has any fill spans with
+     * special identifiers.
+     * @return {@code true} if this {@code Fill} instance has any fill spans
+     *         with special identifiers
+     */
+    final boolean hasSpecial() { return hasSpecial; }
     
     /**
      * 
@@ -543,6 +606,9 @@ public class Fill {
             public Color[] getCssInitial() { return Fill.getCssInitial(); }
             
             @Override
+            public boolean hasSpecial(Fill fill) { return fill.hasSpecial(); }
+            
+            @Override
             public boolean bgFillSpansContainSpecial(Fill fill) {
                 return FillSpanHelper.fillSpansContainSpecial(fill.getBgFillSpans());
             }
@@ -564,17 +630,17 @@ public class Fill {
             
             @Override
             public FillSpan getTextFillSpanFromSpecial(Fill fill, Fillable fillable) {
-                return FillSpanHelper.getFillSpanFromSpecial(fill, fillable, FillSpanHelper.REP_TEXT);
+                return FillSpanHelper.getFillSpanFromSpecial(fill, fillable);
             }
             
             @Override
             public FillSpan getShapeFillSpanFromSpecial(Fill fill, Fillable fillable) {
-                return FillSpanHelper.getFillSpanFromSpecial(fill, fillable, FillSpanHelper.REP_SHAPE);
+                return FillSpanHelper.getFillSpanFromSpecial(fill, fillable);
             }
             
             @Override
             public FillSpan getStrokeFillSpanFromSpecial(Fill fill, Fillable fillable) {
-                return FillSpanHelper.getFillSpanFromSpecial(fill, fillable, FillSpanHelper.REP_STROKE);
+                return FillSpanHelper.getFillSpanFromSpecial(fill, fillable);
             }
             
             @Override

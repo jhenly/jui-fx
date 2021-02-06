@@ -28,7 +28,7 @@ import javafx.css.CssMetaData;
 import javafx.css.Styleable;
 import javafx.css.StyleableProperty;
 import javafx.scene.layout.Background;
-import javafx.scene.paint.Color;
+import javafx.scene.layout.Border;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Shape;
 import javafx.util.Duration;
@@ -39,12 +39,13 @@ import javafx.util.Duration;
  * @author Jonathan Henly
  * @since JuiFX 1.0
  */
-public interface Fillable<T> extends Styleable {
+public interface Fillable extends Styleable {
     
     /**
      * The default {@link #fillToProperty() fill to} color value.
      */
-    public static final Fill DEFAULT_FILL = new Fill(FillSpan.of(Color.valueOf("#f4f4f6"), Color.valueOf("#70787d")));
+    // public static final Fill DEFAULT_FILL = new
+    // Fill(FillSpan.of(Color.valueOf("#f4f4f6"), Color.valueOf("#70787d")));
     
     
     /**************************************************************************
@@ -142,6 +143,10 @@ public interface Fillable<T> extends Styleable {
     Background getBackground();
     void setBackground(Background value);
     
+    ObjectProperty<Border> borderProperty();
+    Border getBorder();
+    void setBorder(Border value);
+    
     ObjectProperty<Paint> textFillProperty();
     Paint getTextFill();
     void setTextFill(Paint value);
@@ -164,7 +169,7 @@ public interface Fillable<T> extends Styleable {
     static class StyleableProperties {
         
         static final CssMetaData<Fillable, Fill> FILL = new CssMetaData<Fillable, Fill>("-jui-fill",
-            FillConverter.INSTANCE, DEFAULT_FILL, false, Fill.getClassCssMetaData())
+            FillConverter.INSTANCE, Fill.getDefault(), false, Fill.getClassCssMetaData())
         {
             
             @Override

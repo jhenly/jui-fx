@@ -1,20 +1,21 @@
 package com.jhenly.juifx.fill;
 
-import static com.jhenly.juifx.fill.SpecialFillSpan.INHERIT;
-import static com.jhenly.juifx.fill.SpecialFillSpan.USE_BG;
-import static com.jhenly.juifx.fill.SpecialFillSpan.USE_SHAPE;
-import static com.jhenly.juifx.fill.SpecialFillSpan.USE_STROKE;
-import static com.jhenly.juifx.fill.SpecialFillSpan.USE_TEXT;
+import static com.jhenly.juifx.fill.FillSpan.USE_BG;
+import static com.jhenly.juifx.fill.FillSpan.USE_BORDER;
+import static com.jhenly.juifx.fill.FillSpan.USE_SHAPE;
+import static com.jhenly.juifx.fill.FillSpan.USE_STROKE;
+import static com.jhenly.juifx.fill.FillSpan.USE_TEXT;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.jhenly.juifx.control.Fillable;
-import com.jhenly.juifx.util.Replacer;
-import com.jhenly.juifx.util.replacer.AbstractReplacer;
+import com.jhenly.juifx.util.replacer.DisposableReplacer;
 
-import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.BorderStroke;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Shape;
@@ -28,467 +29,7 @@ public final class FillSpanHelper {
     
     /**************************************************************************
      *                                                                        *
-     * Replace Special Identifiers                                            *
-     *                                                                        *
-     *************************************************************************/
-    
-    /** Replace text fill span with special. */
-    static final int REP_TEXT = 0;
-    /** Replace shape fill span with special. */
-    static final int REP_SHAPE = 1;
-    /** Replace stroke fill span with special. */
-    static final int REP_STROKE = 2;
-    
-    /** Replace special with unknown, i.e. replace error. */
-    static final int REP_WITH_UNKNOWN = -1;
-    /** Replace special with text fill. */
-    static final int REP_WITH_TEXT = 0;
-    /** Replace special with shape fill. */
-    static final int REP_WITH_SHAPE = 1;
-    /** Replace special with stroke fill. */
-    static final int REP_WITH_STROKE = 2;
-    /** Replace special with innermost background fill. */
-    static final int REP_WITH_BG = 3;
-    
-    /**************************************************************************
-     *                                                                        *
-     * Replace Special Methods                                                *
-     *                                                                        *
-     *************************************************************************/
-    
-    /**
-     * 
-     * @param span
-     * @param fillable
-     * @return
-     */
-    static FillSpan getFillSpanFromSpecial(FillSpan span, Fillable fillable) {
-        if (span == null) return FillSpan.getNullArgsInstance();
-        if (!fillSpanIsSpecial(span)) return span;
-        if (fillable == null) return span; /* this shouldn't happen */
-        
-        return fillSpanReplacer().using(fillable).replace(span);
-    }
-    
-    // lazy, thread safe instantiation for fill span replacer
-    private static class FillSpanReplacerHolder {
-        static final FillSpanReplacer INSTANCE = new FillSpanReplacer();
-    }
-    private static FillSpanReplacer fillSpanReplacer() { return FillSpanReplacerHolder.INSTANCE; }
-    
-    // lazy, thread safe instantiation for fill span list replacer
-    private static class FillSpanListReplacerHolder {
-        static final FillSpanListReplacer INSTANCE = new FillSpanListReplacer();
-    }
-    private static FillSpanListReplacer fillSpanListReplacer() { return FillSpanListReplacerHolder.INSTANCE; }
-    
-    /**
-     * Base {@link Replacer} implementation for {@link FillSpanReplacer} and
-     * {@link FillSpansReplacer}.
-     * @since JuiFX 1.0
-     */
-    private static abstract class FillSpanReplacerBase<T> extends AbstractReplacer<T> {
-        protected Fillable fable;
-        protected List<BackgroundFill> bgFillCache; // only created if needed
-        
-        /** 
-         * Constructor that sets the object that {@link #replaceImpl()} will
-         * act on and the {@link Fillable} that will be used to help replace
-         * an aspect, or aspects, of said object.
-         * 
-         * @param toReplace - the object to replace an aspect, or aspects, of
-         * @param fillable - the {@code Fillable} to help with replacing
-         */
-        
-        
-        /**
-         * Sets the {@link Fillable} instance which is used to get replacement
-         * colors.
-         * @param fillable - the {@code Fillable} to get replacing colors from
-         * @return a reference to this instance
-         */
-        public FillSpanReplacerBase<T> using(Fillable fillable) {
-            fable = fillable;
-            return this;
-        }
-        
-        /** Help out the garbage collector. */
-        @Override
-        protected void dispose() {
-            super.dispose();
-            fable = null;
-            bgFillCache = null;
-        }
-        
-        /**
-         * Gets the color to replace the specified special color identifier
-         * with.
-         * <p>
-         * The {@code index} parameter is only used when the special color
-         * identifier relates to replacement with a background fill color. In
-         * that situation the value of {@code index} should be {@code 0} for a
-         * single fill span, or the index of the fill span in a list of fill
-         * spans.
-         * 
-         * @param specialId - the special color identifier
-         * @param index - the index of the fill span
-         * @return the color to replace the special color identifier with
-         */
-        protected Color getReplacementColor(Color specialId, int index) {
-            
-            if (specialId == USE_TEXT)
-                return getTextFillColor();
-            else if (specialId == USE_SHAPE)
-                return getShapeFillColor();
-            else if (specialId == USE_STROKE)
-                return getStrokeFillColor();
-            else if (specialId == USE_BG) {
-                // use a cached value so we don't have to keep getting bgFills
-                if (bgFillCache == null) {
-                    // first we check if Fillable's background is null
-                    final Background bg = fable.getBackground();
-                    if (bg == null) return getReplaceErrorIdentifier(
-                        "JuiFX replace USE_BG error: Fillable.getBackground() returned 'null'");
-                    
-                    // then if Fillable's list of background fills is null
-                    final List<BackgroundFill> bgFills = bg.getFills();
-                    if (bg.getFills() == null) return getReplaceErrorIdentifier(
-                        "JuiFX replace USE_BG error: Fillable.getBackground().getFills() returned 'null'");
-                    
-                    // if we make it here then bg != null and bgFills != null
-                    bgFillCache = bgFills;
-                }
-                
-                return getBgFillColor(bgFillCache, index);
-            }
-            
-            // if we make it here, we don't know what to replace specialId with
-            return getReplaceErrorIdentifier("JuiFX replace USE_UNKNOWN error: an unknown USE_* specifier was used");
-            
-        }
-        
-        /** 
-         * Gets the {@code Color} from a {@code BackgroundFill} instance at the
-         * specified <b><i>reverse index</i></b> in a list.
-         * <p>
-         * The <b><i>reverse index</i></b> is the index of an element in an
-         * array, or list, if the array, or list, were to be reversed. That is
-         * to say, given an array {@code arr} and a reverse index {@code ri},
-         * the array {@code arr} is accessed via
-         * {@code arr[(arr.length - 1) - ri]}.
-         * <p>
-         * For example, the following code block shows the
-         * <i>regular indexes</i> and <i>reverse indexes</i> of an array of
-         * strings: <pre>
-         * String[] strs = { "a", "b", "c" }
-         * 
-         * // the normal indexes
-         * strs[0] == "a" strs[1] == "b" strs[2] == "c"
-         * 
-         * // the reverse indexes
-         * strs[0] == "c" strs[1] == "b" strs[2] == "a"</pre>
-         * 
-         * @param bgFills - the list of background fills
-         * @param reverseIndex - the reverse index of the background fill to
-         *        get the color from
-         */
-        protected Color getBgFillColor(List<BackgroundFill> bgFills, int reverseIndex) {
-            // bounds checking
-            if (reverseIndex < 0 || reverseIndex >= bgFills.size()) // we should never be out of bounds, but just in
-                                                                    // case
-                return getReplaceErrorIdentifier(
-                    "JuiFX replace USE_BG error: index " + reverseIndex + "is out of bounds");
-            
-            // background fill might not be a Color (i.e. LinearGradient, ...)
-            try {
-                return (Color) bgFills.get((bgFills.size() - 1) - reverseIndex).getFill();
-            } catch (Exception e) {
-                return getReplaceErrorIdentifier("JuiFX replace USE_BG error: " + e.getLocalizedMessage());
-            }
-        }
-        
-        /** Helper that gets the text fill color. */
-        protected Color getTextFillColor() {
-            final Paint tFill = fable.getTextFill();
-            if (tFill == null) return getReplaceErrorIdentifier(
-                "JuiFX replace USE_TEXT error: Fillable.getTextFill() returned 'null'");
-            
-            // text fill might not be a Color (i.e. LinearGradient, ...)
-            try {
-                return (Color) tFill;
-            } catch (Exception e) {
-                return getReplaceErrorIdentifier("JuiFX replace USE_TEXT error: " + e.getLocalizedMessage());
-            }
-        }
-        
-        /** Helper that gets the shape fill color. */
-        protected Color getShapeFillColor() {
-            final Shape shape = fable.getShape();
-            if (shape == null)
-                return getReplaceErrorIdentifier("JuiFX replace USE_SHAPE error: Fillable.getShape() returned 'null'");
-            
-            final Paint shFill = shape.getFill();
-            if (shFill == null) return getReplaceErrorIdentifier(
-                "JuiFX replace USE_SHAPE error: Fillable.getShape().getFill() returned 'null'");
-            
-            // shape fill might not be a Color (i.e. LinearGradient, ...)
-            try {
-                return (Color) shFill;
-            } catch (Exception e) {
-                return getReplaceErrorIdentifier("JuiFX replace USE_SHAPE error: " + e.getLocalizedMessage());
-            }
-        }
-        
-        /** Helper that gets the stroke fill color. */
-        protected Color getStrokeFillColor() {
-            final Paint stroke = fable.getStroke();
-            if (stroke == null) return getReplaceErrorIdentifier(
-                "JuiFX replace USE_STROKE error: Fillable.getStroke() returned 'null'.");
-            
-            // stroke might not be a Color (i.e. LinearGradient, ...)
-            try {
-                return (Color) stroke;
-            } catch (Exception e) {
-                return getReplaceErrorIdentifier("JuiFX replace USE_STROKE error: " + e.getLocalizedMessage());
-            }
-        }
-        
-        
-    } // class FillSpanReplacerBase
-    
-    
-    private static class FillSpanReplacer extends FillSpanReplacerBase<FillSpan> {
-        
-        @Override
-        protected FillSpan replaceImpl(FillSpan toReplace) {
-            // 'from' and 'to' can't be null
-            Color repFrom = toReplace.from();
-            Color repTo = toReplace.to();
-            
-            if (colorIsSpecialIdentifier(repFrom)) {
-                repFrom = getReplacementColor(repFrom, 0);
-            }
-            
-            if (colorIsSpecialIdentifier(repTo)) {
-                repTo = getReplacementColor(repTo, 0);
-            }
-            
-            return FillSpan.of(repFrom, repTo);
-        }
-        
-    } // class FillSpanReplacer
-    
-    
-    static List<FillSpan> getFillSpanListFromSpecial(List<FillSpan> spans, Fillable fillable) {
-        if (spans == null || !fillSpansContainSpecial(spans)) return spans;
-        if (fillable == null || fillable.getBackground() == null) return spans;
-        
-        final List<BackgroundFill> bgFills = fillable.getBackground().getFills();
-        if (bgFills == null || bgFills.isEmpty()) return spans;
-        
-        
-        return fillSpanListReplacer().using(fillable).replace(spans);
-    }
-    
-    
-    private static class FillSpanListReplacer extends FillSpanReplacerBase<List<FillSpan>> {
-        int spansSize;
-        int bgFillsSize;
-        int minSize;
-        
-        @Override
-        protected List<FillSpan> replaceImpl(List<FillSpan> toReplace) {
-            bgFillCache = fable.getBackground().getFills();
-            spansSize = toReplace.size();
-            bgFillsSize = bgFillCache.size();
-            minSize = Math.min(toReplace.size(), bgFillCache.size());
-            
-            List<FillSpan> ret = new ArrayList<>(toReplace);
-            // only use the last 'minSize' elements in toReplace
-//            ret = ret.subList(ret.size() - minSize, ret.size());
-            for (int i = 0; i < ret.size(); i++) {
-                if (i < bgFillCache.size()) {
-                    
-                } else {
-                    
-                }
-            }
-            
-            return null;
-        }
-        
-        private FillSpan getSpan(List<FillSpan> spans, int reverseIndex) {
-            return spans.get((spans.size() - 1) - reverseIndex);
-        }
-        
-        
-    } // class FillSpansReplacer
-    
-    static List<FillSpan> replaceUseBgWithBgFills(List<FillSpan> spans, Background bg) {
-        
-        if (spans == null || spans.isEmpty()) return FillSpan.getNullListArgsInstance();
-        if (bg == null || bg.getFills() == null) return spans;
-        
-        return replaceWithBgFillsHelper(spans, bg.getFills());
-    }
-    
-    private static List<FillSpan> replaceWithBgFillsHelper(List<FillSpan> spans, List<BackgroundFill> bgFills) {
-        final int bgFillsSize = bgFills.size();
-        final int spansSize = spans.size();
-        
-        if (bgFillsSize > spansSize)
-            return replaceHelperBgLarger(spans, bgFills);
-        else if (bgFillsSize < spansSize) //
-            return replaceHelperBgSmaller(spans, bgFills);
-        else
-            return replaceHelperBgSameSize(spans, bgFills);
-        
-    }
-    
-    private static Color getBgFillColor(Color color, List<BackgroundFill> fills, int index) {
-        if (color != USE_BG) return color;
-        
-        try {
-            return (Color) fills.get(index).getFill();
-        } catch (Exception e) {
-            return USE_BG;
-        }
-    }
-    
-    private static List<FillSpan> replaceHelperBgSameSize(List<FillSpan> spans, List<BackgroundFill> bgFills) {
-        final int size = spans.size();
-        final Color[] fromColors = new Color[size];
-        final Color[] toColors = new Color[size];
-        
-        for (int i = 0; i < size; i++) {
-            final FillSpan span = spans.get(size - i);
-            
-            Color newFrom = getBgFillColor(span.from(), bgFills, size - i);
-            Color newTo = getBgFillColor(span.to(), bgFills, size - i);
-            
-            final boolean fromFail = newFrom == USE_BG;
-            final boolean toFail = newTo == USE_BG;
-            
-            if (fromFail && toFail) {
-                newFrom = newTo = Color.TRANSPARENT;
-            } else if (!fromFail && toFail) {
-                newTo = newFrom;
-            } else if (fromFail && !toFail) {
-                newFrom = newTo;
-            }
-            
-            fromColors[(size - 1) - i] = newFrom;
-            toColors[(size - 1) - i] = newTo;
-        }
-        
-        return FillSpan.of(fromColors, toColors);
-    }
-    
-    private static List<FillSpan> replaceHelperBgLarger(List<FillSpan> spans, List<BackgroundFill> bgFills) {
-        final int ssize = spans.size();
-        final int bgSize = bgFills.size();
-        final Color[] fromColors = new Color[ssize];
-        final Color[] toColors = new Color[ssize];
-        
-        for (int i = 0; i < ssize; i++) {
-            final FillSpan span = spans.get(ssize - i);
-            
-            Color newFrom = getBgFillColor(span.from(), bgFills, bgSize - i);
-            Color newTo = getBgFillColor(span.to(), bgFills, bgSize - i);
-            
-            final boolean fromFail = newFrom == USE_BG;
-            final boolean toFail = newTo == USE_BG;
-            
-            if (fromFail && toFail) {
-                newFrom = newTo = Color.TRANSPARENT;
-            } else if (!fromFail && toFail) {
-                newTo = newFrom;
-            } else if (fromFail && !toFail) {
-                newFrom = newTo;
-            }
-            
-            fromColors[(ssize - 1) - i] = newFrom;
-            toColors[(ssize - 1) - i] = newTo;
-        }
-        
-        return FillSpan.of(fromColors, toColors);
-    }
-    
-    private static List<FillSpan> replaceHelperBgSmaller(List<FillSpan> spans, List<BackgroundFill> bgFills) {
-        final int ssize = spans.size();
-        final int bgSize = bgFills.size();
-        final Color[] fromColors = new Color[ssize];
-        final Color[] toColors = new Color[ssize];
-        
-        for (int i = 0; i < bgSize; i++) {
-            final FillSpan span = spans.get(ssize - i);
-            
-            Color newFrom = getBgFillColor(span.from(), bgFills, bgSize - i);
-            Color newTo = getBgFillColor(span.to(), bgFills, bgSize - i);
-            
-            final boolean fromFail = newFrom == USE_BG;
-            final boolean toFail = newTo == USE_BG;
-            
-            if (fromFail && toFail) {
-                newFrom = newTo = Color.TRANSPARENT;
-            } else if (!fromFail && toFail) {
-                newTo = newFrom;
-            } else if (fromFail && !toFail) {
-                newFrom = newTo;
-            }
-            
-            fromColors[(ssize - 1) - i] = newFrom;
-            toColors[(ssize - 1) - i] = newTo;
-        }
-        
-        // copy remaining span colors, replace USE_BG with TRANSPARENT
-        for (int i = 0, n = ssize - bgSize; i < n; i++) {
-            final FillSpan span = spans.get(i);
-            
-            Color from = (span.from() == USE_BG) ? Color.TRANSPARENT : span.from();
-            Color to = (span.to() == USE_BG) ? Color.TRANSPARENT : span.to();
-            
-            fromColors[i] = from;
-            toColors[i] = to;
-        }
-        
-        return FillSpan.of(fromColors, toColors);
-    }
-    
-    
-    /**************************************************************************
-     *                                                                        *
-     * Replace Special Error Methods                                          *
-     *                                                                        *
-     *************************************************************************/
-//                                                                               
-    /**
-     * Gets the {@code Color} object that represents a replace error.
-     * 
-     * @return the {@code Color} object that represents a replace error
-     */
-    static Color getReplaceErrorIdentifier() { return ReplaceHolder.REP_ERROR; }
-    
-    /**
-     * Gets the {@code Color} object that represents a replace error and writes
-     * a specified error message to {@link System#err}.
-     * @param errorMsg - the error message to write to {@code System.err}
-     * @return the {@code Color} object that represents a replace error
-     */
-    static Color getReplaceErrorIdentifier(String errorMsg) {
-        System.err.println(errorMsg);
-        return ReplaceHolder.REP_ERROR;
-    }
-    
-    // lazy, thread safe instantiation
-    static class ReplaceHolder {
-        static final Color REP_ERROR = new Color(1.0, 1.0, 1.0, 0.0);
-    }
-    
-    
-    /**************************************************************************
-     *                                                                        *
-     * FillSpanSpecial Section                                                *
+     * Special Fill Span Section                                              *
      *                                                                        *
      *************************************************************************/
     
@@ -499,9 +40,7 @@ public final class FillSpanHelper {
      * @return {@code true} if the specified color is a special identifier,
      *         otherwise {@code false}
      */
-    static boolean colorIsSpecialIdentifier(final Color c) {
-        return c == INHERIT || c == USE_BG || c == USE_TEXT || c == USE_SHAPE || c == USE_STROKE;
-    }
+    static boolean colorIsSpecialIdentifier(final Color c) { return FillSpan.colorIsSpecialIdentifier(c); }
     
     /**
      * Checks whether a specified {@code FillSpan} instance contains a special
@@ -528,13 +67,513 @@ public final class FillSpanHelper {
      *         span with a special identifier, otherwise {@code false}
      */
     static boolean fillSpansContainSpecial(List<FillSpan> spans) {
-        if (spans == null) return false;
+        if (spans == null) { return false; }
         
         for (FillSpan span : spans) {
-            if (fillSpanIsSpecial(span)) return true;
+            if (fillSpanIsSpecial(span)) { return true; }
         }
         return false;
     }
     
+    
+    /**************************************************************************
+     *                                                                        *
+     * Replace Special Identifiers                                            *
+     *                                                                        *
+     *************************************************************************/
+    
+//    /** Replace text fill span with special. */
+//    static final int REP_TEXT = 0;
+//    /** Replace shape fill span with special. */
+//    static final int REP_SHAPE = 1;
+//    /** Replace stroke fill span with special. */
+//    static final int REP_STROKE = 2;
+//    
+//    /** Replace special with unknown, i.e. replace error. */
+//    static final int REP_WITH_UNKNOWN = -1;
+//    /** Replace special with text fill. */
+//    static final int REP_WITH_TEXT = 0;
+//    /** Replace special with shape fill. */
+//    static final int REP_WITH_SHAPE = 1;
+//    /** Replace special with stroke fill. */
+//    static final int REP_WITH_STROKE = 2;
+//    /** Replace special with innermost background fill. */
+//    static final int REP_WITH_BG = 3;
+    
+    
+    /**************************************************************************
+     *                                                                        *
+     * Replace Special Methods                                                *
+     *                                                                        *
+     *************************************************************************/
+    
+    /**
+     * 
+     * @param span
+     * @param fillable
+     * @return
+     */
+    static FillSpan getFillSpanFromSpecial(FillSpan span, Fillable fillable) {
+        if (span == null || !fillSpanIsSpecial(span)) { return span; }
+        if (fillable == null) { return span; /* this shouldn't happen */ }
+        
+        return fillSpanReplacer().using(fillable).replace(span);
+    }
+    
+    /**
+     * 
+     * @param spans
+     * @param fillable
+     * @return
+     */
+    static List<FillSpan> getFillSpanListFromSpecial(List<FillSpan> spans, Fillable fillable) {
+        if (spans == null || spans.isEmpty()) { return spans; }
+        if (fillable == null) { return spans; }
+        
+        return fillSpanListReplacer().using(fillable).replace(spans);
+    }
+    
+    /**
+     * Base {@link DisposableReplacer} implementation for
+     * {@link FillSpanReplacer} and {@link FillSpanListReplacer}.
+     * @since JuiFX 1.0
+     */
+    private static abstract class FillSpanReplacerBase<T> extends DisposableReplacer<T> {
+        
+        // members
+        protected Fillable fable;
+        
+        /** {@inheritDoc} */
+        @Override
+        protected void dispose() {
+            super.dispose();
+            fable = null;
+        }
+        
+        /**
+         * Sets the {@link Fillable} instance which is used to get replacement
+         * colors.
+         * @param fillable - the {@code Fillable} to get replacement colors
+         *        from
+         * @return a reference to this instance
+         */
+        public FillSpanReplacerBase<T> using(Fillable fillable) {
+            fable = fillable;
+            return this;
+        }
+        
+        /**
+         * Convenience method that simply returns the result of calling
+         * {@code using(fillable).replace(fillSpan)}.
+         * 
+         * @param toReplace - the object to replace some aspect(s) of, or to
+         *        replace entirely
+         * @param fillable - the {@code Fillable} to get replacement colors
+         *        from
+         * @return an object with some aspect(s) replaced
+         */
+        public T replaceUsing(T toReplace, Fillable fillable) { return using(fillable).replace(toReplace); }
+        
+        /**
+         * Checks if the specified {@link FillSpan} contains any special
+         * identifier colors and, if so, returns a new {@code FillSpan} with
+         * the special identifiers replaced, if the specified {@code FillSpan}
+         * contains no special identifiers then this method just returns the
+         * specified {@code FillSpan}.
+         * 
+         * @param span - the fill span to check and, if need be, replace
+         * @return a fill span with any specials replaced, or the specified
+         *         fill span if it contains no specials
+         */
+        protected FillSpan replaceSpecial(SpecialFillSpan span) {
+            // 'from' and 'to' can't be null
+            Color repFrom = span.from();
+            Color repTo = span.to();
+            
+            // replace any special id. color with the fillable's replacement
+            repFrom = span.fromIsSpecial() ? getReplacementColor(repFrom, span.fromIndex(), span.fromBsPos()) : repFrom;
+            repTo = span.toIsSpecial() ? getReplacementColor(repTo, span.toIndex(), span.toBsPos()) : repTo;
+            
+            return FillSpan.of(repFrom, repTo);
+        }
+        
+        /**
+         * Gets the color to replace the specified special color identifier
+         * with.
+         * @param specialId - the special color identifier
+         * @param index - the index of the replacement fill or stroke to get,
+         *        if any
+         * @param pos - the border stroke position, if any
+         * @return the color to replace the special color identifier with
+         */
+        protected Color getReplacementColor(Color specialId, int index, int pos) {
+            if (fable == null) {
+                // this only happens if we mistakenly don't set 'fable'
+                return getReplaceErrorIdentifier(
+                    "JuiFX replace special identifier in Fill error: Fillable not set before replacing special identifiers");
+            }
+            
+            if (specialId == USE_BG) {
+                return getBgFillColor(index);
+                
+            } else if (specialId == USE_BORDER) {
+                return getBorderStrokeColor(index, pos);
+                
+            } else if (specialId == USE_TEXT) {
+                return getTextFillColor();
+                
+            } else if (specialId == USE_SHAPE) {
+                return getShapeFillColor();
+                
+            } else if (specialId == USE_STROKE) {
+                return getStrokeFillColor();
+                
+            }
+            
+            // if we make it here, we don't know what to replace specialId with
+            return getReplaceErrorIdentifier(
+                "JuiFX replace USE_UNKNOWN in Fill error: an unknown USE_* specifier was used");
+        }
+        
+        /** 
+         * Gets a {@code Color} from a {@link BackgroundFill}.
+         * @param index - the index of the background fill to replace the color
+         *        with
+         * @return the background fill color
+         */
+        protected abstract Color getBgFillColor(int index);
+        
+        /** 
+         * Gets a {@code Color} from a {@link BorderStroke}.
+         * @param index - the index of the border stroke to replace the color
+         *        with
+         * @param pos - the border stroke position, if any
+         * @return the border fill color
+         */
+        protected abstract Color getBorderStrokeColor(int index, int pos);
+        
+        /**
+         * Gets a border stroke from a specified {@link BorderStroke} at the
+         * specified position.
+         * @param stroke - the {@code BorderStroke} to get the border stroke
+         *        from
+         * @param pos - the position to get the border stroke from
+         * @return a border stroke from a specified {@link BorderStroke} at the
+         *         specified position
+         */
+        protected static Paint getBorderStroke(BorderStroke stroke, int pos) {
+            /* See the 'FillSpan#BorderStrokePosition' enum to understand where
+             * the values below are derived from. */
+            switch (pos) {
+                case 0:
+                    return stroke.getTopStroke();
+                case 1:
+                    return stroke.getRightStroke();
+                case 2:
+                    return stroke.getBottomStroke();
+                case 3:
+                    return stroke.getLeftStroke();
+                default:
+                    return stroke.getTopStroke();
+            }
+        }
+        
+        /** Helper that gets the text fill color. */
+        protected Color getTextFillColor() {
+            final Paint tFill = fable.getTextFill();
+            if (tFill == null) {
+                return getReplaceErrorIdentifier(
+                    "JuiFX replace USE_TEXT in Fill error: Fillable.getTextFill() returned 'null'");
+            }
+            
+            // text fill might not be a Color (i.e. LinearGradient, ...)
+            try {
+                return (Color) tFill;
+            } catch (Exception e) {
+                return getReplaceErrorIdentifier("JuiFX replace USE_TEXT in Fill error: " + e.getLocalizedMessage());
+            }
+        }
+        
+        /** Helper that gets the shape fill color. */
+        protected Color getShapeFillColor() {
+            final Shape shape = fable.getShape();
+            if (shape == null) {
+                return getReplaceErrorIdentifier(
+                    "JuiFX replace USE_SHAPE in Fill error: Fillable.getShape() returned 'null'");
+            }
+            
+            // shape fill might not be a Color (i.e. LinearGradient, ...)
+            try {
+                // 'shape.getFill()' returns 'Color.BLACK' if null
+                return (Color) shape.getFill();
+            } catch (Exception e) {
+                return getReplaceErrorIdentifier("JuiFX replace USE_SHAPE in Fill error: " + e.getLocalizedMessage());
+            }
+        }
+        
+        /** Helper that gets the stroke fill color. */
+        protected Color getStrokeFillColor() {
+            final Paint stroke = fable.getStroke();
+            if (stroke == null) {
+                return getReplaceErrorIdentifier(
+                    "JuiFX replace USE_STROKE in Fill error: Fillable.getStroke() returned 'null'.");
+            }
+            
+            // stroke might not be a Color (i.e. LinearGradient, ...)
+            try {
+                return (Color) stroke;
+            } catch (Exception e) {
+                return getReplaceErrorIdentifier("JuiFX replace USE_STROKE in Fill error: " + e.getLocalizedMessage());
+            }
+        }
+        
+    } // class FillSpanReplacerBase
+    
+    /**
+     * {@link FillSpanReplacerBase} implementation used to replace special
+     * color identifiers in a single {@link FillSpan}.
+     */
+    private static class FillSpanReplacer extends FillSpanReplacerBase<FillSpan> {
+        
+        @Override
+        protected void dispose() {
+            super.dispose();
+        }
+        
+        @Override
+        protected FillSpan replaceImpl(FillSpan fillSpan) {
+            // return the fill span if neither 'from' nor 'to' is a special id.
+            if (!fillSpanIsSpecial(fillSpan)) { return fillSpan; }
+            
+            return replaceSpecial((SpecialFillSpan) fillSpan);
+        }
+        
+        @Override
+        protected Color getBgFillColor(int index) {
+            final List<BackgroundFill> bgFills = fable.getBackground().getFills();
+            
+            // set index to 0 if it is the default of -1
+            index = (index < 0) ? 0 : index;
+            
+            // don't write any error messages, this could get re-applied
+            if (index >= bgFills.size()) { return getReplaceErrorIdentifier(); }
+            
+            
+            // background fill might not be a Color (i.e. LinearGradient, ...)
+            try {
+                // get the innermost background fill color
+                return (Color) bgFills.get((bgFills.size() - 1) - index).getFill();
+            } catch (Exception e) {
+                return getReplaceErrorIdentifier("JuiFX replace USE_BG in Fill error: " + e.getLocalizedMessage());
+            }
+        }
+        
+        @Override
+        protected Color getBorderStrokeColor(int index, int pos) {
+            final List<BorderStroke> bStrokes = fable.getBorder().getStrokes();
+            
+            // single span, so set index to 0 if it is the default of -1
+            index = (index < 0) ? 0 : index;
+            
+            // don't write any error messages, this could get re-applied
+            if (index >= bStrokes.size()) { return getReplaceErrorIdentifier(); }
+            
+            
+            // border stroke might not be a Color (i.e. LinearGradient, ...)
+            try {
+                // get the innermost border stroke color
+                return (Color) getBorderStroke(bStrokes.get((bStrokes.size() - 1) - index), pos);
+            } catch (Exception e) {
+                return getReplaceErrorIdentifier("JuiFX replace USE_BORDER in Fill error: " + e.getLocalizedMessage());
+            }
+        }
+        
+    } // class FillSpanReplacer
+    
+    
+    private static class FillSpanListReplacer extends FillSpanReplacerBase<List<FillSpan>> {
+        protected List<FillSpan> ret; // set in replaceImpl
+        
+        int loopIndex; // current index in the replace loop
+        
+        // lists only set if needed
+        protected List<BackgroundFill> bgFills; // background fills
+        protected List<BorderStroke> bStrokes; // border strokes
+        
+        @Override
+        protected void dispose() {
+            super.dispose();
+            ret = null;
+            loopIndex = 0;
+            bgFills = null;
+            bStrokes = null;
+        }
+        
+        @Override
+        protected List<FillSpan> replaceImpl(List<FillSpan> spans) {
+            // fable must not be null or empty
+            bgFills = fable.getBackground().getFills();
+            bStrokes = fable.getBorder().getStrokes();
+            
+            ArrayDeque<FillSpan> fillSpans = new ArrayDeque<>(spans);
+            
+            ret = new ArrayList<>(Math.min(bgFills.size(), fillSpans.size()));
+            for (loopIndex = 0; loopIndex < ret.size(); loopIndex++) {
+                FillSpan span = getSpanFromRet(loopIndex);
+                
+                // if span isn't special then move to next fill span
+                if (!fillSpanIsSpecial(span)) { continue; }
+                
+                replaceSpanInRet(loopIndex, replaceSpecial((SpecialFillSpan) span));
+            }
+            
+            return Collections.unmodifiableList(ret);
+        }
+        
+        /** Replaces a fill span in 'ret' */
+        private void replaceSpanInRet(int index, FillSpan span) {
+            ret.set((ret.size() - 1) - index, span);
+        }
+        
+        private FillSpan getSpanFromRet(int index) {
+            return ret.get((ret.size() - 1) - index);
+        }
+        
+        @Override
+        protected Color getBgFillColor(int index) {
+            // index refers to the fill span's replacement index here
+            index = (index == -1) ? loopIndex : index;
+            
+            // don't write any error messages, this could get re-applied
+            if (index >= bgFills.size()) { return getReplaceErrorIdentifier(); }
+            
+            // background fill might not be a Color (i.e. LinearGradient, ...)
+            try {
+                return (Color) bgFills.get((bgFills.size() - 1) - index).getFill();
+            } catch (Exception e) {
+                return getReplaceErrorIdentifier("JuiFX replace USE_BG error: " + e.getLocalizedMessage());
+            }
+        }
+        
+        @Override
+        protected Color getBorderStrokeColor(int index, int pos) {
+            // index refers to the fill span's replacement index here
+            index = (index == -1) ? loopIndex : index;
+            
+            // don't write any error messages, this could get re-applied
+            if (index >= bStrokes.size()) { return getReplaceErrorIdentifier(); }
+            
+            // border stroke might not be a Color (i.e. LinearGradient, ...)
+            try {
+                return (Color) getBorderStroke(bStrokes.get((bStrokes.size() - 1) - index), pos);
+            } catch (Exception e) {
+                return getReplaceErrorIdentifier("JuiFX replace USE_BORDER in Fill error: " + e.getLocalizedMessage());
+            }
+        }
+        
+        
+    } // class FillSpanListReplacer
+    
+    
+    /**************************************************************************
+     *                                                                        *
+     * Fill Span Replacer Holders                                             *
+     *                                                                        *
+     *************************************************************************/
+    
+    // lazy, thread safe instantiation for fill span replacer
+    private static class FillSpanReplacerHolder {
+        static final FillSpanReplacer INSTANCE = new FillSpanReplacer();
+        
+        private FillSpanReplacerHolder() {
+            throw new IllegalAccessError("the FillSpanReplacerHolder class should not be instantiated");
+        }
+    }
+    private static FillSpanReplacer fillSpanReplacer() { return FillSpanReplacerHolder.INSTANCE; }
+    
+    // lazy, thread safe instantiation for fill span list replacer
+    private static class FillSpanListReplacerHolder {
+        static final FillSpanListReplacer INSTANCE = new FillSpanListReplacer();
+        
+        private FillSpanListReplacerHolder() {
+            throw new IllegalAccessError("the FillSpanListReplacerHolder class should not be instantiated");
+        }
+    }
+    private static FillSpanListReplacer fillSpanListReplacer() { return FillSpanListReplacerHolder.INSTANCE; }
+    
+    
+    /**************************************************************************
+     *                                                                        *
+     * Replace Special Error Methods                                          *
+     *                                                                        *
+     *************************************************************************/
+    
+    /**
+     * Gets the {@code Color} object that represents a replace error.
+     * 
+     * @return the {@code Color} object that represents a replace error
+     */
+    static Color getReplaceErrorIdentifier() { return ReplaceHolder.REP_ERROR; }
+    
+    /**
+     * Gets the {@code Color} object that represents a replace error and writes
+     * a specified error message to {@link System#err}.
+     * @param errorMsg - the error message to write to {@code System.err}
+     * @return the {@code Color} object that represents a replace error
+     */
+    static Color getReplaceErrorIdentifier(String errorMsg) {
+        System.err.println(errorMsg);
+        return ReplaceHolder.REP_ERROR;
+    }
+    
+    // lazy, thread safe instantiation
+    static class ReplaceHolder {
+        static final Color REP_ERROR = new Color(1.0, 1.0, 1.0, 0.0);
+    }
+    
+    
+    /**************************************************************************
+     *                                                                        *
+     * Equals Methods                                                         *
+     *                                                                        *
+     *************************************************************************/
+    
+    /**
+     * Used to check for equality between two {@code FillSpan} instances.
+     * <p>
+     * This method should only be used after the fill spans have been added to
+     * the cache, if {@link FillSpanCache} is enabled.
+     * @param a - the fill span to check against {@code b}
+     * @param b - the fill span to check against {@code a}
+     * @return {@code true} if {@code a} equals {@code b}, otherwise
+     *         {@code false}
+     */
+    static boolean fillSpansAreEqual(FillSpan a, FillSpan b) {
+        return a == null ? b == null : FillSpanCache.isCacheEnabled() ? a == b : a.equals(b);
+    }
+    
+    /**
+     * Used to check for equality between two lists {@code FillSpan} instances.
+     * <p>
+     * This method should only be used after any fill spans have been added to
+     * the cache, if {@link FillSpanCache} is enabled.
+     * @param a - the fill span to check against {@code b}
+     * @param b - the fill span to check against {@code a}
+     * @return {@code true} if {@code a} equals {@code b}, otherwise
+     *         {@code false}
+     */
+    static boolean fillSpanListsAreEqual(List<FillSpan> a, List<FillSpan> b) {
+        if (a == b || a == null || b == null) { return a == b; }
+        
+        if (!FillSpanCache.isCacheEnabled()) { return a.equals(b); }
+        
+        if (a.size() != b.size()) { return false; }
+        for (int i = 0, n = a.size(); i < n; i++) {
+            if (a.get(i) != b.get(i)) { return false; }
+        }
+        
+        // if we reach this point the lists are equal
+        return true;
+    }
     
 }
