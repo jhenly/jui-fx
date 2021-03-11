@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,19 +19,17 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.animation;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.jhenly.juifx.control.Fillable;
-import com.jhenly.juifx.fill.Fill;
-import com.jhenly.juifx.fill.FillSpan;
 
-import javafx.scene.layout.Background;
+import impl.com.jhenly.juifx.fill.FillSpan;
 import javafx.scene.layout.BackgroundFill;
+
 
 /**
  * Handles multiple fill transitions on a {@link Fillable}.
@@ -63,17 +60,17 @@ public class MultiFillTransition extends JuiFillTransition {
     public MultiFillTransition(Fillable control) {
         super(control);
         
-        final Background background = control.getBackground();
-        if (background != null && background.getFills() != null) {
-            cachedFills = background.getFills();
-        }
-        
-        final Fill fill = control.getFill();
-        if (fill != null && fill.hasFillSpans()) {
-            cachedSpans = fill.getFillSpans();
-        }
-        
-        setFillListener(control);
+//        final Background background = control.getBackground();
+//        if (background != null && background.getFills() != null) {
+//            cachedFills = background.getFills();
+//        }
+//        
+//        final Fill fill = control.getFill();
+//        if (fill != null && fill.hasFillSpans()) {
+//            cachedSpans = fill.getFillSpans();
+//        }
+//        
+//        setFillListener(control);
     }
     
     
@@ -103,18 +100,19 @@ public class MultiFillTransition extends JuiFillTransition {
     /** {@inheritDoc} */
     @Override
     protected void interpolateFill(double frac) {
-        final Fillable fable = getFillable();
-        final Background bg = fable.getBackground();
-        if (bg == null || cachedFills == null) { return; }
-        
-        // interpolate fill spans and replace innermost bg fills with spans
-        final List<BackgroundFill> interpFills = interpolateFillSpansAndReplace(frac, cachedFills);
-        
-        // no reason to create a new background if bg fills didn't change
-        // if (bg.getFills() == interpFills) { return; }
-        
-        // update fillable's background with the interpolated fill
-        fable.setBackground(new Background(interpFills, bg.getImages()));
+        getFillable().getFillApplier().interpolateAndApply(frac);
+//        final Fillable fable = getFillable();
+//        final Background bg = fable.getBackground();
+//        if (bg == null || cachedFills == null) { return; }
+//        
+//        // interpolate fill spans and replace innermost bg fills with spans
+//        final List<BackgroundFill> interpFills = interpolateFillSpansAndReplace(frac, cachedFills);
+//        
+//        // no reason to create a new background if bg fills didn't change
+//        // if (bg.getFills() == interpFills) { return; }
+//        
+//        // update fillable's background with the interpolated fill
+//        fable.setBackground(new Background(interpFills, bg.getImages()));
     }
     
     /**
@@ -138,8 +136,8 @@ public class MultiFillTransition extends JuiFillTransition {
             final FillSpan span = cachedSpans.get((csSize - 1) - i);
             
             // get new bg fill from cache, replace fill, keep radii and insets
-            final BackgroundFill newBgFill
-                = getBgFillFromCache(span.interpolate(frac), bgFill.getRadii(), bgFill.getInsets());
+            final BackgroundFill newBgFill =
+            getBgFillFromCache(span.interpolate(frac), bgFill.getRadii(), bgFill.getInsets());
             
             newBgFills.set((bgSize - 1) - i, newBgFill);
         }
@@ -156,23 +154,23 @@ public class MultiFillTransition extends JuiFillTransition {
     
     /** Helper that removes the fillable's fill listener. */
     private void removeFillListener(Fillable fillable) {
-        unregisterChangeListeners(fillable.fillProperty());
+//        unregisterChangeListeners(fillable.fillProperty());
     }
     
     /** Helper that sets the fillable's fill listener. */
     private void setFillListener(Fillable fillable) {
         
-        registerChangeListener(fillable.fillProperty(), o -> {
-            boolean wasPlaying = isPlaying();
-            stop();
-            
-            final Fill fill = fillable.getFill();
-            // we just we want the first fill
-            cachedSpans = (fill != null && fill.hasFillSpans()) ? fill.getFillSpans() : null;
-            
-            if (wasPlaying && cachedSpans != null) { play(); }
-        });
-        
+//        registerChangeListener(fillable.fillProperty(), o -> {
+//            boolean wasPlaying = isPlaying();
+//            stop();
+//            
+//            final Fill fill = fillable.getFill();
+//            // we just we want the first fill
+//            cachedSpans = (fill != null && fill.hasFillSpans()) ? fill.getFillSpans() : null;
+//            
+//            if (wasPlaying && cachedSpans != null) { play(); }
+//        });
+//        
     }
     
 }

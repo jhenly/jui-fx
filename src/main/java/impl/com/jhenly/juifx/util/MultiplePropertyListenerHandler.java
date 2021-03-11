@@ -1,4 +1,4 @@
-package com.jhenly.juifx.control;
+package impl.com.jhenly.juifx.util;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,12 @@ import javafx.beans.value.ObservableValue;
 import javafx.beans.value.WeakChangeListener;
 
 
-public final class LambdaMultiplePropertyChangeListenerHandler {
+/**
+ * 
+ * @author Jonathan Henly
+ * @since JuiFX 1.0
+ */
+public final class MultiplePropertyListenerHandler {
     
     private static final Consumer<ObservableValue<?>> EMPTY_CHANGE_CONSUMER = e -> {};
     private static final Consumer<Observable> EMPTY_INVALID_CONSUMER = e -> {};
@@ -25,8 +30,8 @@ public final class LambdaMultiplePropertyChangeListenerHandler {
     private final InvalidationListener propertyInvalidatedListener;
     private final WeakInvalidationListener weakPropertyInvalidatedListener;
     
-    /** Constructs a */
-    public LambdaMultiplePropertyChangeListenerHandler() {
+    /** Constructs a new {@code MultiplePropertyListenerHandler}. */
+    public MultiplePropertyListenerHandler() {
         changeMap = new HashMap<>(0);
         propertyChangedListener = (observable, oldValue, newValue) -> {
             // because all consumers are chained, this calls each consumer for
@@ -47,7 +52,9 @@ public final class LambdaMultiplePropertyChangeListenerHandler {
     /**
      * Register to listen to property change events for a specified property.
      * <p>
-     * If the specified consumer is {@code null} then this method is a no-op.
+     * Registered {@link Consumer} instances will be executed in the order in
+     * which they are registered. If the specified consumer is {@code null}
+     * then this method is a no-op.
      *
      * @param property - the property to listen to change events for
      * @param consumer - the consumer to invoke upon a change event, if
@@ -70,8 +77,10 @@ public final class LambdaMultiplePropertyChangeListenerHandler {
      * Register to listen to property invalidation events for a specified
      * property.
      * <p>
-     * If the specified consumer is {@code null} then this method is a no-op.
-     *
+     * Registered {@link Consumer} instances will be executed in the order in
+     * which they are registered. If the specified consumer is {@code null}
+     * then this method is a no-op.
+     * 
      * @param property - the property to listen to invalidation events for
      * @param consumer - the consumer to invoke upon an invalidation event, if
      *        {@code null} then this method is a no-op

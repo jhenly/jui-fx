@@ -24,6 +24,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
@@ -36,8 +38,8 @@ public class Main extends Application {
         launch(args);
     }
     
-    private static final double ROOT_WIDTH = 500.0;
-    private static final double ROOT_HEIGHT = 400.0;
+    private static final double ROOT_WIDTH = 700.0;
+    private static final double ROOT_HEIGHT = 600.0;
     
     private static final List<String> RAND_STRS = List.of("Foo", "Bazzar", "Random", "A", "whats up?");
     
@@ -46,6 +48,12 @@ public class Main extends Application {
     
     @Override
     public void start(Stage primaryStage) throws IOException {
+        VBox main = new VBox();
+        main.setFillWidth(true);
+        main.setSpacing(10.0);
+        
+        HBox topHbox = createTopHbox();
+        VBox.setVgrow(topHbox, Priority.ALWAYS);
         
         HBox center = new HBox();
         center.setFillHeight(true);
@@ -59,12 +67,15 @@ public class Main extends Application {
         HBox.setHgrow(btnAndCBVBox, Priority.ALWAYS);
         
         center.getChildren().addAll(tfAndTSVBox, btnAndCBVBox);
+        VBox.setVgrow(center, Priority.ALWAYS);
+        
+        main.getChildren().addAll(topHbox, center);
         
         BorderPane root = createBorderPane();
-        root.setCenter(center);
-        
         root.setMinWidth(ROOT_WIDTH);
         root.setMinHeight(ROOT_HEIGHT);
+        
+        root.setCenter(main);
         
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("main.css").toExternalForm());
@@ -72,7 +83,33 @@ public class Main extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         
+    }
+    
+    private static HBox createTopHbox() {
+        SelectHBox shb = new SelectHBox();
+        shb.getStyleClass().add("top-hbox");
+        shb.setMinWidth(200);
+        shb.setMinHeight(200);
+        shb.setSpacing(20);
         
+        FillButton fb1 = new FillButton();
+        fb1.getStyleClass().addAll("top-button");
+        StackPane sp1 = new StackPane();
+        Region fb1r = new Region();
+        fb1r.getStyleClass().addAll("icon", "icon-cogs");
+        sp1.getChildren().add(fb1r);
+        fb1.setGraphic(sp1);
+        
+        FillButton fb2 = new FillButton();
+        fb2.getStyleClass().addAll("top-button");
+        Region fb2r = new Region();
+        fb2r.getStyleClass().addAll("icon", "icon-file-excel");
+        fb2.setGraphic(fb2r);
+        
+        shb.getChildren().addAll(fb1, fb2);
+        shb.setOpacity(1);
+        
+        return shb;
     }
     
     /** Creates the Button and ComboBox VBox. */

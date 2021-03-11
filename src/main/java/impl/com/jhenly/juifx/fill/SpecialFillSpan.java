@@ -1,7 +1,6 @@
-package com.jhenly.juifx.fill;
+package impl.com.jhenly.juifx.fill;
 
-
-import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 
 
 /**
@@ -27,7 +26,6 @@ final class SpecialFillSpan extends FillSpan {
      *************************************************************************/
     
     private final int specAtts; // holds all special attributes
-    private final int hash;
     
     
     /**************************************************************************
@@ -42,75 +40,19 @@ final class SpecialFillSpan extends FillSpan {
      * @param to - the color to set {@code to} to
      * @param fSpec - whether or not fill-from is a special identifier
      * @param tSpec - whether or not fill-to is a special identifier
-     */
-    private SpecialFillSpan(Color from, Color to, boolean fSpec, boolean tSpec) {
-        super(from, to);
-        
-        specAtts = bitPackSpecialAttributes(fSpec, tSpec);
-        hash = precomputeHash(this, super.hashCode());
-    }
-    
-    /**
-     * Uses the {@code FillSpan} constructor that doesn't check for
-     * equality.
-     * @param same - the color to set {@code from} and {@code to} to
-     */
-    private SpecialFillSpan(Color same) {
-        super(same);
-        
-        // both 'from' and 'to' have to be special identifiers at this point
-        specAtts = bitPackSpecialAttributes();
-        hash = precomputeHash(this, super.hashCode());
-    }
-    
-    /**
-     * Uses the regular {@code FillSpan} constructor.
-     * @param from - the color to set {@code from} to
-     * @param to - the color to set {@code to} to
-     * @param fSpec - whether or not fill-from is a special identifier
-     * @param tSpec - whether or not fill-to is a special identifier
-     * @param fIndex - the index of the fill to replace the fill-from with
-     * @param tIndex - the index of the fill to replace the fill-to with
-     */
-    private SpecialFillSpan(Color from, Color to, boolean fSpec, boolean tSpec, int fIndex, int tIndex) {
-        super(from, to);
-        
-        specAtts = bitPackSpecialAttributes(fSpec, tSpec, fIndex, tIndex);
-        hash = precomputeHash(this, super.hashCode());
-    }
-    
-    /**
-     * Uses the {@code FillSpan} constructor that doesn't check for
-     * equality.
-     * @param same - the color to set {@code from} and {@code to} to
-     * @param index - the index of the fill to replace fill-from and fill-to
-     *        with
-     */
-    private SpecialFillSpan(Color same, int index) {
-        super(same);
-        
-        // both 'from' and 'to' have to be special identifiers at this point
-        specAtts = bitPackSpecialAttributes(index);
-        hash = precomputeHash(this, super.hashCode());
-    }
-    
-    /**
-     * Uses the regular {@code FillSpan} constructor.
-     * @param from - the color to set {@code from} to
-     * @param to - the color to set {@code to} to
-     * @param fSpec - whether or not fill-from is a special identifier
-     * @param tSpec - whether or not fill-to is a special identifier
      * @param fIndex - the index of the fill to replace the fill-from with
      * @param tIndex - the index of the fill to replace the fill-to with
      * @param fBsPos - the from border stroke position
      * @param tBsPos - the to border stroke position
      */
-    private SpecialFillSpan(Color from, Color to, boolean fSpec, boolean tSpec, int fIndex, int tIndex, int fBsPos,
-        int tBsPos) {
+    private SpecialFillSpan(Paint from, Paint to, boolean fSpec, boolean tSpec, int fIndex, int tIndex,
+                            BorderStrokePosition fBsPos, BorderStrokePosition tBsPos)
+    {
         super(from, to);
         
         specAtts = bitPackSpecialAttributes(fSpec, tSpec, fIndex, tIndex, fBsPos, tBsPos);
-        hash = precomputeHash(this, super.hashCode());
+        // 'hash' is set in 'super(from, to)'
+        hash = 31 * hash + specAtts;
     }
     
     /**
@@ -121,16 +63,12 @@ final class SpecialFillSpan extends FillSpan {
      *        with
      * @param bsPos - the border stroke position for from and to
      */
-    private SpecialFillSpan(Color same, int index, int bsPos) {
+    private SpecialFillSpan(Paint same, int index, BorderStrokePosition bsPos) {
         super(same);
         
         specAtts = bitPackSpecialAttributes(true, index, bsPos);
-        hash = precomputeHash(this, super.hashCode());
-    }
-    
-    /** Helper used by constructors to precompute hash. */
-    private static int precomputeHash(SpecialFillSpan span, int superHash) {
-        return 31 * superHash + span.specAtts;
+        // 'hash' is set in 'super(same)'
+        hash = 31 * hash + specAtts;
     }
     
     
@@ -141,11 +79,20 @@ final class SpecialFillSpan extends FillSpan {
      *************************************************************************/
     
     /**
+     * {@inheritDoc}
+     * @return {@code true}
+     */
+    @Override
+    boolean isSpecial() { return true; }
+    
+    /**
      * Gets whether or not fill-from is a special identifier.
      * @return {@code true} if fill-from is a special identifier, otherwise
      *         {@code false}
      */
-    boolean fromIsSpecial() { return fromSpecBitIsSet(specAtts); }
+    boolean fromIsSpecial() {
+        return fromSpecBitIsSet(specAtts);
+    }
     
     /**
      * Gets whether or not fill-to is a special identifier.
@@ -203,15 +150,7 @@ final class SpecialFillSpan extends FillSpan {
         
         SpecialFillSpan that = (SpecialFillSpan) obj;
         
-        
-        if (this.hash != that.hash) { return false; }
-        if (this.specAtts != that.specAtts) { return false; }
-        
-        return super.equals(that);
-        
-//        return (this.hash == that.hash)
-//            && (this.specAtts == that.specAtts)
-//            && super.equals(that);
+        return (hash == that.hash) && (specAtts == that.specAtts) && super.equals(that);
     }
     
     
@@ -231,18 +170,19 @@ final class SpecialFillSpan extends FillSpan {
      * @return a {@code FillSpan} with the specified fill-from and fill-to
      *         colors
      */
-    static final FillSpan of(Color from, Color to, boolean fromIsSpecial, boolean toIsSpecial) {
-        return getFromCache(new SpecialFillSpan(from, to, fromIsSpecial, toIsSpecial));
+    static FillSpan of(Paint from, Paint to, boolean fromIsSpecial, boolean toIsSpecial) {
+        return getFromCache(new SpecialFillSpan(from, to, fromIsSpecial, toIsSpecial, -1, -1, null, null));
     }
     
     /**
+     * Gets a {@link FillSpan} with the specified fill-from and fill-to colors.
      * 
      * @param same - the color to set {@code from} and {@code to} to
      * @param index - the index of the fill to replace fill-from and fill-to
      *        with
      */
-    static final FillSpan of(Color same) {
-        return getFromCache(new SpecialFillSpan(same));
+    static FillSpan of(Paint same) {
+        return getFromCache(new SpecialFillSpan(same, -1, null));
     }
     
     /**
@@ -257,20 +197,21 @@ final class SpecialFillSpan extends FillSpan {
      * @return a {@code FillSpan} with the specified fill-from and fill-to
      *         colors
      */
-    static final FillSpan of(Color from, Color to, boolean fromIsSpecial, boolean toIsSpecial, int fIndex, int tIndex) {
-        return getFromCache(new SpecialFillSpan(from, to, fromIsSpecial, toIsSpecial, fIndex, tIndex));
+    static FillSpan of(Paint from, Paint to, boolean fromIsSpecial, boolean toIsSpecial, int fIndex, int tIndex) {
+        return getFromCache(new SpecialFillSpan(from, to, fromIsSpecial, toIsSpecial, fIndex, tIndex, null, null));
     }
     
     /**
      * Gets a {@link FillSpan} with the specified fill-from and fill-to colors.
+     * 
      * @param same - the color to set {@code from} and {@code to} to
      * @param index - the index of the fill to replace fill-from and fill-to
      *        with
      * @return a {@code FillSpan} with the specified fill-from and fill-to
      *         color
      */
-    static final FillSpan of(Color same, int index) {
-        return getFromCache(new SpecialFillSpan(same, index));
+    static FillSpan of(Paint same, int index) {
+        return getFromCache(new SpecialFillSpan(same, index, null));
     }
     
     /**
@@ -287,8 +228,9 @@ final class SpecialFillSpan extends FillSpan {
      * @return a {@code FillSpan} with the specified fill-from and fill-to
      *         colors
      */
-    static final FillSpan of(Color from, Color to, boolean fSpec, boolean tSpec, int fIndex, int tIndex, int fBsPos,
-        int tBsPos) {
+    static FillSpan of(Paint from, Paint to, boolean fSpec, boolean tSpec, int fIndex, int tIndex,
+                       BorderStrokePosition fBsPos, BorderStrokePosition tBsPos)
+    {
         return getFromCache(new SpecialFillSpan(from, to, fSpec, tSpec, fIndex, tIndex, fBsPos, tBsPos));
     }
     
@@ -306,57 +248,16 @@ final class SpecialFillSpan extends FillSpan {
      * @return a {@code FillSpan} with the specified fill-from and fill-to
      *         colors
      */
-    static final FillSpan of(Color same, int index, int bsPos) {
+    static FillSpan of(Paint same, int index, BorderStrokePosition bsPos) {
         return getFromCache(new SpecialFillSpan(same, index, bsPos));
     }
     
     
     /**************************************************************************
      *                                                                        *
-     * Special Attribute Bits                                                 *
+     * Special Attribute Bit Packing Section - PROCEED WITH CAUTION           *
      *                                                                        *
      *************************************************************************/
-    
-    /** 
-     * Just calls {@link #bitPackSpecialAttributes(boolean, boolean, int, int, int, int)
-     * bitPackSpecialAttributes(true, true, -1, -1, 0, 0)}.
-     */
-    private static int bitPackSpecialAttributes() {
-        return bitPackSpecialAttributes(true, true);
-    }
-    
-    /** 
-     * Just calls {@link #bitPackSpecialAttributes(boolean, boolean, int, int, int, int)
-     * bitPackSpecialAttributes(fSpec, tSpec, fIndex, tIndex, 0, 0)}.
-     * @param fSpec - if from is special
-     * @param tSpec - if to is special
-     */
-    private static int bitPackSpecialAttributes(boolean fSpec, boolean tSpec) {
-        return bitPackSpecialAttributes(fSpec, tSpec, -1, -1);
-    }
-    
-    /** 
-     * Just calls {@link #bitPackSpecialAttributes(boolean, boolean, int, int, int, int)
-     * bitPackSpecialAttributes(true, true, index, index, 0, 0)}.
-     * @param index - the index of the fill to use for from and to
-     * @return a 32-bit integer with all the attributes packed in it
-     */
-    private static int bitPackSpecialAttributes(int index) {
-        return bitPackSpecialAttributes(true, true, index, index);
-    }
-    
-    /** 
-     * Just calls {@link #bitPackSpecialAttributes(boolean, boolean, int, int, int, int)
-     * bitPackSpecialAttributes(fSpec, tSpec, fIndex, tIndex, 0, 0)}.
-     * @param fSpec - if from is special
-     * @param tSpec - if to is special
-     * @param fIndex - the index of the fill to use for from
-     * @param tIndex - the index of the fill to use for to
-     * @return a 32-bit integer with all the attributes packed in it
-     */
-    private static int bitPackSpecialAttributes(boolean fSpec, boolean tSpec, int fIndex, int tIndex) {
-        return bitPackSpecialAttributes(fSpec, tSpec, fIndex, tIndex, 0, 0);
-    }
     
     /** 
      * Just calls {@link #bitPackSpecialAttributes(boolean, boolean, int, int, int, int)
@@ -366,7 +267,7 @@ final class SpecialFillSpan extends FillSpan {
      * @param bsPos - the border position's fill to use for from and to
      * @return a 32-bit integer with all the attributes packed in it
      */
-    private static int bitPackSpecialAttributes(boolean spec, int index, int bsPos) {
+    private static int bitPackSpecialAttributes(boolean spec, int index, BorderStrokePosition bsPos) {
         return bitPackSpecialAttributes(spec, spec, index, index, bsPos, bsPos);
     }
     
@@ -376,7 +277,7 @@ final class SpecialFillSpan extends FillSpan {
      * <p>
      * Packed bits layout:<pre>
      * 
-     *                     15         7 5  321
+     *           23        15         7 5  321
      * 0000 0000 0000 0000 0000 0000 0000 0000
      *            |         |         | |  |||
      *                   to index     
@@ -400,28 +301,41 @@ final class SpecialFillSpan extends FillSpan {
      * @param tBsPos - the border position's fill to use for to
      * @return a 32-bit integer with all the attributes packed in it
      */
-    private static int bitPackSpecialAttributes(boolean fSpec, boolean tSpec, int fIndex, int tIndex, int fBsPos,
-        int tBsPos) {
+    private static int bitPackSpecialAttributes(boolean fSpec, boolean tSpec, int fIndex, int tIndex,
+                                                BorderStrokePosition fBsPos, BorderStrokePosition tBsPos)
+    {
         int preSpecAtts = 0;
         preSpecAtts = setFromSpecBit(preSpecAtts, fSpec);
         preSpecAtts = setToSpecBit(preSpecAtts, tSpec);
-        preSpecAtts = setFromBsPos(preSpecAtts, fBsPos);
-        preSpecAtts = setToBsPos(preSpecAtts, tBsPos);
+        
+        final int fBsPosOrd = (fBsPos == null) ? 0 : fBsPos.ordinal();
+        final int tBsPosOrd = (tBsPos == null) ? 0 : tBsPos.ordinal();
+        
+        preSpecAtts = setFromBsPos(preSpecAtts, fBsPosOrd);
+        preSpecAtts = setToBsPos(preSpecAtts, tBsPosOrd);
+        
         preSpecAtts = setFromIndex(preSpecAtts, fIndex);
         preSpecAtts = setToIndex(preSpecAtts, tIndex);
         return preSpecAtts;
     }
     
+    
+    /**************************************************************************
+     *                                                                        *
+     * Special Attribute Bit Fiddling Section - PROCEED WITH CAUTION          *
+     *                                                                        *
+     *************************************************************************/
+    
     private static class IsSpecialHolder {
-        static final int FROM_SPEC_BIT = 0x01b;
-        static final int TO_SPEC_BIT = 0x10b;
+        static final int FROM_SPEC_BIT = 0b01;
+        static final int TO_SPEC_BIT = 0b10;
     }
     
     private static int setFromSpecBit(int specAtts, boolean fromIsSpec) {
-        return specAtts | (fromIsSpec ? IsSpecialHolder.FROM_SPEC_BIT : 0x0b);
+        return specAtts | (fromIsSpec ? IsSpecialHolder.FROM_SPEC_BIT : 0);
     }
     private static int setToSpecBit(int specAtts, boolean toIsSpec) {
-        return specAtts | (toIsSpec ? IsSpecialHolder.TO_SPEC_BIT : 0x0b);
+        return specAtts | (toIsSpec ? IsSpecialHolder.TO_SPEC_BIT : 0);
     }
     private static boolean fromSpecBitIsSet(int specAtts) { return (specAtts & IsSpecialHolder.FROM_SPEC_BIT) != 0; }
     private static boolean toSpecBitIsSet(int specAtts) { return (specAtts & IsSpecialHolder.TO_SPEC_BIT) != 0; }

@@ -1,5 +1,4 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
+/** Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
  * licenses this file to you under the Apache License, Version 2.0 (the
@@ -12,8 +11,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations under
- * the License.
- */
+ * the License. */
 package com.jhenly.juifx.control;
 
 import java.util.ArrayList;
@@ -21,28 +19,24 @@ import java.util.Collections;
 import java.util.List;
 
 import com.jhenly.juifx.control.skin.FillButtonSkin;
-import com.jhenly.juifx.fill.Fill;
-import com.jhenly.juifx.fill.FillHelper;
-import com.jhenly.juifx.fill.FillSpan;
 
+import impl.com.jhenly.juifx.fill.Fill;
+import impl.com.jhenly.juifx.fill.FillApplier;
+import impl.com.jhenly.juifx.fill.FillHelper;
+import impl.com.jhenly.juifx.fill.FillProperty;
+import javafx.beans.InvalidationListener;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.css.CssMetaData;
 import javafx.css.PseudoClass;
-import javafx.css.StyleOrigin;
 import javafx.css.Styleable;
 import javafx.css.StyleableBooleanProperty;
 import javafx.css.StyleableObjectProperty;
-import javafx.css.StyleableProperty;
-import javafx.css.converter.BooleanConverter;
-import javafx.css.converter.DurationConverter;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Skin;
-import javafx.scene.control.SkinBase;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.util.Duration;
+
 
 /**
  * A button control that fills over time to a specified color on mouse enter
@@ -67,19 +61,18 @@ public class FillButton extends SelectableButton implements Fillable {
      */
     public static final Duration DEFAULT_FILL_DURATION = Duration.millis(100.0);
     
-    /**
-     * The default {@link #fillFromProperty() fill from} color value.
-     */
-    public static final Fill DEFAULT_FILL_FROM = null;
     
-//    public static final Color DEFAULT_FILL_FROM = Color.valueOf("#f4f4f6");
+    // new Fill(FillSpan.of(Color.valueOf("#f4f4f6"), Color.valueOf("#70787d")));
     
-//    public static final Color DEFAULT_FILL_TO = Color.valueOf("#70787d");
     
-    /**
-     * The default {@link #fillToProperty() fill to} color value.
-     */
-    public static final Fill DEFAULT_FILL = new Fill(FillSpan.of(Color.valueOf("#f4f4f6"), Color.valueOf("#70787d")));
+    /***************************************************************************
+     *                                                                         *
+     * Private Members                                                         *
+     *                                                                         *
+     **************************************************************************/
+    
+    private InvalidationListener fillInvalidated;
+    private final FillApplier<FillButton> applier;
     
     
     /***************************************************************************
@@ -94,6 +87,7 @@ public class FillButton extends SelectableButton implements Fillable {
      */
     public FillButton() {
         super();
+        applier = new FillApplier<FillButton>(this);
         initialize();
     }
     
@@ -103,6 +97,7 @@ public class FillButton extends SelectableButton implements Fillable {
      */
     public FillButton(String text) {
         super(text);
+        applier = new FillApplier<FillButton>(this);
         initialize();
     }
     
@@ -114,6 +109,7 @@ public class FillButton extends SelectableButton implements Fillable {
      */
     public FillButton(String text, Node graphic) {
         super(text, graphic);
+        applier = new FillApplier<FillButton>(this);
         initialize();
     }
     
@@ -124,6 +120,10 @@ public class FillButton extends SelectableButton implements Fillable {
      */
     private void initialize() {
         getStyleClass().setAll(DEFAULT_STYLE_CLASS);
+        
+        fillInvalidated = (obv) -> {
+            if (fill != null && !applier.isApplying()) { fill.fireValueChanged(); }
+        };
     }
     
     
@@ -147,7 +147,9 @@ public class FillButton extends SelectableButton implements Fillable {
                 @Override
                 public String getName() { return "fillEnabled"; } //$NON-NLS-1$
                 @Override
-                public CssMetaData<FillButton, Boolean> getCssMetaData() { return StyleableProperties.FILL_ENABLED; }
+                public CssMetaData<Fillable, Boolean> getCssMetaData() {
+                    return Fillable.StyleableProperties.FILL_ENABLED;
+                }
                 
             };
         }
@@ -184,7 +186,9 @@ public class FillButton extends SelectableButton implements Fillable {
                 @Override
                 public String getName() { return "fillDuration"; } //$NON-NLS-1$
                 @Override
-                public CssMetaData<FillButton, Duration> getCssMetaData() { return StyleableProperties.FILL_DURATION; }
+                public CssMetaData<Fillable, Duration> getCssMetaData() {
+                    return Fillable.StyleableProperties.FILL_DURATION;
+                }
                 
             };
         }
@@ -200,46 +204,53 @@ public class FillButton extends SelectableButton implements Fillable {
     
     /* --- fill --- */
     @Override
-    public ObjectProperty<Fill> fillProperty() {
+    public FillProperty fillProperty() {
         if (fill == null) {
-            fill = new StyleableObjectProperty<Fill>(Fill.getDefault())
+            fill = new FillProperty(Fill.getDefault(), FillButton.this)
             {
-                // used to let 'invalidate' know that fill was set by CSS
-                private boolean fillSetByCss = false;
+                private Fill special;
                 
                 @Override
-                public void set(Fill v) {
+                void fireValueChanged() {
+                    applier.updateCaches();
                     
-                    // check if any of fill's FillSpans have special identifiers
-                    boolean textHasSpecial = FillHelper.textFillSpanIsSpecial(v);
-                    boolean shapeHasSpecial = FillHelper.shapeFillSpanIsSpecial(v);
-                    boolean strokeHasSpecial = FillHelper.strokeFillSpanIsSpecial(v);
-                    boolean bgHasSpecial = FillHelper.bgFillSpansContainSpecial(v);
-                    
-                    FillSpan textSpan = textHasSpecial ? 
-                    
-                    super.set(v);
-                }
-                @Override
-                public void applyStyle(StyleOrigin newOrigin, Fill value) {
-                    // 'super.applyStyle' calls 'set' which might throw if value
-                    // is bound, have to ensure 'fill' is reset
-                    
-                    try {
-                        fillSetByCss = true;
-                        super.applyStyle(newOrigin, value);
-                    } catch (Exception e) {
-                        throw e;
-                    } finally {
-                        fillSetByCss = false;
+                    if (special != null) {
+                        Fill newRepl = FillHelper.replaceSpecialsInFill(special, FillButton.this);
+                        if (!newRepl.equals(get())) {
+                            super.set(newRepl);
+                        }
                     }
+                    
                 }
+                
+                @Override
+                public void set(Fill val) {
+                    if (val == null) {
+                        special = null;
+                        super.set(val);
+                        return;
+                    }
+                    
+                    if (special != null && special.equals(val)) { return; }
+                    
+                    final Fill old = get();
+                    if (old != null && old.equals(val)) { return; }
+                    special = null;
+                    
+                    if (!FillHelper.fillHasSpecial(val)) {
+                        super.set(val);
+                        return;
+                    }
+                    
+                    special = val;
+                    super.set(FillHelper.replaceSpecialsInFill(val, FillButton.this));
+                }
+                
                 @Override
                 public Object getBean() { return FillButton.this; }
+                
                 @Override
-                public String getName() { return "fill"; }
-                @Override
-                public CssMetaData<Fillable, Fill> getCssMetaData() { return Fillable.StyleableProperties.FILL; }
+                protected Fillable getFillable() { return FillButton.this; }
             };
         }
         return fill;
@@ -247,25 +258,9 @@ public class FillButton extends SelectableButton implements Fillable {
     @Override
     public final void setFill(Fill value) { fillProperty().set(value); }
     @Override
-    public final Fill getFill() { return fill == null ? Fill.getDefault() : fill.get(); }
-    private ObjectProperty<Fill> fill;
+    public final Fill getFill() { return fill == null ? null : fill.get(); }
+    private FillProperty fill;
     
-    @Override
-    public ObjectProperty<Paint> strokeProperty() {
-        if (stroke == null) {
-            stroke = new SimpleObjectProperty<Paint>(FillButton.this, "stroke", Color.TRANSPARENT);
-//            final Shape shape = getShape();
-//            if (shape != null) {
-//                stroke.bind(shape.strokeProperty());
-//            }
-        }
-        return stroke;
-    }
-    @Override
-    public void setStroke(Paint value) { stroke.set(value); }
-    @Override
-    public Paint getStroke() { return stroke == null ? null : stroke.get(); }
-    private ObjectProperty<Paint> stroke;
     
     /***************************************************************************
      *                                                                         *
@@ -278,6 +273,10 @@ public class FillButton extends SelectableButton implements Fillable {
     protected Skin<?> createDefaultSkin() {
         return new FillButtonSkin<FillButton>(this);
     }
+    
+    /** {@inheritDoc} */
+    @Override
+    public FillApplier<?> getFillApplier() { return applier; }
     
     
     /***************************************************************************
@@ -295,76 +294,54 @@ public class FillButton extends SelectableButton implements Fillable {
      */
     private static final PseudoClass FILL_DISABLED_PSEUDO_CLASS = PseudoClass.getPseudoClass("fill-disabled"); //$NON-NLS-1$
     
+    private static String stylesheet;
+    
     /** {@inheritDoc} */
     @Override
     public String getUserAgentStylesheet() {
-        return FillButton.class.getResource("fillbutton.css").toExternalForm(); //$NON-NLS-1$
+        if (stylesheet == null) {
+            stylesheet = FillButton.class.getResource("fillbutton.css").toExternalForm(); // $NON-NLS-1$
+        }
+        return stylesheet;
     }
     
     /** Instantiates all of the this control's CSS styleable properties. */
     private static class StyleableProperties {
-        
-        /* --- Fill Duration --- */
-        private static final String FILL_ENABLED_CSS = "-fill-enabled"; //$NON-NLS-1$
-        private static final CssMetaData<FillButton, Boolean> FILL_ENABLED = new CssMetaData<FillButton, Boolean>(
-            FILL_ENABLED_CSS, BooleanConverter.getInstance(), DEFAULT_FILL_ENABLED)
-        {
-            @Override
-            public boolean isSettable(FillButton fb) { return fb.fillEnabled == null || !fb.fillEnabled.isBound(); }
-            @Override
-            public StyleableProperty<Boolean> getStyleableProperty(FillButton fb) {
-                return (StyleableProperty<Boolean>) fb.fillEnabledProperty();
-            }
-        };
-        
-        /* --- Fill Duration --- */
-        private static final String FILL_DURATION_CSS = "-fill-duration"; //$NON-NLS-1$
-        private static final CssMetaData<FillButton, Duration> FILL_DURATION = new CssMetaData<FillButton, Duration>(
-            FILL_DURATION_CSS, DurationConverter.getInstance(), DEFAULT_FILL_DURATION)
-        {
-            @Override
-            public boolean isSettable(FillButton fb) { return fb.fillDuration == null || !fb.fillDuration.isBound(); }
-            @Override
-            public StyleableProperty<Duration> getStyleableProperty(FillButton fb) {
-                return (StyleableProperty<Duration>) fb.fillDurationProperty();
-            }
-        };
-        
-        /* --- Fill --- */
-//        private static final String FILL_CSS = "-fill"; //$NON-NLS-1$
-//        private static final CssMetaData<FillButton, Fill> FILL_FROM
-//            = new CssMetaData<FillButton, Fill>(FILL_CSS, FillConverter.getInstance(), DEFAULT_FILL_FROM)
-//            {
-//                @Override
-//                public boolean isSettable(FillButton fb) { return fb.fill == null || !fb.fill.isBound(); }
-//                @Override
-//                public StyleableProperty<Fill> getStyleableProperty(FillButton fb) {
-//                    return (StyleableProperty<Fill>) fb.fillProperty();
-//                }
-//            };
-        
-        
-        /* --- Fill From --- */
-//        private static final String FILL_TO_CSS = "-fill-to"; //$NON-NLS-1$
-//        private static final CssMetaData<FillButton, Fill> FILL_TO
-//            = new CssMetaData<FillButton, Fill>(FILL_TO_CSS, FillConverter.getInstance(), DEFAULT_FILL_TO)
-//            {
-//                @Override
-//                public boolean isSettable(FillButton fb) { return fb.fillTo == null || !fb.fillTo.isBound(); }
-//                @Override
-//                public StyleableProperty<Fill> getStyleableProperty(FillButton fb) {
-//                    return (StyleableProperty<Fill>) fb.fillToProperty();
-//                }
-//            };
+//        
+//        /* --- Fill Enabled --- */
+//        private static final String FILL_ENABLED_CSS = "-fill-enabled"; //$NON-NLS-1$
+//        private static final CssMetaData<FillButton, Boolean> FILL_ENABLED =
+//        new CssMetaData<FillButton, Boolean>(FILL_ENABLED_CSS, BooleanConverter.getInstance(), DEFAULT_FILL_ENABLED)
+//        {
+//            @Override
+//            public boolean isSettable(FillButton fb) { return fb.fillEnabled == null || !fb.fillEnabled.isBound(); }
+//            @Override
+//            public StyleableProperty<Boolean> getStyleableProperty(FillButton fb) {
+//                return (StyleableProperty<Boolean>) fb.fillEnabledProperty();
+//            }
+//        };
+//        
+//        /* --- Fill Duration --- */
+//        private static final String FILL_DURATION_CSS = "-fill-duration"; //$NON-NLS-1$
+//        private static final CssMetaData<FillButton, Duration> FILL_DURATION =
+//        new CssMetaData<FillButton, Duration>(FILL_DURATION_CSS, DurationConverter.getInstance(), DEFAULT_FILL_DURATION)
+//        {
+//            @Override
+//            public boolean isSettable(FillButton fb) { return fb.fillDuration == null || !fb.fillDuration.isBound(); }
+//            @Override
+//            public StyleableProperty<Duration> getStyleableProperty(FillButton fb) {
+//                return (StyleableProperty<Duration>) fb.fillDurationProperty();
+//            }
+//        };
         
         
         private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
         static {
-            final List<CssMetaData<? extends Styleable, ?>> styleables
-                = new ArrayList<>(SkinBase.getClassCssMetaData());
-            styleables.add(FILL_ENABLED);
-            styleables.add(FILL_DURATION);
+            final List<CssMetaData<? extends Styleable, ?>> styleables = new ArrayList<>(Button.getClassCssMetaData());
+//            styleables.add(FILL_ENABLED);
+//            styleables.add(FILL_DURATION);
             styleables.addAll(Fillable.getFillableCssMetaData());
+            
             STYLEABLES = Collections.unmodifiableList(styleables);
         }
         

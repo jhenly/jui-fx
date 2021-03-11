@@ -1,5 +1,4 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
+/** Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
  * licenses this file to you under the Apache License, Version 2.0 (the
@@ -12,23 +11,18 @@
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations under
- * the License.
- */
-package com.jhenly.juifx.fill;
+ * the License. */
+package impl.com.jhenly.juifx.fill;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import com.jhenly.juifx.animation.JuiFillTransition;
 import com.jhenly.juifx.control.Fillable;
-import com.jhenly.juifx.css.SubCssMetaData;
 
-import javafx.css.CssMetaData;
-import javafx.css.Styleable;
-import javafx.scene.Node;
 import javafx.scene.paint.Color;
+
 
 /**
  * A {@code Fill} is an immutable object which encapsulates the
@@ -45,13 +39,51 @@ public class Fill {
     
     /***************************************************************************
      *                                                                         *
+     * Fill Helper / Accessor                                                  *
+     *                                                                         *
+     **************************************************************************/
+    
+    /**
+     * Store the singleton instance of the FillHelper subclass corresponding
+     * to the subclass of this instance of Fill
+     */
+    private FillHelper fillHelper = null;
+    static {
+        // This is used by classes in different packages to get access to
+        // private and package private methods.
+        FillHelper.setFillAccessor(new FillHelper.FillAccessor()
+        {
+            @Override
+            public FillHelper getHelper(Fill fill) {
+                return fill.fillHelper;
+            }
+            
+            @Override
+            public void setHelper(Fill fill, FillHelper fillHelper) {
+                fill.fillHelper = fillHelper;
+            }
+            
+            @Override
+            public boolean fillHasSpecial(Fill fill) { return fill.hasSpecial(); }
+            
+            @Override
+            public Fill replaceSpecialsInFill(Fill fill, Fillable fable) {
+                return Fill.replaceSpecialsInFill(fill, fable);
+            }
+            
+        });
+        
+    }
+    
+    
+    /***************************************************************************
+     *                                                                         *
      * Constants                                                               *
      *                                                                         *
      **************************************************************************/
     
     // lazy, thread-safe instantiation
     private static class Holder {
-        static final Color NULL_BG_FILL_SPAN = Color.TRANSPARENT;
         static final List<FillSpan> FILL_SPANS_NULL_EMPTY = List.of();
         
         private Holder() { throw new IllegalAccessError("a Holder class should not be instantiated"); }
@@ -67,8 +99,6 @@ public class Fill {
     // lazy, thread-safe instantiation
     private static class Default {
         static final Fill DEFAULT_FILL = new Fill(); // fill with no spans
-        static final Color[] CSS_INITIAL = new Color[] {};
-        static final Color[] CSS_TO_FROM_DEFAULT = new Color[] {};
     }
     
     /** 
@@ -76,26 +106,6 @@ public class Fill {
      * @return the default fill
      */
     public static Fill getDefault() { return Default.DEFAULT_FILL; }
-    
-    /**
-     * Gets the CSS default value for {@code -*-fill-from} and
-     * {@code -*-fill-to}.
-     * <p>
-     * This method simply returns the same empty {@code Color[]} instance each
-     * time
-     * @return the CSS default value for <i>fill-from</i> and <i>fill-to</i>
-     */
-    public static Color[] getCssFromToDefault() { return Default.CSS_TO_FROM_DEFAULT; }
-    
-    /**
-     * Gets the CSS default value for {@code -*-fill-from} and
-     * {@code -*-fill-to}.
-     * <p>
-     * This method simply returns the same empty {@code Color[]} instance each
-     * time.
-     * @return the CSS default value for <i>fill-from</i> and <i>fill-to</i>
-     */
-    static Color[] getCssInitial() { return Default.CSS_INITIAL; }
     
     
     /***************************************************************************
@@ -158,6 +168,10 @@ public class Fill {
 //        SHAPE;
 //    }
     
+    {
+        // initialize the class helper at the beginning of each constructor
+        FillHelper.initHelper(this);
+    }
     
     /***************************************************************************
      *                                                                         *
@@ -172,8 +186,9 @@ public class Fill {
     private final FillSpan shapeSpan;
     private final FillSpan strokeSpan;
     private final List<FillSpan> bgSpans;
-    private final List<FillSpan> bdSpans; // border spans
+    private final List<BorderFillSpan> bdSpans; // border spans
     
+    private final boolean hasSpans;
     private final boolean hasSpecial; // signals that the fill has special spans
     
     /**
@@ -188,6 +203,18 @@ public class Fill {
      * Constructor(s)                                                          *
      *                                                                         *
      **************************************************************************/
+    
+    /** Empty constructor only used by {@link Default#DEFAULT_FILL}. */
+    private Fill() {
+        textSpan = null;
+        shapeSpan = null;
+        strokeSpan = null;
+        bgSpans = null;
+        bdSpans = null;
+        hasSpans = false;
+        hasSpecial = false;
+        hash = 23;
+    }
     
     /**
      * Creates a new {@code Fill} with the specified text, shape, stroke,
@@ -211,117 +238,19 @@ public class Fill {
      *        then background fill spans will be {@code null}, any {@code null}
      *        elements will be replaced by a {@code FillSpan} with a fill-from
      *        and fill-to of {@code Color.TRANSPARENT}
-     * @param borderFillSpans - array of {@code FillSpan} instances, if
+     * @param borderFillSpans - array of {@code BorderFillSpan} instances, if
      *        {@code null} or empty, or contains only {@code null} instances,
      *        then border fill spans will be {@code null}, any {@code null}
-     *        elements will be replaced by a {@code FillSpan} with a fill-from
-     *        and fill-to of {@code Color.TRANSPARENT}
+     *        elements will be replaced by a uniform {@code BorderFillSpan}
+     *        with a fill-from and fill-to of {@code Color.TRANSPARENT}
      */
     public Fill(FillSpan textFillSpan, FillSpan shapeFillSpan, FillSpan strokeFillSpan, FillSpan[] bgFillSpans,
-        FillSpan[] borderFillSpans) {
-        // used to precompute the hash code
-        int preHash = 23;
-        // used to signal that the fill has specials
-        boolean preHasSpecial = false;
-        
-        // assign text fill span, add to preHash and check for special
-        textSpan = textFillSpan;
-        preHash += (textSpan == null) ? 0 : 11 * preHash + textSpan.hashCode();
-        preHasSpecial = FillSpanHelper.fillSpanIsSpecial(textSpan);
-        
-        // assign shape fill span, add to preHash and check for special
-        shapeSpan = shapeFillSpan;
-        preHash += (shapeSpan == null) ? 0 : 13 * preHash + shapeSpan.hashCode();
-        preHasSpecial |= FillSpanHelper.fillSpanIsSpecial(shapeSpan);
-        
-        // assign stroke fill span, add to preHash and check for special
-        strokeSpan = strokeFillSpan;
-        preHash += (strokeSpan == null) ? 0 : 17 * preHash + strokeSpan.hashCode();
-        preHasSpecial |= FillSpanHelper.fillSpanIsSpecial(strokeSpan);
-        
-        // check and possibly create list of background fill spans
-        if (bgFillSpans == null || bgFillSpans.length == 0) {
-            bgSpans = null;
-        } else {
-            // keep separate hash for bgSpans in case array is filled with null
-            int bgSpansHash = 19;
-            
-            // used to replace nulls and create unmodifiable list
-            List<FillSpan> tmpSpans = new ArrayList<>(bgFillSpans.length);
-            
-            // replace any null fill spans and check for all null fill spans
-            int nullCount = 0;
-            for (int i = 0; i < bgFillSpans.length; i++) {
-                FillSpan span = bgFillSpans[i];
-                
-                // check if span is special before null check
-                preHasSpecial |= FillSpanHelper.fillSpanIsSpecial(strokeSpan);
-                
-                if (span == null) {
-                    nullCount++;
-                    // replace null fill span with Color.BLACK fill span
-                    span = FillSpan.getNullArgsInstance();
-                }
-                
-                bgSpansHash = 31 * bgSpansHash + span.hashCode();
-                tmpSpans.add(span);
-            }
-            
-            // if not all null, set bgSpans to unmodifiable list and add hash
-            if (nullCount < (bgFillSpans.length - 1)) {
-                bgSpans = Collections.unmodifiableList(tmpSpans);
-                preHash += bgSpansHash;
-            } else {
-                // if given all null fill spans then set bgSpans to null
-                bgSpans = null;
-            }
-            
-        }
-        
-        // check and possibly create list of border fill spans
-        if (borderFillSpans == null || borderFillSpans.length == 0) {
-            bdSpans = null;
-        } else {
-            // keep separate hash for bdSpans in case array is filled with null
-            int borderSpansHash = 19;
-            
-            // used to replace nulls and create unmodifiable list
-            List<FillSpan> tmpSpans = new ArrayList<>(borderFillSpans.length);
-            
-            // replace any null fill spans and check for all null fill spans
-            int nullCount = 0;
-            for (int i = 0; i < borderFillSpans.length; i++) {
-                FillSpan span = borderFillSpans[i];
-                
-                // check if span is special before null check
-                preHasSpecial |= FillSpanHelper.fillSpanIsSpecial(strokeSpan);
-                
-                if (span == null) {
-                    nullCount++;
-                    // replace null fill span with Color.BLACK fill span
-                    span = FillSpan.getNullArgsInstance();
-                }
-                
-                borderSpansHash = 31 * borderSpansHash + span.hashCode();
-                tmpSpans.add(span);
-            }
-            
-            // if not all null, set bdSpans to unmodifiable list and add hash
-            if (nullCount < (borderFillSpans.length - 1)) {
-                bdSpans = Collections.unmodifiableList(tmpSpans);
-                preHash += borderSpansHash;
-            } else {
-                // if given all null fill spans then set bdSpans to null
-                bdSpans = null;
-            }
-            
-        }
-        
-        // set if any fill span instances were special
-        hasSpecial = preHasSpecial;
-        
-        // set hash to precomputed hash
-        hash = preHash + (hasSpecial ? 1 : 0);
+                BorderFillSpan[] borderFillSpans)
+    {
+        this(textFillSpan, shapeFillSpan, strokeFillSpan,
+            ((bgFillSpans == null || bgFillSpans.length == 0) ? (List<FillSpan>) null : List.of(bgFillSpans)),
+            ((borderFillSpans == null || borderFillSpans.length == 0) ? (List<BorderFillSpan>) null
+                : List.of(borderFillSpans)));
     }
     
     /**
@@ -346,19 +275,120 @@ public class Fill {
      *        background fill spans will be {@code null}, any {@code null}
      *        elements will be replaced by a {@code FillSpan} with a fill-from
      *        and fill-to of {@code Color.TRANSPARENT}
-     * @param borderFillSpans - list of {@code FillSpan} instances, if
+     * @param borderFillSpans - list of {@code BorderFillSpan} instances, if
      *        {@code null} or empty, or contains only {@code null} instances,
      *        then border fill spans will be {@code null}, any {@code null}
-     *        elements will be replaced by a {@code FillSpan} with a fill-from
-     *        and fill-to of {@code Color.TRANSPARENT}
+     *        elements will be replaced by a uniform {@code BorderFillSpan}
+     *        with a fill-from and fill-to of {@code Color.TRANSPARENT}
      */
     public Fill(FillSpan textFillSpan, FillSpan shapeFillSpan, FillSpan strokeFillSpan, List<FillSpan> bgFillSpans,
-        List<FillSpan> borderFillSpans) {
-        this(textFillSpan, shapeFillSpan, strokeFillSpan,
-            (bgFillSpans == null || bgFillSpans.isEmpty()) ? (FillSpan[]) null
-                : bgFillSpans.toArray(new FillSpan[bgFillSpans.size()]),
-            (borderFillSpans == null || borderFillSpans.isEmpty()) ? (FillSpan[]) null
-                : borderFillSpans.toArray(new FillSpan[borderFillSpans.size()]));
+                List<BorderFillSpan> borderFillSpans)
+    {
+        // used to precompute the hash code
+        int preHash = 23;
+        // used to signal that the fill has specials
+        boolean preHasSpecial = false;
+        
+        // assign text fill span, add to preHash and check for special
+        textSpan = textFillSpan;
+        preHash += (textSpan == null) ? 0 : 11 * preHash + textSpan.hashCode();
+        preHasSpecial |= (textSpan == null) ? false : textSpan.isSpecial();
+        
+        // assign shape fill span, add to preHash and check for special
+        shapeSpan = shapeFillSpan;
+        preHash += (shapeSpan == null) ? 0 : 13 * preHash + shapeSpan.hashCode();
+        preHasSpecial |= (shapeSpan == null) ? false : shapeSpan.isSpecial();
+        
+        // assign stroke fill span, add to preHash and check for special
+        strokeSpan = strokeFillSpan;
+        preHash += (strokeSpan == null) ? 0 : 17 * preHash + strokeSpan.hashCode();
+        preHasSpecial |= (strokeSpan == null) ? false : strokeSpan.isSpecial();
+        
+        // check and possibly create list of background fill spans
+        if (bgFillSpans == null || bgFillSpans.isEmpty()) {
+            bgSpans = null;
+        } else {
+            // keep separate hash for bgSpans in case array is filled with null
+            int bgSpansHash = 19;
+            
+            // used to replace nulls and create unmodifiable list
+            List<FillSpan> tmpSpans = new ArrayList<>(bgFillSpans.size());
+            
+            // replace any null fill spans and check for all null fill spans
+            int nullCount = 0;
+            for (int i = 0; i < bgFillSpans.size(); i++) {
+                FillSpan bgSpan = bgFillSpans.get(i);
+                
+                if (bgSpan == null) {
+                    nullCount++;
+                    // replace null fill span with transparent fill span
+                    bgSpan = FillSpan.getNullArgsInstance();
+                }
+                
+                // check if span is special
+                preHasSpecial |= bgSpan.isSpecial();
+                
+                bgSpansHash = 31 * bgSpansHash + bgSpan.hashCode();
+                tmpSpans.add(bgSpan);
+            }
+            
+            // if not all null, set bgSpans to unmodifiable list and add hash
+            if (nullCount < bgFillSpans.size()) {
+                bgSpans = Collections.unmodifiableList(tmpSpans);
+                preHash += bgSpansHash;
+            } else {
+                // if given all null fill spans then set bgSpans to null
+                bgSpans = null;
+            }
+            
+        }
+        
+        // check and possibly create list of border fill spans
+        if (borderFillSpans == null || borderFillSpans.isEmpty()) {
+            bdSpans = null;
+        } else {
+            // keep separate hash for bdSpans in case array is filled with null
+            int borderSpansHash = 27;
+            
+            // used to replace nulls and create unmodifiable list
+            List<BorderFillSpan> tmpSpans = new ArrayList<>(borderFillSpans.size());
+            
+            // replace any null fill spans and check for all null fill spans
+            int nullCount = 0;
+            for (int i = 0, n = borderFillSpans.size(); i < n; i++) {
+                BorderFillSpan bdSpan = borderFillSpans.get(i);
+                
+                if (bdSpan == null) {
+                    nullCount++;
+                    // replace null fill span with transparent border fill span
+                    bdSpan = BorderFillSpan.getNullFillSpan();
+                }
+                
+                // check if span is special before null check
+                preHasSpecial |= bdSpan.isSpecial();
+                
+                borderSpansHash = 31 * borderSpansHash + bdSpan.hashCode();
+                tmpSpans.add(bdSpan);
+            }
+            
+            // if not all null, set bdSpans to unmodifiable list and add hash
+            if (nullCount < borderFillSpans.size()) {
+                bdSpans = Collections.unmodifiableList(tmpSpans);
+                preHash += borderSpansHash;
+            } else {
+                // if given all null fill spans then set bdSpans to null
+                bdSpans = null;
+            }
+            
+        }
+        
+        hasSpans = textSpan != null || shapeSpan != null || strokeSpan != null || bgSpans != null || bdSpans != null;
+        
+        // set if any fill span instances were special
+        hasSpecial = preHasSpecial;
+        
+        // set hash to precomputed hash
+        hash = preHash + (hasSpecial ? 1 : 0);
     }
     
     
@@ -367,7 +397,7 @@ public class Fill {
      * Public API                                                              *
      *                                                                         *
      **************************************************************************/
-    
+//
     /**
      * Gets this {@code Fill} instance's {@code FillType}.
      * @return the {@code FillType} of this {@code Fill} instance
@@ -375,12 +405,14 @@ public class Fill {
 //    public final FillType getType() { return type; }
     
     /**
-     * Gets whether or not this {@code Fill} instance is made up of any
+     * Gets whether or not this {@code Fill} instance contains any
      * {@link FillSpan} instances.
-     * @return {@code true} if this {@code Fill} instance has fill spans,
-     *         otherwise {@code false}
+     * @return {@code true} if this {@code Fill} instance contains any
+     *         {@code FillSpan} instances, otherwise {@code false}
      */
-    public final boolean hasFillSpans() { return !bgSpans.isEmpty(); }
+    public final boolean hasFillSpans() {
+        return hasSpans;
+    }
     
     /**
      * Gets whether or not this {@code Fill} instance contains a text
@@ -412,7 +444,7 @@ public class Fill {
      * @return {@code true} if this {@code Fill} instance has background fill
      *         span(s), otherwise {@code false}
      */
-    public final boolean hasBgFillSpans() { return !bgSpans.isEmpty(); }
+    public final boolean hasBgFillSpans() { return bgSpans != null && !bgSpans.isEmpty(); }
     
     /**
      * Gets whether or not this {@code Fill} instance contains any background
@@ -420,19 +452,7 @@ public class Fill {
      * @return {@code true} if this {@code Fill} instance has background fill
      *         span(s), otherwise {@code false}
      */
-    public final boolean hasBorderFillSpans() { return !bgSpans.isEmpty(); }
-    
-    /**
-     * Gets the list of {@link FillSpan} instances making up this {@code Fill}.
-     * <p>
-     * <b>Note:</b> This List is unmodifiable and immutable. It will never be
-     * {@code null}. The elements of this list will also never be {@code null}.
-     * 
-     * @return the list of {@code FillSpan} instances making up this
-     *         {@code Fill}
-     * @see Collections#unmodifiableList(List)
-     */
-    public final List<FillSpan> getFillSpans() { return bgSpans; }
+    public final boolean hasBorderFillSpans() { return bdSpans != null && !bdSpans.isEmpty(); }
     
     /**
      * Gets the text {@link FillSpan} instance in this {@code Fill}, if it has
@@ -483,20 +503,7 @@ public class Fill {
      *         {@code Fill}
      * @see Collections#unmodifiableList(List)
      */
-    public final List<FillSpan> getBorderFillSpans() { return bdSpans; }
-    
-    /**
-     * Gets a {@link FillSpan} from the specified index.
-     * 
-     * @param index - position of the fill span to get
-     * @return the fill span at the specified index
-     * @throws IllegalArgumentException if the specified index is less than
-     *         zero, or is greater than the number of fill spans in this fill
-     */
-    public final FillSpan getFillSpan(final int index) {
-        Objects.checkIndex(index, bgSpans.size());
-        return bgSpans.get(index);
-    }
+    public final List<BorderFillSpan> getBorderFillSpans() { return bdSpans; }
     
     /** {@inheritDoc} */
     @Override
@@ -511,15 +518,15 @@ public class Fill {
         final Fill that = (Fill) obj;
         
         // because the hash is cached, this can be a very fast check
-        if (this.hash != that.hash) { return false; }
-        if (this.hasSpecial != that.hasSpecial) { return false; }
+        if (hash != that.hash) { return false; }
+        if (hasSpecial != that.hasSpecial) { return false; }
         
         // if cache of fill spans is enabled then reference equality can be used
-        return FillSpanHelper.fillSpanListsAreEqual(this.bgSpans, that.bgSpans)
-            && FillSpanHelper.fillSpansAreEqual(this.textSpan, that.textSpan)
-            && FillSpanHelper.fillSpansAreEqual(this.shapeSpan, that.shapeSpan)
-            && FillSpanHelper.fillSpanListsAreEqual(this.bdSpans, that.bdSpans)
-            && FillSpanHelper.fillSpansAreEqual(this.strokeSpan, that.strokeSpan);
+        return FillSpanHelper.fillSpansAreEqual(textSpan, that.textSpan)
+               && FillSpanHelper.fillSpansAreEqual(shapeSpan, that.shapeSpan)
+               && FillSpanHelper.fillSpanListsAreEqual(bgSpans, that.bgSpans)
+               && FillSpanHelper.fillSpanListsAreEqual(bdSpans, that.bdSpans)
+               && FillSpanHelper.fillSpansAreEqual(strokeSpan, that.strokeSpan);
     }
     
     /**
@@ -532,126 +539,21 @@ public class Fill {
     
     /**
      * 
-     * @param fill - the fill to replace
-     * @param fillable
-     * @return
+     * @param fill - the {@code Fill} to replace the special identifiers in
+     * @param fable - the {@code Fillable} to use to replace the special
+     *        identifiers
+     * @return a {@code Fill} instance resembling the replacements
      */
-    static final Fill getFillFromReplacingSpecialFills(Fill fill, Fillable fillable) {
-        return null;
-    }
-    
-    /***************************************************************************
-     *                                                                         *
-     * Stylesheet Handling                                                     *
-     *                                                                         *
-     **************************************************************************/
-    
-//    /** The fill-enabled CSS style. */
-//    static final CssMetaData<Node, Boolean> FILL_ENABLED
-//        = new SubCssMetaData<>("-fill-enabled", BooleanConverter.getInstance(), true);
-//    /** The fill-duration CSS style. */
-//    private static final Duration DEFAULT_DURATION = Duration.millis(100.0);
-//    static final CssMetaData<Node, Duration> FILL_DURATION
-//        = new SubCssMetaData<>("-fill-duration", DurationConverter.getInstance(), DEFAULT_DURATION);
-    
-    /** The fill-from CSS style. */
-    static final CssMetaData<Node, Color[]> FILL_FROM
-        = new SubCssMetaData<>("-jui-fill-from", FillConverter.StringSequenceConverter.getInstance(), new Color[] {});
-//        new Color[] { Color.TRANSPARENT });
-    /** The fill-to CSS style. */
-    static final CssMetaData<Node, Color[]> FILL_TO
-        = new SubCssMetaData<>("-jui-fill-to", FillConverter.StringSequenceConverter.getInstance(), new Color[] {});
-//        new Color[] { Color.TRANSPARENT });
-    
-    /** List of CSS styleables. */
-    private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES = List.of(FILL_FROM, FILL_TO);
-    
-    /**
-     * Gets the {@code CssMetaData} associated with this class, which may
-     * include the {@code CssMetaData} of its superclasses.
-     * 
-     * @return the CssMetaData associated with this class, which may include the
-     *         CssMetaData of its superclasses
-     */
-    public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() { return STYLEABLES; }
-    
-    /***************************************************************************
-     *                                                                         *
-     * Fill Helper / Accessor                                                  *
-     *                                                                         *
-     **************************************************************************/
-    
-    /**
-     * Store the singleton instance of the FillHelper subclass corresponding
-     * to the subclass of this instance of Fill
-     */
-    private FillHelper fillHelper = null;
-    
-    static {
-        // This is used by classes in different packages to get access to
-        // private and package private methods.
-        FillHelper.setFillAccessor(new FillHelper.FillAccessor()
-        {
-            @Override
-            public FillHelper getHelper(Fill fill) {
-                return fill.fillHelper;
-            }
-            
-            @Override
-            public void setHelper(Fill fill, FillHelper fillHelper) {
-                fill.fillHelper = fillHelper;
-            }
-            
-            @Override
-            public Color[] getCssInitial() { return Fill.getCssInitial(); }
-            
-            @Override
-            public boolean hasSpecial(Fill fill) { return fill.hasSpecial(); }
-            
-            @Override
-            public boolean bgFillSpansContainSpecial(Fill fill) {
-                return FillSpanHelper.fillSpansContainSpecial(fill.getBgFillSpans());
-            }
-            
-            @Override
-            public boolean textFillSpanIsSpecial(Fill fill) {
-                return FillSpanHelper.fillSpanIsSpecial(fill.getTextFillSpan());
-            }
-            
-            @Override
-            public boolean shapeFillSpanIsSpecial(Fill fill) {
-                return FillSpanHelper.fillSpanIsSpecial(fill.getShapeFillSpan());
-            }
-            
-            @Override
-            public boolean strokeFillSpanIsSpecial(Fill fill) {
-                return FillSpanHelper.fillSpanIsSpecial(fill.getStrokeFillSpan());
-            }
-            
-            @Override
-            public FillSpan getTextFillSpanFromSpecial(Fill fill, Fillable fillable) {
-                return FillSpanHelper.getFillSpanFromSpecial(fill, fillable);
-            }
-            
-            @Override
-            public FillSpan getShapeFillSpanFromSpecial(Fill fill, Fillable fillable) {
-                return FillSpanHelper.getFillSpanFromSpecial(fill, fillable);
-            }
-            
-            @Override
-            public FillSpan getStrokeFillSpanFromSpecial(Fill fill, Fillable fillable) {
-                return FillSpanHelper.getFillSpanFromSpecial(fill, fillable);
-            }
-            
-            @Override
-            public List<FillSpan> getBgFillSpansFromSpecial(Fill fill, Fillable fillable) {
-                return FillSpanHelper.getBgFillSpansFromSpecial(fill, fillable);
-            }
-            
-            
-        });
+    static final Fill replaceSpecialsInFill(Fill fill, Fillable fable) {
+        if (fill == null || fable == null || !fill.hasSpecial) { return fill; }
         
+        FillSpan repText = FillSpanHelper.getFillSpanFromSpecial(fill.textSpan, fable);
+        FillSpan repShape = FillSpanHelper.getFillSpanFromSpecial(fill.shapeSpan, fable);
+        FillSpan repStroke = FillSpanHelper.getFillSpanFromSpecial(fill.strokeSpan, fable);
+        List<FillSpan> repBg = FillSpanHelper.getFillSpanListFromSpecial(fill.bgSpans, fable);
+        List<BorderFillSpan> repBd = FillSpanHelper.getBorderFillSpanListFromSpecial(fill.bdSpans, fable);
+        
+        return new Fill(repText, repShape, repStroke, repBg, repBd);
     }
-    
     
 }

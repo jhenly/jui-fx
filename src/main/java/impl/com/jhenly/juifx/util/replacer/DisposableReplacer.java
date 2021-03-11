@@ -1,6 +1,6 @@
-package com.jhenly.juifx.util.replacer;
+package impl.com.jhenly.juifx.util.replacer;
 
-import com.jhenly.juifx.util.Replacer;
+import impl.com.jhenly.juifx.util.Replacer;
 
 
 /**

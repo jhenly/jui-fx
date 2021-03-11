@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,17 +19,21 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.layout;
+
+import java.util.List;
 
 import com.jhenly.juifx.control.Selectable;
 import com.jhenly.juifx.control.event.SelectionEvent;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.css.CssMetaData;
+import javafx.css.Styleable;
 import javafx.scene.Node;
 import javafx.scene.layout.HBox;
+
 
 /**
  * A simple {@link HBox} wrapper that handles the selected states of any {@link
@@ -169,8 +172,8 @@ public class SelectHBox extends HBox {
      */
     public final BooleanProperty consumeSelectedProperty() {
         if (consumeSelected == null) {
-            consumeSelected
-                = new SimpleBooleanProperty(SelectHBox.this, "consumeSelected", DEFAULT_CONSUME_DE_SELECTED);
+            consumeSelected =
+            new SimpleBooleanProperty(SelectHBox.this, "consumeSelected", DEFAULT_CONSUME_DE_SELECTED);
         }
         return consumeSelected;
     }
@@ -207,8 +210,8 @@ public class SelectHBox extends HBox {
      */
     public final BooleanProperty consumeDeselectedProperty() {
         if (consumeDeselected == null) {
-            consumeDeselected
-                = new SimpleBooleanProperty(SelectHBox.this, "consumeDeselected", DEFAULT_CONSUME_DE_SELECTED);
+            consumeDeselected =
+            new SimpleBooleanProperty(SelectHBox.this, "consumeDeselected", DEFAULT_CONSUME_DE_SELECTED);
         }
         return consumeDeselected;
     }
@@ -243,5 +246,30 @@ public class SelectHBox extends HBox {
         if (selected != null) { selected.deselect(); }
     }
     
+    
+    /***************************************************************************
+     *                                                                         *
+     *                         Stylesheet Handling                             *
+     *                                                                         *
+     **************************************************************************/
+    
+    /* Super-lazy instantiation pattern. */
+    private static class StyleableProperties {
+        private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES = HBox.getClassCssMetaData();
+    }
+    
+    /**
+     * @return The CssMetaData associated with this class, which may include the
+     * CssMetaData of its superclasses.
+     */
+    public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() {
+        return StyleableProperties.STYLEABLES;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<CssMetaData<? extends Styleable, ?>> getCssMetaData() { return getClassCssMetaData(); }
     
 }

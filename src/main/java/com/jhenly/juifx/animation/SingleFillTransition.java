@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,20 +19,18 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.animation;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.jhenly.juifx.control.Fillable;
-import com.jhenly.juifx.fill.Fill;
-import com.jhenly.juifx.fill.FillSpan;
 
+import impl.com.jhenly.juifx.fill.FillSpan;
 import javafx.animation.FillTransition;
-import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
+
 
 /**
  * 
@@ -71,18 +68,18 @@ public class SingleFillTransition extends JuiFillTransition {
     public SingleFillTransition(Fillable control) {
         super(control);
         
-        final Background background = control.getBackground();
-        if (background != null && background.getFills() != null) {
-            cachedFills = background.getFills();
-        }
-        
-        final Fill fill = control.getFill();
-        if (fill != null && fill.hasFillSpans()) {
-            // single fill transition, so we just want the first span
-            cachedSpan = fill.getFillSpan(0);
-        }
-        
-        setFillListener(control);
+//        final Background background = control.getBackground();
+//        if (background != null && background.getFills() != null) {
+//            cachedFills = background.getFills();
+//        }
+//        
+//        final Fill fill = control.getFill();
+//        if (fill != null && fill.hasFillSpans()) {
+//            // single fill transition, so we just want the first span
+//            cachedSpan = fill.getFillSpan(0);
+//        }
+//        
+//        setFillListener(control);
     }
     
     
@@ -112,18 +109,19 @@ public class SingleFillTransition extends JuiFillTransition {
     /** {@inheritDoc} */
     @Override
     protected void interpolateFill(final double frac) {
-        final Fillable fable = getFillable();
-        final Background bg = fable.getBackground();
-        if (bg == null || cachedFills == null) { return; }
-        
-        // interpolate fill span and replace innermost bg fill with fill span
-        final List<BackgroundFill> interpFills = interpolateFillSpanAndReplace(frac, cachedFills);
-        
-        // no reason to create a new background if bg fills didn't change
-        // if (bgFills == interpFills) { return; }
-        
-        // update fillable's background with the interpolated fill
-        fable.setBackground(new Background(interpFills, bg.getImages()));
+        getFillable().getFillApplier().interpolateAndApply(frac);
+//        final Fillable fable = getFillable();
+//        final Background bg = fable.getBackground();
+//        if (bg == null || cachedFills == null) { return; }
+//        
+//        // interpolate fill span and replace innermost bg fill with fill span
+//        final List<BackgroundFill> interpFills = interpolateFillSpanAndReplace(frac, cachedFills);
+//        
+//        // no reason to create a new background if bg fills didn't change
+//        // if (bgFills == interpFills) { return; }
+//        
+//        // update fillable's background with the interpolated fill
+//        fable.setBackground(new Background(interpFills, bg.getImages()));
     }
     
     /**
@@ -145,8 +143,8 @@ public class SingleFillTransition extends JuiFillTransition {
         
         // get existing or new bg fill from cache, replace fill, keep radii and
         // insets
-        final BackgroundFill newBgFill
-            = getBgFillFromCache(cachedSpan.interpolate(frac), inner.getRadii(), inner.getInsets());
+        final BackgroundFill newBgFill =
+        getBgFillFromCache(cachedSpan.interpolate(frac), inner.getRadii(), inner.getInsets());
         
         // replace innermost bg fill with the interpolated fill
         tmpFills.set(tmpFills.size() - 1, newBgFill);
@@ -163,23 +161,23 @@ public class SingleFillTransition extends JuiFillTransition {
     
     /** Helper that removes the fillable's fill listener. */
     private void removeFillListener(Fillable fillable) {
-        unregisterChangeListeners(fillable.fillProperty());
+//        unregisterChangeListeners(fillable.fillProperty());
     }
     
     /** Helper that sets the fillable's fill listener. */
     private void setFillListener(Fillable fillable) {
         
-        registerChangeListener(fillable.fillProperty(), o -> {
-            boolean wasPlaying = isPlaying();
-            stop();
-            
-            final Fill fill = fillable.getFill();
-            // we just we want the first fill
-            cachedSpan = (fill != null && fill.hasFillSpans()) ? fill.getFillSpan(0) : null;
-            
-            if (wasPlaying && cachedSpan != null) { play(); }
-        });
-        
+//        registerChangeListener(fillable.fillProperty(), o -> {
+//            boolean wasPlaying = isPlaying();
+//            stop();
+//            
+//            final Fill fill = fillable.getFill();
+//            // we just we want the first fill
+//            cachedSpan = (fill != null && fill.hasFillSpans()) ? fill.getFillSpan(0) : null;
+//            
+//            if (wasPlaying && cachedSpan != null) { play(); }
+//        });
+    
     }
     
 }

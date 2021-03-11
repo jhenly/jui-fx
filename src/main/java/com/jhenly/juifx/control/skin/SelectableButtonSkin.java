@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,14 +19,14 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.control.skin;
 
 import com.jhenly.juifx.control.SelectableButton;
 
 import javafx.scene.control.skin.ButtonSkin;
 import javafx.scene.control.skin.LabeledSkinBase;
+
 
 /**
  * Default skin implementation for the {@code SelectableButton} control.
@@ -45,15 +44,6 @@ import javafx.scene.control.skin.LabeledSkinBase;
  * {@code ButtonBehavior} in order to function as a button.
  */
 public class SelectableButtonSkin<C extends SelectableButton> extends ButtonSkin {
-    
-    /**************************************************************************
-     *                                                                        *
-     * Private Members                                                        *
-     *                                                                        *
-     *************************************************************************/
-    
-    private C skinnable;
-    
     
     /**************************************************************************
      *                                                                        *
@@ -101,12 +91,6 @@ public class SelectableButtonSkin<C extends SelectableButton> extends ButtonSkin
      * ButtonBehavior} in order to function as a button.
      */
     @SuppressWarnings("unchecked")
-    public final C thisSkinnable() {
-        if (skinnable == null) {
-            skinnable = (C) getSkinnable();
-        }
-        
-        return skinnable;
-    }
+    public final C thisSkinnable() { return (C) getSkinnable(); }
     
 }

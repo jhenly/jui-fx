@@ -155,17 +155,36 @@
           <groupId>org.openjfx</groupId>
           <artifactId>javafx-maven-plugin</artifactId>
           <version>0.0.5</version>
-          <configuration>
+          <executions>
+            <execution>
+              <!-- Default configuration for running. -->
+              <id>default-cli</id>
+              <configuration>
           
-            <!-- Used to specify absolute path to JDK's java executable,
-                 i.e. "/absolute/path/to/jdk-#.#.#/bin/java", if Maven throws errors
-                 because it can't find it. -->
-            <executable>${java.home}/bin/java</executable>           
-            <!-- used to test different 'public static void main(String[] args)' classes without changing pom.xml -->   
-            <!-- via: 'clean javafx:run "-Dfoo=sample.Main"' -->
-            <mainClass>com.jhenly.juifx.${foo}</mainClass>
+                <!-- Used to specify absolute path to JDK's java executable,
+                     i.e. "/absolute/path/to/jdk-#.#.#/bin/java", if Maven throws errors
+                     because it can't find it. -->
+                <executable>${java.home}/bin/java</executable>           
+                <!-- used to test different 'public static void main(String[] args)' classes without changing pom.xml -->   
+                <!-- via: 'clean javafx:run "-Dfoo=sample.Main"' -->
+                <mainClass>com.jhenly.juifx.${foo}</mainClass>
             
-          </configuration>
+              </configuration>
+            </execution>
+            
+            <execution>
+              <!-- Configuration for debugging -->
+              <id>debug</id>
+              <configuration>
+                  <options>
+                    <option>-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:8000</option>
+                  </options>
+                  <executable>${java.home}/bin/java</executable>
+                  <mainClass>com.jhenly.juifx.${foo}</mainClass>
+              </configuration>
+            </execution>
+            
+          </executions>
         </plugin>
 
       </plugins>

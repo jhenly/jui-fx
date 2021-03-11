@@ -1,5 +1,4 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
+/** Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
  * licenses this file to you under the Apache License, Version 2.0 (the
@@ -12,9 +11,8 @@
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations under
- * the License.
- */
-package com.jhenly.juifx.fill;
+ * the License. */
+package impl.com.jhenly.juifx.fill;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,7 +21,12 @@ import java.util.List;
 import com.jhenly.juifx.control.Fillable;
 
 import javafx.animation.Interpolatable;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Paint;
+import javafx.scene.paint.RadialGradient;
+
 
 /**
  * A {@code FillSpan} represents one of the, possibly many, fills in a
@@ -32,22 +35,22 @@ import javafx.scene.paint.Color;
  * The {@code FillSpan} object is made up of a <i>fill-from</i> and a
  * <i>fill-to</i>, which can be obtained via {@link #from()} and {@link #to()},
  * respectively. A {@code FillSpan} instance can also be interpolated via
- * {@link #interpolate(Color, double)} or {@link #interpolate(double)}.
+ * {@link #interpolate(Paint, double)} or {@link #interpolate(double)}.
  * <p>
  * {@code FillSpan} instances are immutable and cached by the
  * {@link FillSpanCache} class. An instance of {@code FillSpan} can be obtained
- * from the static {@link #of(Color, Color)} method, or multiple instances of
- * {@code FillSpan} can be obtained via
- * {@link #of(Color[], Color[]) of(Color[], Color[])} or
- * {@link #of(List, List) of(List&lt;Color&gt;, List&lt;Color&gt;)}.
+ * from any of the static {@code FillSpan.of(...)} methods, or multiple
+ * instances of {@code FillSpan} can be obtained via
+ * {@link #of(Paint[], Paint[]) of(Paint[], Paint[])} or
+ * {@link #of(List, List) of(List&lt;Paint&gt;, List&lt;Paint&gt;)}.
  * 
  * @author Jonathan Henly
  * @since JuiFX 1.0
  * 
  * @see Fill
- * @see Color
+ * @see Paint
  */
-public class FillSpan implements Interpolatable<Color> {
+public class FillSpan implements Interpolatable<Paint> {
     
     /**************************************************************************
      *                                                                        *
@@ -71,7 +74,7 @@ public class FillSpan implements Interpolatable<Color> {
     static final FillSpan getNullArgsInstance() { return Holder.NULL_ARGS_INSTANCE; }
     /**
      * Gets the {@code FillSpan[]} associated with {@code null}
-     * {@link #of(Color[], Color[]) FillSpan.of(from[], to[])} arguments.
+     * {@link #of(Paint[], Paint[]) FillSpan.of(from[], to[])} arguments.
      * @return the {@code FillSpan[]} associated with {@code null}
      *         {@code FillSpan.of(from[], to[])} arguments
      */
@@ -85,41 +88,55 @@ public class FillSpan implements Interpolatable<Color> {
      *************************************************************************/
     
     /**
-     * Special indicator that indicates to use the {@link Fillable} instance's
-     * text fill color for either fill-from or fill-to.
+     * Special indicator that signals to use a {@link Fillable} instance's
+     * text fill paint for either fill-from or fill-to.
      */
-    public static final Color USE_TEXT = new Color(0.02, 0.0, 0.0, 0.0);
+    public static final Paint USE_TEXT = new Color(0.02, 0.0, 0.0, 0.0);
     /**
-     * Special indicator that indicates to use the {@link Fillable} instance's
-     * shape fill color for either fill-from or fill-to.
+     * Special indicator that signals to use a {@link Fillable} instance's
+     * shape fill paint for either fill-from or fill-to.
      */
-    public static final Color USE_SHAPE = new Color(0.03, 0.0, 0.0, 0.0);
+    public static final Paint USE_SHAPE = new Color(0.03, 0.0, 0.0, 0.0);
     /**
-     * Special indicator that indicates to use the {@link Fillable} instance's
-     * shape's stroke fill color for either fill-from or fill-to.
+     * Special indicator that signals to use a {@link Fillable} instance's
+     * shape's stroke fill paints for either fill-from or fill-to.
      */
-    public static final Color USE_STROKE = new Color(0.04, 0.0, 0.0, 0.0);
+    public static final Paint USE_STROKE = new Color(0.04, 0.0, 0.0, 0.0);
     /**
-     * Special indicator that indicates to use one of a {@link Fillable}
-     * instance's background fill colors for either fill-from or fill-to.
+     * Special indicator that signals to use one of a {@link Fillable}
+     * instance's background fill paints for either fill-from or fill-to.
      */
-    public static final Color USE_BG = new Color(0.05, 0.0, 0.0, 0.0);
+    public static final Paint USE_BG = new Color(0.05, 0.0, 0.0, 0.0);
     /**
-     * Special indicator that indicates to use one of a {@link Fillable}
-     * instance's border stroke colors for either fill-from or fill-to.
+     * Special indicator that signals to use one of a {@link Fillable}
+     * instance's border stroke paints for either fill-from or fill-to.
      */
-    public static final Color USE_BORDER = new Color(0.06, 0.0, 0.0, 0.0);
+    public static final Paint USE_BORDER = new Color(0.06, 0.0, 0.0, 0.0);
+    /**
+     * Special indicator that signals to use a {@link Fillable} instance's
+     * property's existing {@link Paint}.
+     * <p>
+     * This is useful in situations where a {@link Fillable} instance's
+     * list of {@link BackgroundFill} instances may contain a {@code Paint}
+     * that cannot be cast to a {@link Color}, such as a {@link LinearGradient}
+     * or {@link RadialGradient}. Rather than replacing the {@code Paint} with
+     * an interpolated {@code Color}, it is just skipped.
+     * <p>
+     * <b>Note:</b> specifying {@code SKIP} as a fill-from or fill-to
+     * {@code Color} will assign both fill-from and fill-to to {@code SKIP}.
+     */
+    public static final Paint SKIP = new Color(0.07, 0.0, 0.0, 0.0);
     
     /**
-     * Checks whether a specified {@code Color} instance is a special
+     * Checks whether a specified {@code Paint} instance is a special
      * identifier.
-     * @param c - the color to check
-     * @return {@code true} if the specified color is a special identifier,
-     *         otherwise {@code false}
+     * @param p - the {@code Paint} to check
+     * @return {@code true} if the specified {@code Paint} is a special
+     *         identifier, otherwise {@code false}
      */
-    static boolean colorIsSpecialIdentifier(final Color c) {
-        if (c == null) { return false; }
-        return c == USE_BG || c == USE_TEXT || c == USE_BORDER || c == USE_SHAPE || c == USE_STROKE;
+    static boolean paintIsSpecialIdentifier(final Paint p) {
+        if (p == null) { return false; }
+        return p == SKIP || p == USE_BG || p == USE_TEXT || p == USE_BORDER || p == USE_SHAPE || p == USE_STROKE;
     }
     
     /**
@@ -129,8 +146,8 @@ public class FillSpan implements Interpolatable<Color> {
      * <p>
      * The border stroke position can also be indicated through CSS:<pre>
      * .some-class {
-     *     -jui-bg-from: "border[t:3], afafaf";
-     *     -jui-bg-to: "border[r], fafafa";
+     *     -fill-bg-from: "border[t:3], afafaf";
+     *     -fill-bg-to: "fafafa, border[r]";
      * }</pre>
      * Where {@code "border[t:3]"} is specifying to use the {@link #TOP} border
      * stroke, of the third to last border stroke, in the {@link Fillable}
@@ -138,10 +155,10 @@ public class FillSpan implements Interpolatable<Color> {
      * specifying to use the {@link #RIGHT} border stroke, of the second to last
      * border stroke, in said list of border strokes.
      * 
-     * @see FillSpan#of(Color, Color, int, int, BorderStrokePosition, BorderStrokePosition)
-     * @see FillSpan#of(Color, Color, BorderStrokePosition, BorderStrokePosition)
+     * @see FillSpan#of(Paint, Paint, int, int, BorderStrokePosition, BorderStrokePosition)
+     * @see FillSpan#of(Paint, Paint, BorderStrokePosition, BorderStrokePosition)
      */
-    public static enum BorderStrokePosition {
+    public enum BorderStrokePosition {
         /** Indicates the top border stroke should be used. */
         TOP,
         /** Indicates the right border stroke should be used. */
@@ -160,10 +177,10 @@ public class FillSpan implements Interpolatable<Color> {
      *************************************************************************/
     
     // fill-from and fill-to colors
-    private final Color from, to;
+    protected final Paint from, to;
     private final boolean fromEqualsTo;
     // pre-compute hash
-    private final int hash;
+    protected int hash;
     
     
     /**************************************************************************
@@ -177,23 +194,23 @@ public class FillSpan implements Interpolatable<Color> {
      * the {@code FillSpan} used by {@link Holder#NULL_ARGS_INSTANCE}.
      */
     private FillSpan() {
-        this.from = this.to = Color.TRANSPARENT;
-        this.fromEqualsTo = true;
-        this.hash = 1;
+        from = to = Color.TRANSPARENT;
+        fromEqualsTo = true;
+        hash = 1;
     }
     
     /**
      * Creates a {@code FillSpan} with the specified fill-from and fill-to
-     * colors.
+     * {@code Paint} instances.
      * <p>
      * This constructor's parameters can never be null.
      * 
-     * @param from - the fill-from color
-     * @param to - the fill-to color
+     * @param from - the fill-from paint
+     * @param to - the fill-to paint
      */
-    FillSpan(Color from, Color to) {
-        this.fromEqualsTo = from.equals(to);
-        if (this.fromEqualsTo) {
+    protected FillSpan(Paint from, Paint to) {
+        fromEqualsTo = from.equals(to);
+        if (fromEqualsTo) {
             this.from = this.to = from;
         } else {
             this.from = from;
@@ -204,29 +221,29 @@ public class FillSpan implements Interpolatable<Color> {
         // hash = 7;
         // hash = 31 * hash + from.hashCode();
         // hash = 31 * hash + to.hashCode();
-        this.hash = 31 * (31 * 7 + this.from.hashCode()) + this.to.hashCode();
+        hash = 31 * (31 * 7 + this.from.hashCode()) + this.to.hashCode();
     }
     
     /**
      * Creates a {@code FillSpan} with fill-from and fill-to set to the same
-     * specified color.
+     * specified {@code Paint} instance.
      * <p>
-     * This constructor is used by {@link #of(Color, Color)} to create fill
-     * spans when 'from' == 'to' is known. This constructor's parameter can
-     * never be null.
+     * This constructor is used by {@link #of(Paint, Paint)} to create fill
+     * spans when {@code from.equals(to)} is {@code true}. This constructor's
+     * parameter can never be null.
      * 
-     * @param same - the color to set both fill-from and fill-to to
+     * @param same - the {@code Paint} to set both fill-from and fill-to to
      */
-    FillSpan(Color same) {
-        this.fromEqualsTo = true;
-        this.from = this.to = same;
+    protected FillSpan(Paint same) {
+        fromEqualsTo = true;
+        from = to = same;
         
         // hash calculation is:
         // hash = 7;
         // hash = 31 * hash + from.hashCode();
         // hash = 31 * hash + from.hashCode();
-        final int fromHash = this.from.hashCode();
-        this.hash = 31 * (31 * 7 + fromHash) + fromHash;
+        final int fromHash = from.hashCode();
+        hash = 31 * (31 * 7 + fromHash) + fromHash;
     }
     
     
@@ -235,35 +252,34 @@ public class FillSpan implements Interpolatable<Color> {
      * Public API                                                             *
      *                                                                        *
      *************************************************************************/
-    
+//
     /**
-     * Gets the fill-from {@link Color}.
-     * @return the fill-from color
+     * Gets the fill-from {@link Paint}.
+     * @return the fill-from paint
      */
-    public final Color from() { return from; }
+    public Paint from() { return from; }
     
     /**
-     * Gets the fill-to {@link Color}.
-     * @return the fill-to color
+     * Gets the fill-to {@link Paint}.
+     * @return the fill-to paint
      */
-    public final Color to() { return to; }
+    public Paint to() { return to; }
     
     /**
-     * Gets whether this fill span's fill-from color is equal to its fill-to
-     * color.
-     * @return {@code true} if this fill span's fill-from color is equal to its
-     *         fill-to color
+     * Gets whether this fill span's fill-from is equal to its fill-to.
+     * @return {@code true} if this fill span's fill-from is equal to its
+     *         fill-to.
      */
     public final boolean fromEqualsTo() { return fromEqualsTo; }
     
     /**
-     * Gets an interpolated {@linkplain Color} between {@link #from()} and
+     * Gets an interpolated {@linkplain Paint} between {@link #from()} and
      * {@link #to()} along the fraction {@code frac} between {@code 0.0} and
      * {@code 1.0}.
      * <p>
      * This method was overridden to comply with the {@link Interpolatable}
      * interface, {@link #interpolate(double)} should be preferred over this
-     * method. The {@code Color} parameter {@code fodder} is not used in any
+     * method. The {@code Paint} parameter {@code fodder} is not used in any
      * way by this method. Using {@code null} when calling this method is
      * advisable, i.e. {@code interpolate(null, frac)}.
      * <p>
@@ -272,15 +288,14 @@ public class FillSpan implements Interpolatable<Color> {
      * 
      * @param fodder - not used
      * @param frac - fraction between {@code 0.0} and {@code 1.0}
-     * @return the interpolated {@code Color} between {@code this.from()} and
+     * @return the interpolated {@code Paint} between {@code this.from()} and
      *         {@code this.to()}
-     * @see Color#interpolate(Color, double)
      */
     @Override
-    public final Color interpolate(Color fodder, double frac) { return interpolate(frac); }
+    public final Paint interpolate(Paint fodder, double frac) { return interpolate(frac); }
     
     /**
-     * Gets an interpolated {@linkplain Color} between {@link #from()} and
+     * Gets an interpolated {@linkplain Paint} between {@link #from()} and
      * {@link #to()} along the fraction {@code frac} between {@code 0.0} and
      * {@code 1.0}.
      * <p>
@@ -296,15 +311,32 @@ public class FillSpan implements Interpolatable<Color> {
      * </table>
      * 
      * @param frac - fraction between {@code 0.0} and {@code 1.0}
-     * @return the interpolated {@code Color} between {@code this.from()} and
+     * @return the interpolated {@code Paint} between {@code this.from()} and
      *         {@code this.to()}
      * 
      * @see #from()
      * @see #to()
      * @see #fromEqualsTo()
-     * @see Color#interpolate(Color, double)
      */
-    public final Color interpolate(double frac) { return fromEqualsTo() ? from : from.interpolate(to, frac); }
+    public final Paint interpolate(double frac) {
+        if (fromEqualsTo || frac <= 0.0) { return from; }
+        if (frac >= 1.0) { return to; }
+        
+        return interpolateImpl(frac);
+    }
+    
+    /**
+     * Invoked by {@link #interpolate(double)} after checking
+     * {@code fromEqualsTo} and {@code frac}, subclasses should override this
+     * method with implementation specific interpolate logic.
+     * 
+     * @param frac - fraction between {@code 0.0} and {@code 1.0}
+     * @return the interpolated {@code Paint} between {@code this.from()} and
+     *         {@code this.to()}
+     */
+    protected Paint interpolateImpl(double frac) {
+        return ((Color) from).interpolate((Color) to, frac);
+    }
     
     /** {@inheritDoc} */
     @Override
@@ -314,9 +346,15 @@ public class FillSpan implements Interpolatable<Color> {
     @Override
     public boolean equals(Object obj) {
         if (obj == this) { return true; }
-        if (obj == null || !(obj instanceof FillSpan)) { return false; }
+        // instance of returns false when passed null
+        if (!(obj instanceof FillSpan)) { return false; }
         
-        return equals((FillSpan) obj);
+        FillSpan that = (FillSpan) obj;
+        // we precompute hash, so this check can be fast
+        if (hash != that.hash) { return false; }
+        if (fromEqualsTo != that.fromEqualsTo) { return false; }
+        
+        return equals(that);
     }
     
     /**
@@ -324,15 +362,11 @@ public class FillSpan implements Interpolatable<Color> {
      * this one.
      * @param that - the non-{@code null} fill span to check for equality
      * @return {@code true} if the specified fill span is equal to this fill
-     *         span
+     *         span, otherwise {@code false}
      * @throws NullPointerException if the specified {@code FillSpan} instance
      *         is {@code null}
      */
     boolean equals(FillSpan that) {
-        // we precompute hash, so this check can be fast
-        if (this.hash != that.hash) { return false; }
-        if (this.fromEqualsTo != that.fromEqualsTo) { return false; }
-        
         return from.equals(that.from) && to.equals(that.to);
     }
     
@@ -340,14 +374,22 @@ public class FillSpan implements Interpolatable<Color> {
      * Gets the string representation of this {@code FillSpan} instance.
      * <p>
      * The string representation of a {@code FillSpan} instance follows:
-     * <pre>"FillSpan [ from: &lt;Color.toString()&gt;, to: &lt;Color.toString()&gt; ]"</pre>
+     * <pre>"FillSpan [ from: &lt;Paint.toString()&gt;, to: &lt;Paint.toString()&gt; ]"</pre>
      * <p>
      * 
      * @return the string representation of this {@code FillSpan} instance
      */
     @Override
-    public String toString() { return String.format("FillSpan [ from: %s, to: %s ]", from.toString(), to.toString()); }
+    public String toString() { return String.format("FillSpan [ from: %s, to: %s ]", from, to); }
     
+    /**
+     * Gets whether or not this {@code FillSpan} instance is a
+     * {@link SpecialFillSpan}.
+     * 
+     * @return {@code true} if this fill span is special, otherwise
+     *         {@code false}
+     */
+    boolean isSpecial() { return false; }
     
     /**************************************************************************
      *                                                                        *
@@ -356,7 +398,8 @@ public class FillSpan implements Interpolatable<Color> {
      *************************************************************************/
     
     /**
-     * Gets a {@link FillSpan} with the specified fill-from and fill-to colors.
+     * Gets a {@link FillSpan} with the specified fill-from and fill-to
+     * {@link Paint} instances.
      * <p>
      * If {@code from} and {@code to} are {@code null} then a fill span with a
      * fill-from and fill-to of {@link Color#TRANSPARENT} will be returned. If
@@ -364,12 +407,14 @@ public class FillSpan implements Interpolatable<Color> {
      * {@code to}. If only {@code to} is {@code null} then {@code to} will be
      * set to {@code from}.
      * 
-     * @param from - the fill-from color
-     * @param to - the fill-to color
+     * @param from - the fill-from paint
+     * @param to - the fill-to paint
      * @return a {@code FillSpan} with the specified fill-from and fill-to
-     *         colors
      */
-    public static final FillSpan of(final Color from, final Color to) {
+    public static final FillSpan of(final Paint from, final Paint to) {
+        // have to check for SKIP before anything else
+        if (from == SKIP || to == SKIP) { return of(SKIP); }
+        
         final boolean fromIsNull = (from == null);
         final boolean toIsNull = (to == null);
         
@@ -389,8 +434,8 @@ public class FillSpan implements Interpolatable<Color> {
             return of(from);
         }
         
-        final boolean fromIsSpec = colorIsSpecialIdentifier(from);
-        final boolean toIsSpec = colorIsSpecialIdentifier(to);
+        final boolean fromIsSpec = paintIsSpecialIdentifier(from);
+        final boolean toIsSpec = paintIsSpecialIdentifier(to);
         
         // get a special fill span from the cache if from or to are special
         return (fromIsSpec || toIsSpec) ? SpecialFillSpan.of(from, to, fromIsSpec, toIsSpec) : getFromCache(from, to);
@@ -403,8 +448,8 @@ public class FillSpan implements Interpolatable<Color> {
      * @param same - the color to set 'from' and 'to' to
      * @return a fill span
      */
-    private static final FillSpan of(final Color same) {
-        return colorIsSpecialIdentifier(same) ? SpecialFillSpan.of(same) : getFromCache(same);
+    private static final FillSpan of(final Paint same) {
+        return paintIsSpecialIdentifier(same) ? SpecialFillSpan.of(same) : getFromCache(same);
     }
     
     /**
@@ -412,10 +457,10 @@ public class FillSpan implements Interpolatable<Color> {
      * and the specified from and to indexes.
      * <p>
      * This method is specifically meant to be used when either {@code from} or
-     * {@code to} is a list based special identifier, such as {@link #USE_BG},
-     * {@link #USE_BORDER}. If neither {@code from} nor {@code to} is a list
+     * {@code to} is a list based special identifier, such as {@link #USE_BG}
+     * or {@link #USE_BORDER}. If neither {@code from} nor {@code to} is a list
      * based special identifier then this method just returns
-     * {@link #of(Color, Color) of(from, to)}. If {@code from} is {@code null}
+     * {@link #of(Paint, Paint) of(from, to)}. If {@code from} is {@code null}
      * then {@code from} will be set to {@code to}. If {@code to} is
      * {@code null} then {@code to} will be set to {@code from}.
      * <p>
@@ -426,18 +471,21 @@ public class FillSpan implements Interpolatable<Color> {
      * a list as the index of the background fill or border stroke to replace
      * it with. Which is the default behavior.
      * 
-     * @param from - the fill-from color
-     * @param to - the fill-to color
+     * @param from - the fill-from paint
+     * @param to - the fill-to paint
      * @param fIndex - the index of the background fill or border stroke to
-     *        replace fill-from with, must be less than or equal to {@code 255}
+     *        replace fill-from with, must be less than or equal to {@code 254}
      *        and greater than or equal to {@code -1}
      * @param tIndex - the index of the background fill or border stroke to
-     *        replace fill-to with, must be less than or equal to {@code 255}
+     *        replace fill-to with, must be less than or equal to {@code 254}
      *        and greater than or equal to {@code -1}
      * @return a {@code FillSpan} with the specified fill-from and fill-to
-     *         colors
+     *         paints
      */
-    public static final FillSpan of(Color from, Color to, int fIndex, int tIndex) {
+    public static final FillSpan of(Paint from, Paint to, int fIndex, int tIndex) {
+        // have to check for SKIP before anything else
+        if (from == SKIP || to == SKIP) { return of(SKIP); }
+        
         // return of(...) if neither from nor to is list based spec. id.
         if ((from != USE_BG || from != USE_BORDER) && (to != USE_BG || to != USE_BORDER)) { return of(from, to); }
         
@@ -461,15 +509,15 @@ public class FillSpan implements Interpolatable<Color> {
             return of(from, fIndex);
         }
         
-        final boolean fromIsSpec = colorIsSpecialIdentifier(from);
-        final boolean toIsSpec = colorIsSpecialIdentifier(to);
+        final boolean fromIsSpec = paintIsSpecialIdentifier(from);
+        final boolean toIsSpec = paintIsSpecialIdentifier(to);
         
         // get a special list based fill span from the cache
         return SpecialFillSpan.of(from, to, fromIsSpec, toIsSpec, fIndex, tIndex);
     }
     
     /** Helper for special list based 'of' for 'same' fill-from and fill-to. */
-    private static final FillSpan of(Color same, int index) {
+    private static final FillSpan of(Paint same, int index) {
         return SpecialFillSpan.of(same, index);
     }
     
@@ -480,38 +528,38 @@ public class FillSpan implements Interpolatable<Color> {
      * This method is specifically meant to be used when either {@code from} or
      * {@code to} is {@link #USE_BORDER}. If neither {@code from} nor
      * {@code to} is {@link #USE_BORDER} then this method just returns
-     * {@link #of(Color, Color, int, int) of(from, to, fIndex, tIndex)}. If
+     * {@link #of(Paint, Paint, int, int) of(from, to, fIndex, tIndex)}. If
      * {@code from} is {@code null} then {@code from} will be set to
      * {@code to}. If {@code to} is {@code null} then {@code to} will be set to
      * {@code from}.
      * <p>
      * This method is similar to
-     * {@link #of(Color, Color, int, int, BorderStrokePosition, BorderStrokePosition)}
+     * {@link #of(Paint, Paint, int, int, BorderStrokePosition, BorderStrokePosition)}
      * , but the innermost border stroke will be used rather than any specified
      * border stroke indexes.
      * 
-     * @param from - the fill-from color
-     * @param to - the fill-to color
-     * @param fBsPos - the border stroke position to replace the color of
+     * @param from - the fill-from paint
+     * @param to - the fill-to paint
+     * @param fBsPos - the border stroke position to replace the paint of
      *        fill-from with
-     * @param tBsPos - the border stroke position to replace the color of
+     * @param tBsPos - the border stroke position to replace the paint of
      *        fill-to with
      * @return a {@code FillSpan} with the specified fill-from and fill-to
-     *         colors
+     *         paints
      */
-    public static final FillSpan of(Color from, Color to, BorderStrokePosition fBsPos, BorderStrokePosition tBsPos) {
+    public static final FillSpan of(Paint from, Paint to, BorderStrokePosition fBsPos, BorderStrokePosition tBsPos) {
         return of(from, to, -1, -1, fBsPos, tBsPos);
     }
     
     /**
-     * Gets a {@link FillSpan} with the specified fill-from and fill-to colors,
+     * Gets a {@link FillSpan} with the specified fill-from and fill-to paints,
      * the specified from and to indexes, and the specified from and to border
      * stroke positions.
      * <p>
      * This method is specifically meant to be used when either {@code from} or
      * {@code to} is {@link #USE_BORDER}. If neither {@code from} nor
      * {@code to} is {@link #USE_BORDER} then this method just returns
-     * {@link #of(Color, Color, int, int) of(from, to, fIndex, tIndex)}. If
+     * {@link #of(Paint, Paint, int, int) of(from, to, fIndex, tIndex)}. If
      * {@code from} is {@code null} then {@code from} will be set to
      * {@code to}. If {@code to} is {@code null} then {@code to} will be set to
      * {@code from}.
@@ -523,23 +571,27 @@ public class FillSpan implements Interpolatable<Color> {
      * a list as the index of the background fill or border stroke to replace
      * it with. Which is the default behavior.
      * 
-     * @param from - the fill-from color
-     * @param to - the fill-to color
+     * @param from - the fill-from paint
+     * @param to - the fill-to paint
      * @param fIndex - the index of the background fill or border stroke to
-     *        replace fill-from with, must be less than or equal to {@code 255}
+     *        replace fill-from with, must be less than or equal to {@code 254}
      *        and greater than or equal to {@code -1}
      * @param tIndex - the index of the background fill or border stroke to
-     *        replace fill-to with, must be less than or equal to {@code 255}
+     *        replace fill-to with, must be less than or equal to {@code 254}
      *        and greater than or equal to {@code -1}
-     * @param fBsPos - the border stroke position to replace the color of
+     * @param fBsPos - the border stroke position to replace the paint of
      *        fill-from with
-     * @param tBsPos - the border stroke position to replace the color of
+     * @param tBsPos - the border stroke position to replace the paint of
      *        fill-to with
      * @return a {@code FillSpan} with the specified fill-from and fill-to
-     *         colors
+     *         paints
      */
-    public static final FillSpan of(Color from, Color to, int fIndex, int tIndex, BorderStrokePosition fBsPos,
-        BorderStrokePosition tBsPos) {
+    public static final FillSpan
+    of(Paint from, Paint to, int fIndex, int tIndex, BorderStrokePosition fBsPos, BorderStrokePosition tBsPos)
+    {
+        // have to check for SKIP before anything else
+        if (from == SKIP || to == SKIP) { return of(SKIP); }
+        
         // return of(...) if neither from nor to is border stroke special id.
         if (from != USE_BORDER && to != USE_BORDER) { return of(from, to, fIndex, tIndex); }
         
@@ -563,50 +615,47 @@ public class FillSpan implements Interpolatable<Color> {
             return of(from, fIndex, fBsPos);
         }
         
-        final boolean fromIsSpec = colorIsSpecialIdentifier(from);
-        final boolean toIsSpec = colorIsSpecialIdentifier(to);
-        
-        int fPos = (fBsPos == null) ? 0 : fBsPos.ordinal();
-        int tPos = (tBsPos == null) ? 0 : tBsPos.ordinal();
+        final boolean fromIsSpec = paintIsSpecialIdentifier(from);
+        final boolean toIsSpec = paintIsSpecialIdentifier(to);
         
         // get a special border stroke fill span from the cache
-        return SpecialFillSpan.of(from, to, fromIsSpec, toIsSpec, fIndex, tIndex, fPos, tPos);
+        return SpecialFillSpan.of(from, to, fromIsSpec, toIsSpec, fIndex, tIndex, fBsPos, tBsPos);
     }
     
     /** Helper for special border stroke 'of' for 'same' fill-from and fill-to. */
-    private static final FillSpan of(Color same, int index, BorderStrokePosition bsPos) {
-        return SpecialFillSpan.of(same, index, bsPos == null ? 0 : bsPos.ordinal());
+    private static final FillSpan of(Paint same, int index, BorderStrokePosition bsPos) {
+        return SpecialFillSpan.of(same, index, bsPos);
     }
     
     /**
      * Gets a list of {@link FillSpan} instances containing the specified
-     * fill-from and fill-to colors.
+     * fill-from and fill-to paints.
      * <p>
      * This method is a convenience method that simply converts the specified
      * arrays to lists and calls {@link #of(List, List)}.
      * 
-     * @param from - the fill-from colors
-     * @param to - the fill-to colors
+     * @param from - the fill-from paints
+     * @param to - the fill-to paints
      * @return a list of {@code FillSpan} instances containing the specified
-     *         fill-from and fill-to colors
+     *         fill-from and fill-to paints
      */
-    public static final List<FillSpan> of(Color[] from, Color[] to) {
-        final List<Color> fromList = (from == null) ? (List<Color>) null : Arrays.asList(from);
-        final List<Color> toList = (to == null) ? (List<Color>) null : Arrays.asList(to);
+    public static final List<FillSpan> of(Paint[] from, Paint[] to) {
+        final List<Paint> fromList = (from == null) ? (List<Paint>) null : Arrays.asList(from);
+        final List<Paint> toList = (to == null) ? (List<Paint>) null : Arrays.asList(to);
         
         return of(fromList, toList);
     }
     
     /**
      * Gets a list of {@link FillSpan} instances containing the specified
-     * fill-from and fill-to colors.
+     * fill-from and fill-to paints.
      * 
-     * @param from - the fill-from colors
-     * @param to - the fill-to colors
+     * @param from - the fill-from paints
+     * @param to - the fill-to paints
      * @return a list of {@code FillSpan} instances containing the specified
-     *         fill-from and fill-to colors
+     *         fill-from and fill-to paints
      */
-    public static final List<FillSpan> of(List<Color> from, List<Color> to) {
+    public static final List<FillSpan> of(List<Paint> from, List<Paint> to) {
         final boolean fromNullEmpty = (from == null || from.isEmpty());
         final boolean toNullEmpty = (to == null || to.isEmpty());
         
@@ -631,8 +680,8 @@ public class FillSpan implements Interpolatable<Color> {
      *                                                                        *
      *************************************************************************/
     
-    /** Helper that creates a List<FillSpan> from two Color lists. */
-    private static final List<FillSpan> createList(List<Color> from, List<Color> to) {
+    /** Helper that creates a List<FillSpan> from two Paint lists. */
+    private static final List<FillSpan> createList(List<Paint> from, List<Paint> to) {
         int diff = from.size() - to.size();
         
         if (diff != 0) {
@@ -640,7 +689,7 @@ public class FillSpan implements Interpolatable<Color> {
             return createListFromStaggered(from, to);
         }
         
-        // both color arrays are same size, so just create FillSpans from both
+        // both paint arrays are same size, so just create FillSpans from both
         List<FillSpan> ret = new ArrayList<>(from.size());
         for (int i = 0, n = from.size(); i < n; i++) {
             ret.add(of(from.get(i), to.get(i)));
@@ -649,10 +698,10 @@ public class FillSpan implements Interpolatable<Color> {
         return ret;
     }
     
-    /** Helper that creates a List<FillSpan> from different sized Color lists. */
-    private static final List<FillSpan> createListFromStaggered(List<Color> from, List<Color> to) {
-        List<Color> larger = (from.size() > to.size()) ? from : to;
-        List<Color> smaller = (from.size() < to.size()) ? from : to;
+    /** Helper that creates a List<FillSpan> from different sized Paint lists. */
+    private static final List<FillSpan> createListFromStaggered(List<Paint> from, List<Paint> to) {
+        List<Paint> larger = (from.size() > to.size()) ? from : to;
+        List<Paint> smaller = (from.size() < to.size()) ? from : to;
         
         FillSpan[] ret = new FillSpan[larger.size()];
         // create spans using from and to until smaller array length is reached
@@ -661,9 +710,9 @@ public class FillSpan implements Interpolatable<Color> {
         }
         
         boolean fromIsLarger = (larger == from);
-        // create spans using the larger array's colors for 'from' and 'to'
+        // create spans using the larger array's paints for 'from' and 'to'
         for (int i = smaller.size(), n = larger.size(); i < n; i++) {
-            Color which = (fromIsLarger) ? from.get(i) : to.get(i);
+            Paint which = (fromIsLarger) ? from.get(i) : to.get(i);
             
             // we didn't check for null so use of(from, to) instead of of(same)
             ret[i] = of(which, which);
@@ -680,39 +729,41 @@ public class FillSpan implements Interpolatable<Color> {
      *************************************************************************/
     
     /**
-     * Gets a {@code FillSpan} with the specified colors from this cache if
+     * Gets a {@code FillSpan} with the specified paints from the cache if
      * the cache contains it, otherwise a new {@code FillSpan} is created
-     * with the specified colors, then added to the cache and returned.
+     * with the specified paints, then added to the cache and returned.
      * 
-     * @param from - the fill-from color
-     * @param to - the fill-to color
-     * @return a new {@code FillSpan} created from the specified colors, or
+     * @param from - the fill-from paint
+     * @param to - the fill-to paint
+     * @return a new {@code FillSpan} created from the specified paints, or
      *         a previously cached {@code FillSpan} with the specified
-     *         colors
+     *         paints
      */
-    static final FillSpan getFromCache(Color from, Color to) { return FillSpanCache.get(new FillSpan(from, to)); }
+    static final FillSpan getFromCache(Paint from, Paint to) {
+        return FillSpanCache.get(new FillSpan(from, to));
+    }
     
     /**
-     * Gets a {@code FillSpan} that has the same fill-from and fill-to color
-     * from this cache if the cache contains it, otherwise a new
-     * {@code FillSpan} is created with the specified color, added to the
+     * Gets a {@code FillSpan} that has the same fill-from and fill-to paint
+     * from the cache if the cache contains it, otherwise a new
+     * {@code FillSpan} is created with the specified paint, added to the
      * cache and returned.
      * 
-     * @param same - the fill-from and fill-to color
-     * @return a new {@code FillSpan} created from the specified color, or
+     * @param same - the fill-from and fill-to paints
+     * @return a new {@code FillSpan} created from the specified paint, or
      *         a previously cached {@code FillSpan} with the specified
-     *         color
+     *         paint
      */
-    static final FillSpan getFromCache(Color same) { return FillSpanCache.get(new FillSpan(same)); }
-    
+    static final FillSpan getFromCache(Paint same) { return FillSpanCache.get(new FillSpan(same)); }
     
     /**
-     * Used by {@link SpecialFillSpan#of(Color, Color)} and
-     * {@link SpecialFillSpan#of(Color)} to get a {@link SpecialFillSpan} from the cache.
+     * Used by implementations of {@code FillSpan} to get a cached
+     * {@code FillSpan}.
      * 
-     * @param spec - the special fill span to get
-     * @return a special fill span from the cache
+     * @param span - the fill span to get
+     * @return a cached {@code FillSpan} instance
      */
-    static final FillSpan getFromCache(SpecialFillSpan spec) { return FillSpanCache.get(spec); }
+    @SuppressWarnings("unchecked")
+    static final <T extends FillSpan> T getFromCache(T span) { return (T) FillSpanCache.get(span); }
     
 }

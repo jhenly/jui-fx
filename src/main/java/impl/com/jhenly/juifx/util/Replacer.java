@@ -1,4 +1,4 @@
-package com.jhenly.juifx.util;
+package impl.com.jhenly.juifx.util;
 
 /**
  * Interface representing a replacer.
@@ -22,4 +22,8 @@ public interface Replacer<T> {
      * @return an object with some aspect(s) replaced
      */
     T replace(T toReplace);
+    
+    
+    default <E> Replacer<T> using(E obj) { return this; }
+    
 }

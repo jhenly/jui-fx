@@ -1,5 +1,4 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
+/** Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
  * licenses this file to you under the Apache License, Version 2.0 (the
@@ -12,25 +11,30 @@
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations under
- * the License.
- */
-package com.jhenly.juifx.fill;
-
-import java.util.List;
+ * the License. */
+package impl.com.jhenly.juifx.fill;
 
 import com.jhenly.juifx.control.Fillable;
-import com.jhenly.juifx.util.Utils;
 
-import javafx.scene.paint.Color;
+import impl.com.jhenly.juifx.util.Utils;
 
-public abstract class FillHelper {
+
+public class FillHelper {
+    private static final FillHelper theInstance;
     private static FillAccessor fillAccessor;
     
     static {
+        theInstance = new FillHelper();
         Utils.forceInit(Fill.class);
     }
     
     protected FillHelper() {}
+    
+    private static FillHelper getInstance() { return theInstance; }
+    
+    public static void initHelper(Fill fill) {
+        setHelper(fill, getInstance());
+    }
     
     protected static FillHelper getHelper(Fill fill) {
         
@@ -53,33 +57,11 @@ public abstract class FillHelper {
         fillAccessor.setHelper(fill, fillHelper);
     }
     
-    public static Color[] getCssInitial() { return fillAccessor.getCssInitial(); }
+    public static boolean fillHasSpecial(Fill fill) { return fillAccessor.fillHasSpecial(fill); }
     
-    
-    public static boolean bgFillSpansContainSpecial(Fill fill) { return fillAccessor.bgFillSpansContainSpecial(fill); }
-    
-    public static boolean textFillSpanIsSpecial(Fill fill) { return fillAccessor.textFillSpanIsSpecial(fill); }
-    
-    public static boolean shapeFillSpanIsSpecial(Fill fill) { return fillAccessor.shapeFillSpanIsSpecial(fill); }
-    
-    public static boolean strokeFillSpanIsSpecial(Fill fill) { return fillAccessor.strokeFillSpanIsSpecial(fill); }
-    
-    public static FillSpan getTextFillSpanFromSpecial(Fill fill, Fillable fillable) {
-        return fillAccessor.getTextFillSpanFromSpecial(fill, fillable);
+    public static Fill replaceSpecialsInFill(Fill fill, Fillable fable) {
+        return fillAccessor.replaceSpecialsInFill(fill, fable);
     }
-    
-    public static FillSpan getShapeFillSpanFromSpecial(Fill fill, Fillable fillable) {
-        return fillAccessor.getShapeFillSpanFromSpecial(fill, fillable);
-    }
-    
-    public static FillSpan getStrokeFillSpanFromSpecial(Fill fill, Fillable fillable) {
-        return fillAccessor.getStrokeFillSpanFromSpecial(fill, fillable);
-    }
-    
-    public static List<FillSpan> getBgFillSpansFromSpecial(Fill fill, Fillable fillable) {
-        return fillAccessor.getBgFillSpansFromSpecial(fill, fillable);
-    }
-    
     
     /**************************************************************************
      *                                                                        *
@@ -103,19 +85,9 @@ public abstract class FillHelper {
         FillHelper getHelper(Fill fill);
         void setHelper(Fill fill, FillHelper fillHelper);
         
-        Color[] getCssInitial();
+        boolean fillHasSpecial(Fill fill);
+        Fill replaceSpecialsInFill(Fill fill, Fillable fable);
         
-        boolean hasSpecial(Fill fill);
-        
-        boolean textFillSpanIsSpecial(Fill fill);
-        boolean shapeFillSpanIsSpecial(Fill fill);
-        boolean strokeFillSpanIsSpecial(Fill fill);
-        boolean bgFillSpansContainSpecial(Fill fill);
-        
-        FillSpan getTextFillSpanFromSpecial(Fill fill, Fillable fillable);
-        FillSpan getShapeFillSpanFromSpecial(Fill fill, Fillable fillable);
-        FillSpan getStrokeFillSpanFromSpecial(Fill fill, Fillable fillable);
-        List<FillSpan> getBgFillSpansFromSpecial(Fill fill, Fillable fillable);
     }
     
 }

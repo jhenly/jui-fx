@@ -20,14 +20,15 @@
     -fx-alignment: CENTER;
     -fx-content-display: LEFT;
     
-    -jui-fill-from: "dfdfdf, a0a0a0, f4f4f6";/* #ececec, #ffffff, #010101; dfdfdf, d0d0d0, */
-    -jui-fill-to: "cfcfcf, 9f9f9f, afafaf";
+    a-fill-bg-from: "dfdfdf, a0a0a0, f4f4f6";/* #ececec, #ffffff, #010101; dfdfdf, d0d0d0, */
+    -fill-bg-to: "cfcfcf, 9f9f9f, afafaf";
+    -fill-text-to: "fff";
 }
 
-.fill-button:selected,
-.fill-button:focused:selected {
+.fill-button:selected {
     -fx-color: -fx-pressed-base;
-    -fx-background-color: -fx-outer-border, #acacac, #cccccc;
+    -fx-text-fill: -fx-text-base-color;
+    -fx-background-color: -fx-outer-border, #0bc, #cb0;
     -fx-background-insets: 0, 2, 4;
     -fx-background-radius: 3px, 3px, 3px;
 }
