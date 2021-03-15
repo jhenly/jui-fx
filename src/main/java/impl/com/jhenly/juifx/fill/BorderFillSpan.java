@@ -18,6 +18,7 @@ import static impl.com.jhenly.juifx.fill.FillSpanHelper.fillSpansAreEqual;
 
 import javafx.animation.Interpolatable;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 
 
 /**
@@ -41,7 +42,7 @@ import javafx.scene.paint.Color;
  * @see Fill
  * @see FillSpan
  */
-public class BorderFillSpan implements Interpolatable<Color[]> {
+public class BorderFillSpan implements Interpolatable<Paint[]> {
     
     /** Lazy, thread safe instantiation. */
     private static final class Holder {
@@ -78,7 +79,7 @@ public class BorderFillSpan implements Interpolatable<Color[]> {
     private BorderFillSpan(FillSpan t) {
         top = t;
         
-        special |= t.isSpecial();
+        special = t.isSpecial();
         
         hash = preComputeHash();
     }
@@ -174,10 +175,10 @@ public class BorderFillSpan implements Interpolatable<Color[]> {
      * @see FillSpan#interpolate(double)
      */
     @Override
-    public Color[] interpolate(Color[] fodder, double frac) { return interpolate(frac); }
+    public Paint[] interpolate(Paint[] fodder, double frac) { return interpolate(frac); }
     
     /**
-     * Gets an array of {@code Color} instances interpolated from the
+     * Gets an array of {@code Paint} instances interpolated from the
      * {@code FillSpan} instances that make up this {@code BorderFillSpan}
      * instance.
      * <p>
@@ -191,11 +192,11 @@ public class BorderFillSpan implements Interpolatable<Color[]> {
      * </p>
      * 
      * @param frac - fraction between {@code 0.0} and {@code 1.0}
-     * @return an array of interpolated {@code Color} instances
+     * @return an array of interpolated {@code Paint} instances
      * @see FillSpan#interpolate(double)
      */
-    public Color[] interpolate(double frac) {
-        return new Color[] { getTop().interpolate(frac), //
+    public Paint[] interpolate(double frac) {
+        return new Paint[] { getTop().interpolate(frac), //
                              getRight().interpolate(frac), //
                              getBottom().interpolate(frac), //
                              getLeft().interpolate(frac) };
@@ -218,7 +219,7 @@ public class BorderFillSpan implements Interpolatable<Color[]> {
      * method to check for equality.
      */
     protected boolean equals(BorderFillSpan that) {
-        if (that.getClass() != BorderFillSpan.class) { return false; }
+        if (!(that instanceof BorderFillSpan)) { return false; }
         
         return FillSpanHelper.fillSpansAreEqual(top, that.top);
     }
@@ -371,7 +372,7 @@ public class BorderFillSpan implements Interpolatable<Color[]> {
         
         @Override
         protected boolean equals(BorderFillSpan that) {
-            if (that.getClass() != BiBorderFillSpan.class) { return false; }
+            if (!(that instanceof BiBorderFillSpan)) { return false; }
             
             return FillSpanHelper.fillSpansAreEqual(right, ((BiBorderFillSpan) that).right) && super.equals(that);
         }
@@ -419,7 +420,7 @@ public class BorderFillSpan implements Interpolatable<Color[]> {
         
         @Override
         protected boolean equals(BorderFillSpan that) {
-            if (that.getClass() != QuadBorderFillSpan.class) { return false; }
+            if (!(that instanceof QuadBorderFillSpan)) { return false; }
             
             return FillSpanHelper.fillSpansAreEqual(bottom, ((QuadBorderFillSpan) that).bottom)
                    && FillSpanHelper.fillSpansAreEqual(left, ((QuadBorderFillSpan) that).left) && super.equals(that);
