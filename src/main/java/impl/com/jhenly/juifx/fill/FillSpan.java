@@ -63,11 +63,15 @@ public class FillSpan implements Interpolatable<Paint> {
         static final FillSpan NULL_ARGS_INSTANCE = new FillSpan();
         static final List<FillSpan> NULL_LIST_ARGS_INSTANCE = List.of();
         
-        private Holder() { throw new IllegalAccessError("a Holder class should not be instantiated"); }
+        private Holder() { throw new IllegalAccessError("the FillSpan.Holder class should not be instantiated"); }
     }
     /**
      * Gets the {@code FillSpan} associated with {@code null} fill-from and
      * fill-to arguments.
+     * <p>
+     * The returned {@code FillSpan} has a fill-from and fill-to of
+     * {@link Color#TRANSPARENT}.
+     * 
      * @return the {@code FillSpan} associated with {@code null} fill-from
      *         and fill-to arguments
      */
@@ -346,13 +350,13 @@ public class FillSpan implements Interpolatable<Paint> {
     @Override
     public boolean equals(Object obj) {
         if (obj == this) { return true; }
-        // instance of returns false when passed null
+        // null check not needed, instanceof returns false when obj is null
         if (!(obj instanceof FillSpan)) { return false; }
         
         FillSpan that = (FillSpan) obj;
         // we precompute hash, so this check can be fast
         if (hash != that.hash) { return false; }
-        if (fromEqualsTo != that.fromEqualsTo) { return false; }
+        if (fromEqualsTo != that.fromEqualsTo || isSpecial() != that.isSpecial()) { return false; }
         
         return equals(that);
     }
