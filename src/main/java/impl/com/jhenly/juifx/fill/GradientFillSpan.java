@@ -116,7 +116,7 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
      * @return a {@code FillSpan} instance with the specified fill-from and
      *         fill-to {@code Paint} instances
      */
-    static final FillSpan ofGradient(Paint from, Paint to, boolean fromIsGradient, boolean toIsGradient) {
+    static final FillSpan of(Paint from, Paint to, boolean fromIsGradient, boolean toIsGradient) {
         
         /* Caution - smelly 'if-getClass()' code follows. */
         
@@ -134,7 +134,7 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
                     RadialGradient convertedFrom =
                     newRadialGradient((RadialGradient) to, ((LinearGradient) from).getStops());
                     
-                    return FillSpan.getFromCache(new RadialToRadialFillSpan(convertedFrom, (RadialGradient) to));
+                    return FillSpan.getFromCache(RadialToRadialFillSpan.ofRadial(convertedFrom, (RadialGradient) to));
                 }
                 
             } else {
@@ -145,13 +145,13 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
                     LinearGradient convertedFrom =
                     newLinearGradient((LinearGradient) to, ((RadialGradient) from).getStops());
                     
-                    return FillSpan.getFromCache(new LinearToLinearFillSpan(convertedFrom, (LinearGradient) to));
+                    return FillSpan.getFromCache(LinearToLinearFillSpan.ofLinear(convertedFrom, (LinearGradient) to));
                     
                 } else {
                     
                     // 'to' is a RadialGradient
                     return FillSpan
-                        .getFromCache(new RadialToRadialFillSpan((RadialGradient) from, (RadialGradient) to));
+                        .getFromCache(RadialToRadialFillSpan.ofRadial((RadialGradient) from, (RadialGradient) to));
                 }
                 
             }
@@ -191,7 +191,7 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
      * @param same - the fill-from and fill-to paint
      * @param spec - the from-to color-gradient specifier
      */
-    static final FillSpan ofGradient(Paint same) {
+    static final FillSpan of(Paint same) {
         // don't need to worry about same.getClass() == Color.class,
         // FillSpan.of(...) takes care of that
         

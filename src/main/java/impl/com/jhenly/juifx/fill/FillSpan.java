@@ -117,6 +117,7 @@ public class FillSpan implements Interpolatable<Paint> {
     /**
      * Checks whether a specified {@code Paint} instance is a special
      * identifier.
+     * 
      * @param p - the {@code Paint} to check
      * @return {@code true} if the specified {@code Paint} is a special
      *         identifier, otherwise {@code false}
@@ -405,10 +406,10 @@ public class FillSpan implements Interpolatable<Paint> {
         if (fromIsNull && toIsNull) {
             // if both are null then use NULL_ARGS color
             return getNullArgsInstance();
-        } else if (!fromIsNull && toIsNull) {
+        } else if (toIsNull) {
             // if 'to' is null then use a fill span of fill-from to fill-from
             return of(from);
-        } else if (fromIsNull && !toIsNull) {
+        } else if (fromIsNull) {
             // if 'from' is null then use a fill span of fill-to to fill-to
             return of(to);
         }
@@ -421,8 +422,17 @@ public class FillSpan implements Interpolatable<Paint> {
         final boolean fromIsSpec = paintIsSpecialIdentifier(from);
         final boolean toIsSpec = paintIsSpecialIdentifier(to);
         
-        // get a special fill span from the cache if from or to are special
-        return (fromIsSpec || toIsSpec) ? SpecialFillSpan.of(from, to, fromIsSpec, toIsSpec) : getFromCache(from, to);
+        // get a special fill span from the cache if from or to is special
+        if (fromIsSpec || toIsSpec) { return SpecialFillSpan.of(from, to, fromIsSpec, toIsSpec); }
+        
+        final boolean fromIsGrad = FillSpanHelper.paintIsGradient(from);
+        final boolean toIsGrad = FillSpanHelper.paintIsGradient(to);
+        
+        // get a gradient fill span from the cache if from or to is a gradient
+        if (fromIsGrad || toIsGrad) { return GradientFillSpan.of(from, to, fromIsGrad, toIsGrad); }
+        
+        // from and to are just Colors so get a regular fill span from cache
+        return getFromCache(from, to);
     }
     
     /**
@@ -433,7 +443,14 @@ public class FillSpan implements Interpolatable<Paint> {
      * @return a fill span
      */
     private static final FillSpan of(final Paint same) {
-        return paintIsSpecialIdentifier(same) ? SpecialFillSpan.of(same) : getFromCache(same);
+        // get a special fill span from the cache if same is special
+        if (paintIsSpecialIdentifier(same)) { return SpecialFillSpan.of(same); }
+        
+        // get a gradient fill span from the cache if same is a gradient
+        if (FillSpanHelper.paintIsGradient(same)) { return GradientFillSpan.of(same); }
+        
+        // same is just a Color so get a regular fill span from cache
+        return getFromCache(same);
     }
     
     /**
@@ -477,10 +494,10 @@ public class FillSpan implements Interpolatable<Paint> {
         final boolean fromIsNull = (from == null);
         final boolean toIsNull = (to == null);
         
-        if (!fromIsNull && toIsNull) {
+        if (toIsNull) {
             // if 'to' is null then use a fill span of fill-from to fill-from
             return of(from, fIndex);
-        } else if (fromIsNull && !toIsNull) {
+        } else if (fromIsNull) {
             // if 'from' is null then use a fill span of fill-to to fill-to
             return of(to, tIndex);
         }
@@ -580,10 +597,10 @@ public class FillSpan implements Interpolatable<Paint> {
         final boolean fromIsNull = (from == null);
         final boolean toIsNull = (to == null);
         
-        if (!fromIsNull && toIsNull) {
+        if (toIsNull) {
             // if 'to' is null then use a fill span of fill-from to fill-from
             return of(from, fIndex, fBsPos);
-        } else if (fromIsNull && !toIsNull) {
+        } else if (fromIsNull) {
             // if 'from' is null then use a fill span of fill-to to fill-to
             return of(to, tIndex, tBsPos);
         }

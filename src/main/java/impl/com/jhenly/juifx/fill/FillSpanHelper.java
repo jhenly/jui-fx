@@ -35,7 +35,9 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Paint;
+import javafx.scene.paint.RadialGradient;
 import javafx.scene.shape.Shape;
 
 
@@ -690,6 +692,27 @@ public final class FillSpanHelper {
             default:
                 return BorderStrokePosition.TOP;
         }
+    }
+    
+    
+    /**************************************************************************
+     *                                                                        *
+     * Linear And Radial Gradient Checker                                     *
+     *                                                                        *
+     *************************************************************************/
+    
+    /**
+     * Checks whether a specified {@code Paint} instance is either a
+     * {@link LinearGradient} or a {@link RadialGradient}.
+     * 
+     * @param p - the {@code Paint} to check
+     * @return {@code true} if the specified {@code Paint} is a gradient,
+     *         otherwise {@code false}
+     */
+    static boolean paintIsGradient(Paint p) {
+        if (p == null) { return false; }
+        
+        return p.getClass() == LinearGradient.class || p.getClass() == RadialGradient.class;
     }
     
     
