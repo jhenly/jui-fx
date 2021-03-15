@@ -21,11 +21,8 @@ import java.util.List;
 import com.jhenly.juifx.control.Fillable;
 
 import javafx.animation.Interpolatable;
-import javafx.scene.layout.BackgroundFill;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Paint;
-import javafx.scene.paint.RadialGradient;
 
 
 /**
@@ -116,20 +113,6 @@ public class FillSpan implements Interpolatable<Paint> {
      * instance's border stroke paints for either fill-from or fill-to.
      */
     public static final Paint USE_BORDER = new Color(0.06, 0.0, 0.0, 0.0);
-    /**
-     * Special indicator that signals to use a {@link Fillable} instance's
-     * property's existing {@link Paint}.
-     * <p>
-     * This is useful in situations where a {@link Fillable} instance's
-     * list of {@link BackgroundFill} instances may contain a {@code Paint}
-     * that cannot be cast to a {@link Color}, such as a {@link LinearGradient}
-     * or {@link RadialGradient}. Rather than replacing the {@code Paint} with
-     * an interpolated {@code Color}, it is just skipped.
-     * <p>
-     * <b>Note:</b> specifying {@code SKIP} as a fill-from or fill-to
-     * {@code Color} will assign both fill-from and fill-to to {@code SKIP}.
-     */
-    public static final Paint SKIP = new Color(0.07, 0.0, 0.0, 0.0);
     
     /**
      * Checks whether a specified {@code Paint} instance is a special
@@ -140,7 +123,7 @@ public class FillSpan implements Interpolatable<Paint> {
      */
     static boolean paintIsSpecialIdentifier(final Paint p) {
         if (p == null) { return false; }
-        return p == SKIP || p == USE_BG || p == USE_TEXT || p == USE_BORDER || p == USE_SHAPE || p == USE_STROKE;
+        return p == USE_BG || p == USE_TEXT || p == USE_BORDER || p == USE_SHAPE || p == USE_STROKE;
     }
     
     /**
@@ -416,9 +399,6 @@ public class FillSpan implements Interpolatable<Paint> {
      * @return a {@code FillSpan} with the specified fill-from and fill-to
      */
     public static final FillSpan of(final Paint from, final Paint to) {
-        // have to check for SKIP before anything else
-        if (from == SKIP || to == SKIP) { return of(SKIP); }
-        
         final boolean fromIsNull = (from == null);
         final boolean toIsNull = (to == null);
         
@@ -487,9 +467,6 @@ public class FillSpan implements Interpolatable<Paint> {
      *         paints
      */
     public static final FillSpan of(Paint from, Paint to, int fIndex, int tIndex) {
-        // have to check for SKIP before anything else
-        if (from == SKIP || to == SKIP) { return of(SKIP); }
-        
         // return of(...) if neither from nor to is list based spec. id.
         if ((from != USE_BG || from != USE_BORDER) && (to != USE_BG || to != USE_BORDER)) { return of(from, to); }
         
@@ -593,9 +570,6 @@ public class FillSpan implements Interpolatable<Paint> {
     public static final FillSpan
     of(Paint from, Paint to, int fIndex, int tIndex, BorderStrokePosition fBsPos, BorderStrokePosition tBsPos)
     {
-        // have to check for SKIP before anything else
-        if (from == SKIP || to == SKIP) { return of(SKIP); }
-        
         // return of(...) if neither from nor to is border stroke special id.
         if (from != USE_BORDER && to != USE_BORDER) { return of(from, to, fIndex, tIndex); }
         
