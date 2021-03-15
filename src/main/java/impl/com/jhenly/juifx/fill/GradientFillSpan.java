@@ -3,12 +3,10 @@ package impl.com.jhenly.juifx.fill;
 import static javafx.animation.Interpolator.EASE_BOTH;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import javafx.animation.Interpolatable;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Paint;
@@ -29,75 +27,6 @@ import javafx.scene.paint.Stop;
  * @see RadialGradient
  */
 abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSpan {
-    
-    /**************************************************************************
-     *                                                                        *
-     * From-To Specifiers                                                     *
-     *                                                                        *
-     *************************************************************************/
-    
-    /**
-     * Enum that indicates {@code from}'s type and {@code to}'s type.
-     * 
-     * @see #COLOR_TO_LINEAR
-     * @see #COLOR_TO_RADIAL
-     * @see #LINEAR_TO_COLOR
-     * @see #LINEAR_TO_LINEAR
-     * @see #LINEAR_TO_RADIAL
-     * @see #RADIAL_TO_COLOR
-     * @see #RADIAL_TO_LINEAR
-     * @see #RADIAL_TO_RADIAL
-     */
-    enum FromToSpecifier {
-        /**
-         * Indicates that {@code from} is a {@link Color} and {@code to} is a
-         * {@link LinearGradient}.
-         */
-        COLOR_TO_LINEAR,
-        /**
-         * Indicates that {@code from} is a {@link Color} and {@code to} is a
-         * {@link RadialGradient}.
-         */
-        COLOR_TO_RADIAL,
-        /**
-         * Indicates that {@code from} is a {@link LinearGradient} and
-         * {@code to} is a {@link Color}.
-         */
-        LINEAR_TO_COLOR,
-        /**
-         * Indicates that {@code from} is a {@link LinearGradient} and
-         * {@code to} is a {@link LinearGradient}.
-         */
-        LINEAR_TO_LINEAR,
-        /**
-         * Indicates that {@code from} is a {@link LinearGradient} and
-         * {@code to} is a {@link RadialGradient}.
-         */
-        LINEAR_TO_RADIAL,
-        /**
-         * Indicates that {@code from} is a {@link RadialGradient} and
-         * {@code to} is a {@link Color}.
-         */
-        RADIAL_TO_COLOR,
-        /**
-         * Indicates that {@code from} is a {@link RadialGradient} and
-         * {@code to} is a {@link LinearGradient}.
-         */
-        RADIAL_TO_LINEAR,
-        /**
-         * Indicates that {@code from} is a {@link RadialGradient} and
-         * {@code to} is a {@link RadialGradient}.
-         */
-        RADIAL_TO_RADIAL;
-    }
-    
-    
-    /**************************************************************************
-     *                                                                        *
-     * Private Members                                                        *
-     *                                                                        *
-     *************************************************************************/
-    
     
     /**************************************************************************
      *                                                                        *
@@ -192,24 +121,41 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
         /* Caution - smelly 'if-getClass()' code follows. */
         
         if (fromIsGradient && toIsGradient) {
+            
             if (from.getClass() == LinearGradient.class) {
+                
                 if (to.getClass() == LinearGradient.class) {
                     return FillSpan
                         .getFromCache(LinearToLinearFillSpan.ofLinear((LinearGradient) from, (LinearGradient) to));
+                    
                 } else {
-                    // 'to' is a RadialGradient
-                    return FillSpan.getFromCache(new LinearToRadialFillSpan(from, to));
+                    // 'to' is a RadialGradient, use RadialToRadialFillSpan since linear to radial
+                    // is not possible
+                    RadialGradient convertedFrom =
+                    newRadialGradient((RadialGradient) to, ((LinearGradient) from).getStops());
+                    
+                    return FillSpan.getFromCache(new RadialToRadialFillSpan(convertedFrom, (RadialGradient) to));
                 }
+                
             } else {
+                
                 // 'from' is a RadialGradient
                 if (to.getClass() == LinearGradient.class) {
-                    return FillSpan.getFromCache(new RadialToLinearFillSpan(from, to));
+                    // use LinearToLinearFillSpan since radial to linear is not possible
+                    LinearGradient convertedFrom =
+                    newLinearGradient((LinearGradient) to, ((RadialGradient) from).getStops());
+                    
+                    return FillSpan.getFromCache(new LinearToLinearFillSpan(convertedFrom, (LinearGradient) to));
+                    
                 } else {
+                    
                     // 'to' is a RadialGradient
                     return FillSpan
                         .getFromCache(new RadialToRadialFillSpan((RadialGradient) from, (RadialGradient) to));
                 }
+                
             }
+            
         } else if (fromIsGradient) {
             // 'from' is a gradient and 'to' is a color
             if (from.getClass() == LinearGradient.class) {
@@ -218,6 +164,7 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
                 // 'from' is a RadialGradient
                 return FillSpan.getFromCache(new RadialToColorFillSpan(from, to));
             }
+            
         } else {
             // 'from' is a color and 'to' is a gradient
             if (to.getClass() == LinearGradient.class) {
@@ -228,7 +175,8 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
             }
         }
         
-    }
+        
+    } // static FillSpan ofGradient(...)
     
     /**
      * Gets a {@code FillSpan} with fill-from and fill-to set to the
@@ -244,6 +192,9 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
      * @param spec - the from-to color-gradient specifier
      */
     static final FillSpan ofGradient(Paint same) {
+        // don't need to worry about same.getClass() == Color.class,
+        // FillSpan.of(...) takes care of that
+        
         if (same.getClass() == LinearGradient.class) {
             return FillSpan.getFromCache(new LinearToLinearFillSpan(same));
         } else {
@@ -254,9 +205,39 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
     
     /**************************************************************************
      *                                                                        *
+     * New Gradient Helpers                                                   *
+     *                                                                        *
+     *************************************************************************/
+    
+    /**
+     * Convenience method that creates a new LinearGradient from an old 
+     * LinearGradient with new stops.
+     */
+    private static LinearGradient newLinearGradient(LinearGradient old, List<Stop> stops) {
+        return new LinearGradient(old.getStartX(), old.getStartY(), old.getEndX(), old.getEndY(), old.isProportional(),
+            old.getCycleMethod(), stops);
+    }
+    
+    /**
+     * Convenience method that creates a new RadialGradient from an old 
+     * RadialGradient with new stops.
+     */
+    private static RadialGradient newRadialGradient(RadialGradient old, List<Stop> stops) {
+        return new RadialGradient(old.getFocusAngle(), old.getFocusDistance(), old.getCenterX(), old.getCenterY(),
+            old.getRadius(), old.isProportional(), old.getCycleMethod(), stops);
+    }
+    
+    
+    /**************************************************************************
+     *                                                                        *
      * Stop Interpolate Methods                                               *
      *                                                                        *
      *************************************************************************/
+    
+    /** Convenience method that interpolates a double. */
+    private static double interpolateDouble(double start, double end, double frac) {
+        return start == end ? start : EASE_BOTH.interpolate(start, end, frac);
+    }
     
     private static Stop interpolateStop(Color from, Stop to, double frac) {
         return new Stop(to.getOffset(), from.interpolate(to.getColor(), frac));
@@ -286,73 +267,14 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
     
     /**************************************************************************
      *                                                                        *
-     * Linear And Radial Gradient Interpolate Methods                         *
-     *                                                                        *
-     *************************************************************************/
-    
-    private static double interpolateDouble(double start, double end, double frac) {
-        return start == end ? start : EASE_BOTH.interpolate(start, end, frac);
-    }
-    
-    private static LinearGradient newLinearGradient(LinearGradient old, List<Stop> stops) {
-        return new LinearGradient(old.getStartX(), old.getStartY(), old.getEndX(), old.getEndY(), old.isProportional(),
-            old.getCycleMethod(), stops);
-    }
-    
-    private static LinearGradient interpolateLinearGradient(LinearGradient from, LinearGradient to, double frac) {
-        // startX
-        final double fStartX = from.getStartX(), tStartX = to.getStartX();
-        final double startX = (fStartX == tStartX) ? fStartX : interpolateDouble(fStartX, tStartX, frac);
-        // startY
-        final double fStartY = from.getStartY(), tStartY = to.getStartY();
-        final double startY = (fStartY == tStartY) ? fStartY : interpolateDouble(fStartY, tStartY, frac);
-        // endX
-        final double fEndX = from.getEndX(), tEndX = to.getEndX();
-        final double endX = (fEndX == tEndX) ? fEndX : interpolateDouble(fEndX, tEndX, frac);
-        // endY
-        final double fEndY = from.getEndY(), tEndY = to.getEndY();
-        final double endY = (fEndY == tEndY) ? fEndY : interpolateDouble(fEndY, tEndY, frac);
-        // stops
-        final List<Stop> stops = interpolateStops(from.getStops(), to.getStops(), frac);
-        
-        return new LinearGradient(startX, startY, endX, endY, to.isProportional(), to.getCycleMethod(), stops);
-    }
-    
-    private static RadialGradient interpolateRadialGradient(RadialGradient from, RadialGradient to, double frac) {
-        // focus angle
-        final double fAngle = from.getFocusAngle(), tAngle = to.getFocusAngle();
-        final double angle = (fAngle == tAngle) ? fAngle : interpolateDouble(fAngle, tAngle, frac);
-        // focus distance
-        final double fDistance = from.getFocusDistance(), tDistance = to.getFocusDistance();
-        final double distance = (fDistance == tDistance) ? fDistance : interpolateDouble(fDistance, tDistance, frac);
-        // center X
-        final double fCenterX = from.getCenterX(), tCenterX = to.getCenterX();
-        final double centerX = (fCenterX == tCenterX) ? fCenterX : interpolateDouble(fCenterX, tCenterX, frac);
-        // center Y
-        final double fCenterY = from.getCenterY(), tCenterY = to.getCenterY();
-        final double centerY = (fCenterY == tCenterY) ? fCenterY : interpolateDouble(fCenterY, tCenterY, frac);
-        // radius
-        final double fRadius = from.getRadius(), tRadius = to.getRadius();
-        final double radius = (fRadius == tRadius) ? fRadius : interpolateDouble(fRadius, tRadius, frac);
-        // stops
-        final List<Stop> stops = interpolateStops(from.getStops(), to.getStops(), frac);
-        
-        return new RadialGradient(angle, distance, centerX, centerY, radius, to.isProportional(), to.getCycleMethod(),
-            stops);
-    }
-    
-    private static RadialGradient newRadialGradient(RadialGradient old, List<Stop> stops) {
-        return new RadialGradient(old.getFocusAngle(), old.getFocusDistance(), old.getCenterX(), old.getCenterY(),
-            old.getRadius(), old.isProportional(), old.getCycleMethod(), stops);
-    }
-    
-    
-    /**************************************************************************
-     *                                                                        *
      * Color To Linear Gradient                                               *
      *                                                                        *
      *************************************************************************/
     
+    /**
+     * Indicates that {@code from} is a {@link Color} and {@code to} is a
+     * {@link LinearGradient}.
+     */
     private static final class ColorToLinearFillSpan extends GradientFillSpan<Color, LinearGradient> {
         private ColorToLinearFillSpan(Paint from, Paint to) {
             super(from, to);
@@ -373,6 +295,10 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
      *                                                                        *
      *************************************************************************/
     
+    /**
+     * Indicates that {@code from} is a {@link LinearGradient} and
+     * {@code to} is a {@link Color}.
+     */
     private static final class LinearToColorFillSpan extends GradientFillSpan<LinearGradient, Color> {
         private LinearToColorFillSpan(Paint from, Paint to) {
             super(from, to);
@@ -393,6 +319,10 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
      *                                                                        *
      *************************************************************************/
     
+    /**
+     * Indicates that {@code from} is a {@link Color} and {@code to} is a
+     * {@link RadialGradient}.
+     */
     private static final class ColorToRadialFillSpan extends GradientFillSpan<Color, RadialGradient> {
         private ColorToRadialFillSpan(Paint from, Paint to) {
             super(from, to);
@@ -413,6 +343,10 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
      *                                                                        *
      *************************************************************************/
     
+    /**
+     * Indicates that {@code from} is a {@link RadialGradient} and {@code to}
+     * is a {@link Color}.
+     */
     private static final class RadialToColorFillSpan extends GradientFillSpan<RadialGradient, Color> {
         private RadialToColorFillSpan(Paint from, Paint to) {
             super(from, to);
@@ -433,6 +367,10 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
      *                                                                        *
      *************************************************************************/
     
+    /**
+     * Indicates that {@code from} is a {@link LinearGradient} and
+     * {@code to} is a {@link LinearGradient}.
+     */
     private static class LinearToLinearFillSpan extends GradientFillSpan<LinearGradient, LinearGradient> {
         private final boolean uniform;
         
@@ -477,10 +415,16 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
         }
         
         protected Paint interpolateNonUniform(List<Stop> stops, double frac) {
-            final double startX = interpolateDouble(from().getStartX(), to().getStartX(), frac);
-            final double startY = interpolateDouble(from().getStartY(), to().getStartY(), frac);
-            final double endX = interpolateDouble(from().getEndX(), to().getEndX(), frac);
-            final double endY = interpolateDouble(from().getEndY(), to().getEndY(), frac);
+            final LinearGradient f = from(), t = to();
+            
+            // start X
+            final double startX = interpolateDouble(f.getStartX(), t.getStartX(), frac);
+            // start Y
+            final double startY = interpolateDouble(f.getStartY(), t.getStartY(), frac);
+            // end X
+            final double endX = interpolateDouble(f.getEndX(), t.getEndX(), frac);
+            // end Y
+            final double endY = interpolateDouble(f.getEndY(), t.getEndY(), frac);
             
             return new LinearGradient(startX, startY, endX, endY, to().isProportional(), to().getCycleMethod(), stops);
         }
@@ -504,67 +448,128 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
      *                                                                        *
      *************************************************************************/
     
+    /**
+     * Indicates that {@code from} is a {@link LinearGradient} and
+     * {@code to} is a {@link LinearGradient}, and that {@code from} and
+     * {@code to}'s lists of {@link Stop} instances differ in size.
+     */
     private static final class LinearToLinearDisjunctFillSpan extends LinearToLinearFillSpan {
-        private final List<Double> married;
-        private int fromBits;
-        private int toBits;
+        private final List<Double> offsets;
+        private long fromToBits;
         
         private LinearToLinearDisjunctFillSpan(LinearGradient from, LinearGradient to) {
             super(from, to);
             
-            married = calculateMarried(from.getStops(), to.getStops());
+            offsets = marryStopOffsets(from.getStops(), to.getStops());
         }
         
-        private List<Double> calculateMarried(List<Stop> from, List<Stop> to) {
-            final List<Double> ret = new LinkedList<Double>();
+        /**
+         * 
+         * @param from
+         * @param to
+         * @return
+         */
+        private List<Double> marryStopOffsets(List<Stop> from, List<Stop> to) {
+            // a gradient's list of stops contains at least two stops, so we start with
+            // from's and to's first stop's offset
+            double fOff = from.get(0).getOffset();
+            double tOff = to.get(0).getOffset();
             
+            int fIdx = 0, tIdx = 0;
+            int count = 0;
+            
+            ArrayList<Double> ret = new ArrayList<>(Math.max(from.size(), to.size()));
+            while (fIdx < from.size() - 1 || tIdx < to.size() - 1) {
+                
+                if (fOff == tOff) {
+                    ret.add(fOff);
+                    
+                    // mark that both from and to have a color change at this offset
+                    setFromBit(count);
+                    setToBit(count);
+                    
+                    // get from's and to's next stop's offset
+                    fOff = from.get(++fIdx).getOffset();
+                    tOff = to.get(++tIdx).getOffset();
+                    
+                } else if (fOff > tOff) {
+                    ret.add(tOff);
+                    
+                    // mark that to has a color change at this offset
+                    setToBit(count);
+                    
+                    // get to's next stop's offset
+                    tOff = to.get(++tIdx).getOffset();
+                    
+                } else if (fOff < tOff) {
+                    ret.add(fOff);
+                    
+                    // mark that from has a color change at this offset
+                    setFromBit(count);
+                    
+                    // get from's next stop's offset
+                    fOff = from.get(++fIdx).getOffset();
+                }
+                
+                // keep track of current offset count so we can mark bits
+                count += 1;
+            }
+            
+            // add the last offset which is '1.0'
+            ret.add(fOff);
+            
+            // we won't be adding any more offsets, so save some space
+            ret.trimToSize();
             
             return ret;
         }
         
         @Override
-        protected Paint interpolateImpl(double frac) {
-            final List<Stop> fStops = from().getStops();
-            final List<Stop> tStops = to().getStops();
-            final List<Stop> ret = new ArrayList<Stop>(married.size());
+        protected List<Stop> interpolateStops(List<Stop> fStops, List<Stop> tStops, double frac) {
+            boolean fIsNew = true, tIsNew = true;
+            int fIdx = 0, tIdx = 0;
             
-            for (int i = 0, n = married.size(); i < n; i++) {
+            Color fColor = fStops.get(0).getColor();
+            Color tColor = tStops.get(0).getColor();
+            
+            final List<Stop> ret = new ArrayList<Stop>(offsets.size());
+            for (int i = 0, n = offsets.size(); i < n; i++) {
+                fColor = fIsNew ? fStops.get(++fIdx).getColor() : fColor;
+                tColor = tIsNew ? tStops.get(++tIdx).getColor() : tColor;
+                
+                ret.add(new Stop(offsets.get(i), fColor.interpolate(tColor, frac)));
+                
+                fIsNew = fromBitIsSet(i);
+                tIsNew = toBitIsSet(i);
                 
             }
             
             return ret;
         }
         
+        /**
+         * Sets a specified 'from' bit in {@code fromToBits} to {@code 1}.
+         */
+        private void setFromBit(int which) { fromToBits |= (1 << which); }
+        
+        /** 
+         * Gets whether or not a specified 'from' bit in {@code fromToBits} is
+         *  {@code 1}.
+         */
+        private boolean fromBitIsSet(int which) { return (fromToBits & (1 << which)) != 0; }
+        
+        /**
+         * Sets a specified 'to' bit in {@code fromToBits} to {@code 1}.
+         */
+        private void setToBit(int which) { fromToBits |= (1 << (32 + which)); }
+        
+        /**
+         * Gets whether or not a specified 'to' bit in {@code fromToBits} is {@code 1}.
+         */
+        private boolean toBitIsSet(int which) { return (fromToBits & (1 << (32 + which))) != 0; }
+        
+        
     } // class LinearToLinearDisjunctFillSpan
-    
-    /**************************************************************************
-     *                                                                        *
-     * Linear To Radial Gradient                                              *
-     *                                                                        *
-     *************************************************************************/
-    
-    private static final class LinearToRadialFillSpan extends GradientFillSpan<LinearGradient, RadialGradient> {
-        private LinearToRadialFillSpan(Paint from, Paint to) {
-            super(from, to);
-            
-            hash = 31 * hash + 5;
-        }
-    } // class LinearToRadialFillSpan
-    
-    
-    /**************************************************************************
-     *                                                                        *
-     * Radial To Linear Gradient                                               *
-     *                                                                        *
-     *************************************************************************/
-    
-    private static final class RadialToLinearFillSpan extends GradientFillSpan<RadialGradient, LinearGradient> {
-        private RadialToLinearFillSpan(Paint from, Paint to) {
-            super(from, to);
-            
-            hash = 31 * hash + 7;
-        }
-    } // class RadialToLinearFillSpan
     
     
     /**************************************************************************
@@ -573,6 +578,10 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
      *                                                                        *
      *************************************************************************/
     
+    /**
+     * Indicates that {@code from} is a {@link RadialGradient} and
+     * {@code to} is a {@link RadialGradient}.
+     */
     private static class RadialToRadialFillSpan extends GradientFillSpan<RadialGradient, RadialGradient> {
         private final boolean uniform;
         
@@ -607,23 +616,25 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
             return uniform ? newRadialGradient(from(), stops) : interpolateNonUniform(stops, frac);
         }
         
+        protected List<Stop> interpolateStops(List<Stop> from, List<Stop> to, double frac) {
+            // from and to are same size so just interpolate their stops
+            return IntStream.range(0, from.size()).mapToObj(i -> interpolateStop(from.get(i), to.get(i), frac))
+                .collect(Collectors.toList());
+        }
+        
         private Paint interpolateNonUniform(List<Stop> stops, double frac) {
+            final RadialGradient f = from(), t = to();
+            
             // focus angle
-            final double fAngle = from().getFocusAngle(), tAngle = to().getFocusAngle();
-            final double angle = (fAngle == tAngle) ? fAngle : interpolateDouble(fAngle, tAngle, frac);
+            final double angle = interpolateDouble(f.getFocusAngle(), t.getFocusAngle(), frac);
             // focus distance
-            final double fDistance = from().getFocusDistance(), tDistance = to().getFocusDistance();
-            final double distance =
-            (fDistance == tDistance) ? fDistance : interpolateDouble(fDistance, tDistance, frac);
+            final double distance = interpolateDouble(f.getFocusDistance(), t.getFocusDistance(), frac);
             // center X
-            final double fCenterX = from().getCenterX(), tCenterX = to().getCenterX();
-            final double centerX = (fCenterX == tCenterX) ? fCenterX : interpolateDouble(fCenterX, tCenterX, frac);
+            final double centerX = interpolateDouble(f.getCenterX(), t.getCenterX(), frac);
             // center Y
-            final double fCenterY = from().getCenterY(), tCenterY = to().getCenterY();
-            final double centerY = (fCenterY == tCenterY) ? fCenterY : interpolateDouble(fCenterY, tCenterY, frac);
+            final double centerY = interpolateDouble(f.getCenterY(), t.getCenterY(), frac);
             // radius
-            final double fRadius = from().getRadius(), tRadius = to().getRadius();
-            final double radius = (fRadius == tRadius) ? fRadius : interpolateDouble(fRadius, tRadius, frac);
+            final double radius = interpolateDouble(f.getRadius(), t.getRadius(), frac);
             
             return new RadialGradient(angle, distance, centerX, centerY, radius, to().isProportional(),
                 to().getCycleMethod(), stops);
@@ -634,7 +645,7 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
          * a regular RadialToRadialFillSpan, otherwise ths method returns a
          * RadialToRadialDisjunctFillSpan.
          */
-        private static FillSpan ofLinear(RadialGradient from, RadialGradient to) {
+        private static FillSpan ofRadial(RadialGradient from, RadialGradient to) {
             return from.getStops().size() == to.getStops().size() ? new RadialToRadialFillSpan(from, to)
                 : new RadialToRadialDisjunctFillSpan(from, to);
         }
@@ -642,26 +653,135 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
     } // class RadialToRadialFillSpan
     
     
+    /**************************************************************************
+     *                                                                        *
+     * Radial To Radial Disjunct Gradient                                     *
+     *                                                                        *
+     *************************************************************************/
+    
+    /**
+     * Indicates that {@code from} is a {@link RadialGradient} and
+     * {@code to} is a {@link RadialGradient}, and that {@code from} and
+     * {@code to}'s lists of {@link Stop} instances differ in size.
+     */
     private static class RadialToRadialDisjunctFillSpan extends RadialToRadialFillSpan {
+        private final List<Double> offsets;
+        private long fromToBits;
+        
         
         RadialToRadialDisjunctFillSpan(RadialGradient from, RadialGradient to) {
             super(from, to);
-        }
-    }
-    
-    private static final class MarriedStops implements Interpolatable<List<Stop>> {
-        
-        
-        private MarriedStops(List<Stop> from, List<Stop> to) {
             
+            offsets = marryStopOffsets(from.getStops(), to.getStops());
+        }
+        
+        /**
+         * 
+         * @param from
+         * @param to
+         * @return
+         */
+        private List<Double> marryStopOffsets(List<Stop> from, List<Stop> to) {
+            // a gradient's list of stops contains at least two stops, so we start with
+            // from's and to's first stop's offset
+            double fOff = from.get(0).getOffset();
+            double tOff = to.get(0).getOffset();
+            
+            int fIdx = 0, tIdx = 0;
+            int count = 0;
+            
+            ArrayList<Double> ret = new ArrayList<>(Math.max(from.size(), to.size()));
+            while (fIdx < from.size() - 1 || tIdx < to.size() - 1) {
+                
+                if (fOff == tOff) {
+                    ret.add(fOff);
+                    
+                    // mark that both from and to have a color change at this offset
+                    setFromBit(count);
+                    setToBit(count);
+                    
+                    // get from's and to's next stop's offset
+                    fOff = from.get(++fIdx).getOffset();
+                    tOff = to.get(++tIdx).getOffset();
+                    
+                } else if (fOff > tOff) {
+                    ret.add(tOff);
+                    
+                    // mark that to has a color change at this offset
+                    setToBit(count);
+                    
+                    // get to's next stop's offset
+                    tOff = to.get(++tIdx).getOffset();
+                    
+                } else if (fOff < tOff) {
+                    ret.add(fOff);
+                    
+                    // mark that from has a color change at this offset
+                    setFromBit(count);
+                    
+                    // get from's next stop's offset
+                    fOff = from.get(++fIdx).getOffset();
+                }
+                
+                // keep track of current offset count so we can mark bits
+                count += 1;
+            }
+            
+            // add the last offset which is '1.0'
+            ret.add(fOff);
+            
+            // we won't be adding any more offsets, so save some space
+            ret.trimToSize();
+            
+            return ret;
         }
         
         @Override
-        public List<Stop> interpolate(List<Stop> fodder, double frac) { return interpolate(frac); }
-        
-        public List<Stop> interpolate(double frac) {
-            return null;
+        protected List<Stop> interpolateStops(List<Stop> fStops, List<Stop> tStops, double frac) {
+            boolean fIsNew = true, tIsNew = true;
+            int fIdx = 0, tIdx = 0;
+            
+            Color fColor = fStops.get(0).getColor();
+            Color tColor = tStops.get(0).getColor();
+            
+            final List<Stop> ret = new ArrayList<Stop>(offsets.size());
+            for (int i = 0, n = offsets.size(); i < n; i++) {
+                fColor = fIsNew ? fStops.get(++fIdx).getColor() : fColor;
+                tColor = tIsNew ? tStops.get(++tIdx).getColor() : tColor;
+                
+                ret.add(new Stop(offsets.get(i), fColor.interpolate(tColor, frac)));
+                
+                fIsNew = fromBitIsSet(i);
+                tIsNew = toBitIsSet(i);
+                
+            }
+            
+            return ret;
         }
         
-    }
+        /**
+         * Sets a specified 'from' bit in {@code fromToBits} to {@code 1}.
+         */
+        private void setFromBit(int which) { fromToBits |= (1 << which); }
+        
+        /** 
+         * Gets whether or not a specified 'from' bit in {@code fromToBits} is
+         *  {@code 1}.
+         */
+        private boolean fromBitIsSet(int which) { return (fromToBits & (1 << which)) != 0; }
+        
+        /**
+         * Sets a specified 'to' bit in {@code fromToBits} to {@code 1}.
+         */
+        private void setToBit(int which) { fromToBits |= (1 << (32 + which)); }
+        
+        /**
+         * Gets whether or not a specified 'to' bit in {@code fromToBits} is {@code 1}.
+         */
+        private boolean toBitIsSet(int which) { return (fromToBits & (1 << (32 + which))) != 0; }
+        
+        
+    } // class RadialToRadialDisjunctFillSpan
+    
+    
 } // class GradientFillSpan
