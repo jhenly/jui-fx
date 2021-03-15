@@ -48,7 +48,7 @@ public class BorderFillSpan implements Interpolatable<Paint[]> {
     private static final class Holder {
         static final FillSpan DEFAULT_TOP = FillSpan.of(Color.BLACK, Color.BLACK);
         
-        private Holder() { throw new IllegalAccessError("a Holder class should not be instantiated"); }
+        private Holder() { throw new IllegalAccessError("the BorderFillSpan.Holder class should not be instantiated"); }
     }
     static final FillSpan getDefaultTop() { return Holder.DEFAULT_TOP; }
     
@@ -206,7 +206,8 @@ public class BorderFillSpan implements Interpolatable<Paint[]> {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) { return true; }
-        if (obj == null || !(obj instanceof BorderFillSpan)) { return false; }
+        // null check not needed, instanceof returns false when obj is null
+        if (!(obj instanceof BorderFillSpan)) { return false; }
         
         BorderFillSpan that = (BorderFillSpan) obj;
         if (hash != that.hash || special != that.special || isUniform() != that.isUniform()) { return false; }
@@ -219,8 +220,6 @@ public class BorderFillSpan implements Interpolatable<Paint[]> {
      * method to check for equality.
      */
     protected boolean equals(BorderFillSpan that) {
-        if (!(that instanceof BorderFillSpan)) { return false; }
-        
         return FillSpanHelper.fillSpansAreEqual(top, that.top);
     }
     
