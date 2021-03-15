@@ -12,7 +12,7 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
-import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Shape;
 
 
@@ -342,7 +342,7 @@ public class FillApplier<F extends Fillable> {
         }
         
         // 'is' stands for 'interpolated span'
-        Color[] is = span.interpolate(frac);
+        Paint[] is = span.interpolate(frac);
         return new BorderStroke(is[0], is[1], is[2], is[3], os.getTopStyle(), os.getRightStyle(), os.getBottomStyle(),
             os.getLeftStyle(), os.getRadii(), os.getWidths(), os.getInsets());
     }

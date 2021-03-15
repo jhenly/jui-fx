@@ -30,6 +30,9 @@ import javafx.css.ParsedValue;
 import javafx.css.StyleConverter;
 import javafx.css.Styleable;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Paint;
+import javafx.scene.paint.RadialGradient;
 import javafx.scene.text.Font;
 
 
@@ -155,17 +158,46 @@ public final class FillConverter extends StyleConverter<ParsedValue[], Fill> {
                 case "border":
                     return (vals.length == 1) ? FillSpanHalf.getBorderInstance() : parseBorderString(vals[1]);
                 
-                // val is not a special identifier, so try to get color
+                // val is not a special identifier, so try to get paint
                 default:
-                    try {
-                        return new FillSpanHalf(Color.web(val));
-                    } catch (Exception e) {
-                        // fall through
-                    }
-                    
-                    outErr("could not parse color", val);
-                    return getErrorHalf();
+                    return parsePaintString(val);
             }
+        }
+        
+        private static FillSpanHalf parsePaintString(String val) {
+            // check if val is a linear gradient
+            if (val.startsWith("linear")) {
+                try {
+                    return new FillSpanHalf(LinearGradient.valueOf(val));
+                } catch (Exception e) {
+                    // fall through
+                }
+                
+                outErr("could not parse linear gradient", val);
+                return getErrorHalf();
+            }
+            
+            // check if val is a radial gradient
+            if (val.startsWith("radial")) {
+                try {
+                    return new FillSpanHalf(RadialGradient.valueOf(val));
+                } catch (Exception e) {
+                    // fall through
+                }
+                
+                outErr("could not parse radial gradient", val);
+                return getErrorHalf();
+            }
+            
+            // if we get this far then val must be a color
+            try {
+                return new FillSpanHalf(Color.web(val));
+            } catch (Exception e) {
+                // fall through
+            }
+            
+            outErr("could not parse color", val);
+            return getErrorHalf();
         }
         
         private static FillSpanHalf parseBgIndex(String index) {
@@ -314,10 +346,10 @@ public final class FillConverter extends StyleConverter<ParsedValue[], Fill> {
             Object val = value.getValue();
             if (val == null) { return null; }
             
-            // if we get a color then just return an array with that color
-            if (val instanceof Color) { return new FillSpanHalf[] { new FillSpanHalf((Color) val) }; }
+            // if we get a paint then just return an array with that paint
+            if (val instanceof Paint) { return new FillSpanHalf[] { new FillSpanHalf((Paint) val) }; }
             
-            // if we get a string of color(s), then parse and return them
+            // if we get a string of paint(s), then parse and return them
             if (val instanceof String) {
                 
                 final String cleanValue = ((String) val).strip().toLowerCase(Locale.ENGLISH);
@@ -816,17 +848,17 @@ public final class FillConverter extends StyleConverter<ParsedValue[], Fill> {
      */
     public static class FillSpanHalf {
         private final boolean isComplex;
-        private final Color color;
+        private final Paint paint;
         private final int index;
         private final FillSpan.BorderStrokePosition bsPos;
         
-        private FillSpanHalf(Color c) { this(c, -1, null, false); }
-        private FillSpanHalf(Color c, int i) { this(c, i, null, true); }
-        private FillSpanHalf(Color c, int i, FillSpan.BorderStrokePosition p) { this(c, i, p, true); }
-        private FillSpanHalf(Color c, int i, FillSpan.BorderStrokePosition p, boolean s) {
-            color = c;
+        private FillSpanHalf(Paint p) { this(p, -1, null, false); }
+        private FillSpanHalf(Paint p, int i) { this(p, i, null, true); }
+        private FillSpanHalf(Paint p, int i, FillSpan.BorderStrokePosition pos) { this(p, i, pos, true); }
+        private FillSpanHalf(Paint p, int i, FillSpan.BorderStrokePosition pos, boolean s) {
+            paint = p;
             index = i;
-            bsPos = p;
+            bsPos = pos;
             isComplex = s;
         }
         
@@ -862,21 +894,21 @@ public final class FillConverter extends StyleConverter<ParsedValue[], Fill> {
          */
         private static FillSpan makeWhole(FillSpanHalf from, FillSpanHalf to) {
             // neither from nor to has indexes or border strokes
-            if (!from.isComplex && !to.isComplex) { return FillSpan.of(from.color, to.color); }
+            if (!from.isComplex && !to.isComplex) { return FillSpan.of(from.paint, to.paint); }
             
             final boolean hasIndex = (from.index != -1 || to.index != -1);
             final boolean hasBsPos = (from.bsPos != null || to.bsPos != null);
             
             if (hasIndex && hasBsPos) {
                 // from and/or to has both indexes and border strokes
-                return FillSpan.of(from.color, to.color, from.index, to.index, from.bsPos, to.bsPos);
+                return FillSpan.of(from.paint, to.paint, from.index, to.index, from.bsPos, to.bsPos);
             } else if (hasIndex) {
                 // from and/or to only has indexes
-                return FillSpan.of(from.color, to.color, from.index, to.index);
+                return FillSpan.of(from.paint, to.paint, from.index, to.index);
             }
             
             // at this point, from and/or to has border strokes and no indexes
-            return FillSpan.of(from.color, to.color, from.bsPos, to.bsPos);
+            return FillSpan.of(from.paint, to.paint, from.bsPos, to.bsPos);
         }
         
         /**
@@ -891,13 +923,13 @@ public final class FillConverter extends StyleConverter<ParsedValue[], Fill> {
             
             if (!sspan.fromIsSpecial()) { return new FillSpanHalf(span.from()); }
             
-            final Color c = sspan.from();
-            if (c == FillSpan.USE_TEXT) { return getTextInstance(); }
-            if (c == FillSpan.USE_SHAPE) { return getShapeInstance(); }
-            if (c == FillSpan.USE_STROKE) { return getStrokeInstance(); }
+            final Paint p = sspan.from();
+            if (p == FillSpan.USE_TEXT) { return getTextInstance(); }
+            if (p == FillSpan.USE_SHAPE) { return getShapeInstance(); }
+            if (p == FillSpan.USE_STROKE) { return getStrokeInstance(); }
             
             final int idx = sspan.fromIndex();
-            if (c == FillSpan.USE_BG) {
+            if (p == FillSpan.USE_BG) {
                 // use default background instance
                 return (idx == -1) ? getBgInstance() : new FillSpanHalf(FillSpan.USE_BG, idx);
             }
@@ -923,13 +955,13 @@ public final class FillConverter extends StyleConverter<ParsedValue[], Fill> {
             
             if (!sspan.toIsSpecial()) { return new FillSpanHalf(span.to()); }
             
-            final Color c = sspan.to();
-            if (c == FillSpan.USE_TEXT) { return getTextInstance(); }
-            if (c == FillSpan.USE_SHAPE) { return getShapeInstance(); }
-            if (c == FillSpan.USE_STROKE) { return getStrokeInstance(); }
+            final Paint p = sspan.to();
+            if (p == FillSpan.USE_TEXT) { return getTextInstance(); }
+            if (p == FillSpan.USE_SHAPE) { return getShapeInstance(); }
+            if (p == FillSpan.USE_STROKE) { return getStrokeInstance(); }
             
             final int idx = sspan.toIndex();
-            if (c == FillSpan.USE_BG) {
+            if (p == FillSpan.USE_BG) {
                 // use default background instance
                 return (idx == -1) ? getBgInstance() : new FillSpanHalf(FillSpan.USE_BG, idx);
             }
