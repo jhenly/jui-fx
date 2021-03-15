@@ -45,12 +45,13 @@ public class Fill {
     
     /**
      * Store the singleton instance of the FillHelper subclass corresponding
-     * to the subclass of this instance of Fill
+     * to the subclass of this instance of Fill.
      */
     private FillHelper fillHelper = null;
     static {
-        // This is used by classes in different packages to get access to
-        // private and package private methods.
+        
+        // this is used by classes in different packages to get access to
+        // private and package private methods
         FillHelper.setFillAccessor(new FillHelper.FillAccessor()
         {
             @Override
@@ -83,22 +84,10 @@ public class Fill {
      **************************************************************************/
     
     // lazy, thread-safe instantiation
-    private static class Holder {
-        static final List<FillSpan> FILL_SPANS_NULL_EMPTY = List.of();
-        
-        private Holder() { throw new IllegalAccessError("a Holder class should not be instantiated"); }
-    }
-    /**
-    * Returns empty list of {@link FillSpan} when constructor's
-    * {@code FillSpan} parameter is {@code null} or
-    * {@code fillSpans.length == 0}.
-    */
-    static List<FillSpan> getFillSpansNullEmpty() { return Holder.FILL_SPANS_NULL_EMPTY; }
-    
-    
-    // lazy, thread-safe instantiation
     private static class Default {
         static final Fill DEFAULT_FILL = new Fill(); // fill with no spans
+        
+        private Default() { throw new IllegalAccessError("the Fill.Default class should not be instantiated"); }
     }
     
     /** 
@@ -107,6 +96,38 @@ public class Fill {
      */
     public static Fill getDefault() { return Default.DEFAULT_FILL; }
     
+    // lazy, thread-safe instantiation
+    private static class Holder {
+        static final List<FillSpan> FILL_SPANS_NULL_EMPTY = List.of();
+        
+        private Holder() { throw new IllegalAccessError("the Fill.Holder class should not be instantiated"); }
+    }
+    /**
+    * Returns empty list of {@link FillSpan} when constructor's
+    * {@code FillSpan} parameter is {@code null} or
+    * {@code fillSpans.length == 0}.
+    */
+    static List<FillSpan> getFillSpansNullEmpty() { return Holder.FILL_SPANS_NULL_EMPTY; }
+    
+    // lazy, thread-safe instantiation
+    private static class NullBorderFillSpan {
+        // used by constructor when replacing null instances with transparent
+        static final BorderFillSpan NULL_BORDER_FILLSPAN = BorderFillSpan.of(FillSpan.getNullArgsInstance());
+        
+        private NullBorderFillSpan() {
+            throw new IllegalAccessError("the Fill.NullBorderFillSpan class should not be instantiated");
+        }
+    }
+    
+    /**
+     * Returns the {@code BorderFillSpan} instance used by the constructor to
+     * replace {@code null} {@code BorderFillSpan} instances with a
+     * {@code BorderFillSpan} instance containing a {@code FillSpan} instance
+     * with a fill-from and fill-to of {@link Color#TRANSPARENT}.
+     * 
+     * @return the null border fill span instance replacement
+     */
+    static BorderFillSpan getNullBorderFillSpanReplacement() { return NullBorderFillSpan.NULL_BORDER_FILLSPAN; }
     
     /***************************************************************************
      *                                                                         *
@@ -311,8 +332,11 @@ public class Fill {
             // keep separate hash for bgSpans in case array is filled with null
             int bgSpansHash = 19;
             
-            // used to replace nulls and create unmodifiable list
-            List<FillSpan> tmpSpans = new ArrayList<>(bgFillSpans.size());
+            /* used to replace nulls and create unmodifiable list
+             * 
+             * Note: use 'ArrayList<>' over 'List<>' so that 'ArrayList#trimToSize()' can be
+             * used */
+            ArrayList<FillSpan> tmpSpans = new ArrayList<>(bgFillSpans.size());
             
             // replace any null fill spans and check for all null fill spans
             int nullCount = 0;
@@ -334,6 +358,9 @@ public class Fill {
             
             // if not all null, set bgSpans to unmodifiable list and add hash
             if (nullCount < bgFillSpans.size()) {
+                // no further modification to tmpSpans, so save some memory
+                tmpSpans.trimToSize();
+                
                 bgSpans = Collections.unmodifiableList(tmpSpans);
                 preHash += bgSpansHash;
             } else {
@@ -350,8 +377,11 @@ public class Fill {
             // keep separate hash for bdSpans in case array is filled with null
             int borderSpansHash = 27;
             
-            // used to replace nulls and create unmodifiable list
-            List<BorderFillSpan> tmpSpans = new ArrayList<>(borderFillSpans.size());
+            /* used to replace nulls and create unmodifiable list
+             * 
+             * Note: use 'ArrayList<>' over 'List<>' so that 'ArrayList#trimToSize()' can be
+             * used */
+            ArrayList<BorderFillSpan> tmpSpans = new ArrayList<>(borderFillSpans.size());
             
             // replace any null fill spans and check for all null fill spans
             int nullCount = 0;
@@ -361,7 +391,7 @@ public class Fill {
                 if (bdSpan == null) {
                     nullCount++;
                     // replace null fill span with transparent border fill span
-                    bdSpan = BorderFillSpan.getNullFillSpan();
+                    bdSpan = getNullBorderFillSpanReplacement();
                 }
                 
                 // check if span is special before null check
@@ -373,6 +403,9 @@ public class Fill {
             
             // if not all null, set bdSpans to unmodifiable list and add hash
             if (nullCount < borderFillSpans.size()) {
+                // no further modification to tmpSpans, so save some memory
+                tmpSpans.trimToSize();
+                
                 bdSpans = Collections.unmodifiableList(tmpSpans);
                 preHash += borderSpansHash;
             } else {
@@ -384,7 +417,7 @@ public class Fill {
         
         hasSpans = textSpan != null || shapeSpan != null || strokeSpan != null || bgSpans != null || bdSpans != null;
         
-        // set if any fill span instances were special
+        // mark if any fill span instances were special
         hasSpecial = preHasSpecial;
         
         // set hash to precomputed hash
@@ -513,7 +546,8 @@ public class Fill {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) { return true; }
-        if (obj == null || this.getClass() != obj.getClass()) { return false; }
+        // null check not needed, instanceof returns false when obj is null
+        if (!(obj instanceof Fill)) { return false; }
         
         final Fill that = (Fill) obj;
         
@@ -524,9 +558,9 @@ public class Fill {
         // if cache of fill spans is enabled then reference equality can be used
         return FillSpanHelper.fillSpansAreEqual(textSpan, that.textSpan)
                && FillSpanHelper.fillSpansAreEqual(shapeSpan, that.shapeSpan)
+               && FillSpanHelper.fillSpansAreEqual(strokeSpan, that.strokeSpan)
                && FillSpanHelper.fillSpanListsAreEqual(bgSpans, that.bgSpans)
-               && FillSpanHelper.fillSpanListsAreEqual(bdSpans, that.bdSpans)
-               && FillSpanHelper.fillSpansAreEqual(strokeSpan, that.strokeSpan);
+               && FillSpanHelper.borderFillSpanListsAreEqual(bdSpans, that.bdSpans);
     }
     
     /**

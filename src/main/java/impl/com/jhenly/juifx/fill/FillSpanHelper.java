@@ -22,7 +22,6 @@ import static impl.com.jhenly.juifx.fill.FillSpan.USE_TEXT;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.jhenly.juifx.control.Fillable;
 
@@ -31,16 +30,12 @@ import impl.com.jhenly.juifx.fill.BorderFillSpan.QuadBorderFillSpan;
 import impl.com.jhenly.juifx.fill.FillSpan.BorderStrokePosition;
 import impl.com.jhenly.juifx.util.Replacer;
 import impl.com.jhenly.juifx.util.replacer.DisposableReplacer;
-import javafx.animation.Interpolator;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Paint;
-import javafx.scene.paint.RadialGradient;
-import javafx.scene.paint.Stop;
 import javafx.scene.shape.Shape;
 
 
@@ -779,213 +774,43 @@ public final class FillSpanHelper {
         return true;
     }
     
-    
-    /**************************************************************************
-     *                                                                        *
-     * FillSpan Linear/Radial Gradient Interpolate Methods                    *
-     *                                                                        *
-     *************************************************************************/
+    /**
+     * Used to check for equality between two lists of {@code FillSpan}
+     * instances.
+     * <p>
+     * This method should only be used after any fill spans have been added to
+     * the cache, if {@link FillSpanCache} is enabled.
+     * @param a - the fill span list to check against {@code b}
+     * @param b - the fill span list to check against {@code a}
+     * @return {@code true} if {@code a} equals {@code b}, otherwise
+     *         {@code false}
+     */
+    static boolean borderFillSpanListsAreEqual(List<? extends BorderFillSpan> a, List<? extends BorderFillSpan> b) {
+        if (a == b || a == null || b == null) { return a == b; }
+        
+        return a.equals(b);
+    }
     
     /**
-     * Used by {@link FillSpan#interpolate(double)} when a {@code FillSpan}
-     * contains a {@link LinearGradient} and/or {@link RadialGradient}.
+     * Used to check for equality between two arrays of {@code BorderFillSpan}
+     * instances.
+     * 
+     * @param a - the border fill span array to check against {@code b}
+     * @param b - the border fill span array to check against {@code a}
+     * @return {@code true} if {@code a} equals {@code b}, otherwise
+     *         {@code false}
      */
-    static Paint
-    interpolateGradientFillSpan(Paint from, Paint to, boolean fromIsColor, boolean toIsColor, double frac)
-    {
-        // frac bounds checking, 0.0 <= frac <= 1.0, has already occurred in
-        // FillSpan.interpolate(double)
+    static <T extends BorderFillSpan> boolean borderFillSpanArraysAreEqual(T[] a, T[] b) {
+        if (a == b || a == null || b == null) { return a == b; }
         
-        if (fromIsColor) {
-            // simple case, one color to possibly many colors
-            return interpolateGradientFillSpan((Color) from, to, frac);
-        } else if (toIsColor) {
-            // simple case, possibly many colors to one color
-            return interpolateGradientFillSpan(from, (Color) to, frac);
+        if (a.length != b.length) { return false; }
+        
+        for (int i = 0, n = a.length; i < n; i++) {
+            if (!a[i].equals(b[i])) { return false; }
         }
         
-        // complex case, possibly many colors to possibly many colors
-        return interpolateGradientFillSpan(from, to, frac);
+        // if we reach this point the arrays are equal
+        return true;
     }
-    
-    private static Paint interpolateGradientFillSpan(Color from, Paint to, double frac) {
-        if (to.getClass() == LinearGradient.class) {
-            // from is a Color and to is a LinearGradient
-            return interpolateGradient(from, (LinearGradient) to, frac);
-        } else if (to.getClass() == RadialGradient.class) {
-            // from is a Color and to is a RadialGradient
-            return interpolateGradient(from, (RadialGradient) to, frac);
-        }
-        
-        // don't know what subclass of Paint 'to' is, return from
-        return from;
-    }
-    
-    private static Paint interpolateGradientFillSpan(Paint from, Color to, double frac) {
-        if (from.getClass() == LinearGradient.class) {
-            // from is a LinearGradient and to is a Color
-            return interpolateGradient((LinearGradient) from, to, frac);
-        } else if (from.getClass() == RadialGradient.class) {
-            // from is a RadialGradient and to is a Color
-            return interpolateGradient((RadialGradient) from, to, frac);
-        }
-        
-        // don't know what subclass of Paint 'from' is, return 'to'
-        return to;
-    }
-    
-    private static Paint interpolateGradientFillSpan(Paint from, Paint to, double frac) {
-        if (from.getClass() == LinearGradient.class) {
-            if (to.getClass() == LinearGradient.class) {
-                // from and to are both LinearGradients
-                return interpolateGradient((LinearGradient) from, (LinearGradient) to, frac);
-            } else if (to.getClass() == RadialGradient.class) {
-                // from is a LinearGradient and to is RadialGradient
-                return interpolateGradient((LinearGradient) from, (RadialGradient) to, frac);
-            }
-            
-            // don't know what subclass of Paint 'to' is, return 'from'
-            return from;
-        }
-        
-        if (from.getClass() == RadialGradient.class) {
-            if (to.getClass() == LinearGradient.class) {
-                // from is a RadialGradient and to is a LinearGradient
-                return interpolateGradient((RadialGradient) from, (LinearGradient) to, frac);
-            } else if (to.getClass() == RadialGradient.class) {
-                // from and to are both RadialGradients
-                return interpolateGradient((RadialGradient) from, (RadialGradient) to, frac);
-            }
-            
-            // don't know what subclass of Paint 'to' is, return 'from'
-            return from;
-        }
-        
-        // don't know what subclass of Paint 'from' is, hopefully 'to' is
-        return to;
-    }
-    
-    
-    /* --- simple cases, one color to possibly many colors --- */
-    
-    private static Paint interpolateGradient(Color from, LinearGradient to, double frac) {
-        // create gradient's new list of Stops by interpolating from with old stop
-        final List<Stop> stops =
-        to.getStops().stream().map(s -> interpolateStop(from, s, frac)).collect(Collectors.toList());
-        
-        // return a new LinearGradient same as old, but with new Stops
-        return newLinearGradient(to, stops);
-    }
-    
-    private static Paint interpolateGradient(Color from, RadialGradient to, double frac) {
-        // create gradient's new list of Stops by interpolating from with old stop
-        final List<Stop> stops =
-        to.getStops().stream().map(s -> interpolateStop(from, s, frac)).collect(Collectors.toList());
-        
-        // return a new RadialGradient same as old, but with new Stops
-        return newRadialGradient(to, stops);
-    }
-    
-    
-    /* --- simple cases, possibly many colors to one color --- */
-    
-    private static Paint interpolateGradient(LinearGradient from, Color to, double frac) {
-        // create gradient's new list of Stops by interpolating old stop with to
-        final List<Stop> stops =
-        from.getStops().stream().map(s -> interpolateStop(s, to, frac)).collect(Collectors.toList());
-        
-        // return a new LinearGradient same as old, but with new Stops
-        return newLinearGradient(from, stops);
-    }
-    
-    private static Paint interpolateGradient(RadialGradient from, Color to, double frac) {
-        // create gradient's new list of Stops by interpolating old stop with to
-        final List<Stop> stops =
-        from.getStops().stream().map(s -> interpolateStop(s, to, frac)).collect(Collectors.toList());
-        
-        // return a new RadialGradient same as old, but with new Stops
-        return newRadialGradient(from, stops);
-    }
-    
-    
-    /* --- complex cases, possibly many colors to possibly many colors --- */
-    
-    static Paint interpolateGradient(LinearGradient from, LinearGradient to, double frac) {
-        List<Stop> newStops = new ArrayList<>(from.getStops());
-        
-        return null;
-    }
-    
-    static Paint interpolateGradient(LinearGradient from, RadialGradient to, double frac) {
-        List<Stop> newStops = new ArrayList<>(from.getStops());
-        
-        
-        // go from LinearGradient to RadialGradient at halfway
-        return (frac <= 0.5) ? newLinearGradient(from, newStops) : newRadialGradient(to, newStops);
-    }
-    
-    
-    static Paint interpolateGradient(RadialGradient from, RadialGradient to, double frac) {
-        List<Stop> newStops = new ArrayList<>(from.getStops());
-        
-        return newRadialGradient(from, newStops);
-    }
-    
-    
-    static Paint interpolateGradient(RadialGradient from, LinearGradient to, double frac) {
-        List<Stop> newStops = new ArrayList<>(from.getStops());
-        
-        
-        // go from LinearGradient to RadialGradient at halfway
-        return (frac <= 0.5) ? newRadialGradient(from, newStops) : newLinearGradient(to, newStops);
-    }
-    
-    
-    /**************************************************************************
-     *                                                                        *
-     * Stop Interpolate Methods                                               *
-     *                                                                        *
-     *************************************************************************/
-    
-    private static Stop interpolateStop(Color from, Stop to, double frac) {
-        return new Stop(to.getOffset(), from.interpolate(to.getColor(), frac));
-    }
-    
-    private static Stop interpolateStop(Stop from, Color to, double frac) {
-        return new Stop(from.getOffset(), from.getColor().interpolate(to, frac));
-    }
-    
-    
-    /**************************************************************************
-     *                                                                        *
-     * Linear And Radial Gradient Interpolate Methods                         *
-     *                                                                        *
-     *************************************************************************/
-    
-    private static double interpolateDouble(double start, double end, double frac) {
-        return Interpolator.EASE_BOTH.interpolate(start, end, frac);
-    }
-    
-    private static LinearGradient newLinearGradient(LinearGradient old, List<Stop> stops) {
-        return new LinearGradient(old.getStartX(), old.getStartY(), old.getEndX(), old.getEndY(), old.isProportional(),
-            old.getCycleMethod(), stops);
-    }
-    
-    private static LinearGradient interpolateLinearGradient(LinearGradient from, LinearGradient to, double frac) {
-        final double fStartX = from.getStartX(), tStartX = to.getStartX();
-        final double startX = (from.getStartX() == to.getStartX()) ? from.getStartX() : interpolateDouble(
-        
-        EASE_BOTH.interpolate(startValue, endValue, fraction)
-        
-        return new LinearGradient(to.getStartX(), old.getStartY(), old.getEndX(), old.getEndY(), to.isProportional(),
-            to.getCycleMethod(), stops);
-    }
-    
-    private static RadialGradient newRadialGradient(RadialGradient old, List<Stop> stops) {
-        
-        return new RadialGradient(old.getFocusAngle(), old.getFocusDistance(), old.getCenterX(), old.getCenterY(),
-            old.getRadius(), old.isProportional(), old.getCycleMethod(), stops);
-    }
-    
     
 }
