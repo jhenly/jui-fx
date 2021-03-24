@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,8 +19,7 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.control;
 
 import com.jhenly.juifx.control.event.SelectionEvent;
@@ -34,7 +32,7 @@ import javafx.css.PseudoClass;
 import javafx.css.Styleable;
 import javafx.event.EventHandler;
 import javafx.event.EventTarget;
-import javafx.scene.Node;
+
 
 /**
  * The selectable interface.
@@ -154,12 +152,6 @@ public interface Selectable extends EventTarget, Styleable {
      */
     void deselect();
     
-    /** 
-     * Gets this {@code Selectable} as a {@link Node}.
-     * @return this {@code Selectable} as a {@code Node}
-     */
-    Node getNode();
-    
     
     /**************************************************************************
      *                                                                        *
@@ -168,7 +160,7 @@ public interface Selectable extends EventTarget, Styleable {
      *************************************************************************/
     
     /** The CSS {@code :selected} pseudo class. */
-    static final PseudoClass PSEUDO_CLASS_SELECTED = PseudoClass.getPseudoClass("selected");
+    PseudoClass PSEUDO_CLASS_SELECTED = PseudoClass.getPseudoClass("selected");
     
     
 }

@@ -22,17 +22,16 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.control.skin;
 
-import java.util.function.Consumer;
-
 import com.jhenly.juifx.animation.JuiFillTransition;
-import com.jhenly.juifx.animation.SingleFillTransition;
 import com.jhenly.juifx.control.FillButton;
-import com.jhenly.juifx.control.Fillable;
+import com.jhenly.juifx.control.applier.FillApplier;
+import com.jhenly.juifx.control.applier.FillButtonApplier;
 
-import impl.com.jhenly.juifx.fill.Fill;
-import impl.com.jhenly.juifx.fill.FillApplier;
-import javafx.beans.value.ObservableValue;
-import javafx.util.Duration;
+import javafx.beans.binding.BooleanBinding;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.value.ChangeListener;
 
 
 /**
@@ -54,6 +53,13 @@ public class FillButtonSkin<C extends FillButton> extends SelectableButtonSkin<C
     
     private JuiFillTransition jfTrans;
     
+//    private ChangeListener<? super Skin<?>> skinInit;
+    
+    private BooleanBinding fillEnabled;
+    
+    private ChangeListener<Boolean> focusChange;
+    
+    private BooleanBinding fillDisabledOrSelected;
     
     /***************************************************************************
      *                                                                         *
@@ -69,41 +75,108 @@ public class FillButtonSkin<C extends FillButton> extends SelectableButtonSkin<C
     public FillButtonSkin(final C control) {
         super(control);
         
+        // setFillApplier(createDefaultFillApplier());
         
-        if (control.getFill() != null && control.getFill().hasFillSpans()) {
-            createJuiFillTransition(control);
-        }
+        // create JuiFillTransition after fill applier has been set
+        jfTrans = new JuiFillTransition(getFillApplier());
+        jfTrans.durationProperty().bind(control.fillDurationProperty());
+        
+//        skinInit = (obv, o, n) -> {
+//            if (control.getSkin() != null) {
+//                createJuiFillTransition(control);
+//                
+//                control.skinProperty().removeListener(skinInit);
+//                skinInit = null;
+//            }
+//        };
+//        control.skinProperty().addListener(skinInit);
+        
+        fillDisabledOrSelected = new BooleanBinding()
+        {
+            {
+                bind(control.fillEnabledProperty(), control.selectedProperty());
+            }
+            
+            @Override
+            protected boolean computeValue() {
+                return control.isSelected() || !control.isFillEnabled();
+            }
+        };
         
         // register FillButton change listeners
-        registerChangeListener(control.fillEnabledProperty(), o -> setFillEnabled(thisSkinnable().isFillEnabled()));
-        registerChangeListener(control.fillProperty(), o -> updateJuiFillTransition(thisSkinnable()));
+        registerChangeListener(control.fillEnabledProperty(), o -> onFillEnabled(getFillable().isFillEnabled()));
         
         // register SelectableButton change listeners
-        registerChangeListener(control.selectedProperty(), o -> handleButtonSelected(thisSkinnable().isSelected()));
+        registerChangeListener(control.selectedProperty(), o -> onSelected(getFillable().isSelected()));
         
         // register Button change listeners
-        registerChangeListener(control.armedProperty(), o -> handleButtonArmed(thisSkinnable().isArmed()));
+        registerChangeListener(control.armedProperty(), o -> onArmed(getFillable().isArmed()));
         
         // register Node change listeners
-        registerChangeListener(control.hoverProperty(), o -> handleButtonHover(thisSkinnable().isHover()));
-        registerChangeListener(control.focusedProperty(), o -> handleButtonFocused(thisSkinnable().isFocused()));
+        registerChangeListener(control.hoverProperty(), o -> onHover(getFillable().isHover()));
+        
+        // focus change listener
+        focusChange = (obv, o, n) -> onFocused(n);
+        
+        // add focus change listener if fillOnFocus is true
+        if (control.isFillOnFocus()) { control.focusedProperty().addListener(focusChange); }
+        
+        // fill on focused listener
+        registerChangeListener(control.fillOnFocusProperty(), o -> {
+            final BooleanProperty fillOnFocus = getFillable().fillOnFocusProperty();
+            if (fillOnFocus.get()) {
+                getFillable().focusedProperty().addListener(focusChange);
+            } else {
+                getFillable().focusedProperty().removeListener(focusChange);
+            }
+        });
     }
     
     
     /***************************************************************************
      *                                                                         *
-     * Public API                                                              *
+     * Public API (from Skin)                                                  *
      *                                                                         *
      **************************************************************************/
     
     /** {@inheritDoc} */
     @Override
     public void dispose() {
-        if (thisSkinnable() == null) { return; }
+        if (getFillable() == null) { return; }
         
-        disposeOfJuiFillTransition();
+        if (jfTrans != null) {
+            jfTrans.dispose();
+            jfTrans = null;
+        }
+        
+        if (getFillApplier() != null) {
+            getFillApplier().dispose();
+        }
+        
         super.dispose();
     }
+    
+    
+    /***************************************************************************
+     *                                                                         *
+     * Public API (from FillableSkin)                                          *
+     *                                                                         *
+     **************************************************************************/
+    
+    @Override
+    public C getFillable() { return thisSkinnable(); }
+    
+    @Override
+    public FillApplier<C> createDefaultFillApplier() { return new FillButtonApplier<C>(getFillable()); }
+    
+    
+    @Override
+    public final ReadOnlyObjectProperty<FillApplier<C>> fillApplierProperty() {
+        return fillApplier.getReadOnlyProperty();
+    }
+    protected void setFillApplier(FillApplier<C> value) { fillApplier.set(value); }
+    private ReadOnlyObjectWrapper<FillApplier<C>> fillApplier =
+    new ReadOnlyObjectWrapper<FillApplier<C>>(this, "fillApplier", createDefaultFillApplier());
     
     
     /***************************************************************************
@@ -112,152 +185,70 @@ public class FillButtonSkin<C extends FillButton> extends SelectableButtonSkin<C
      *                                                                         *
      **************************************************************************/
     
-    private void setFillEnabled(final boolean enabled) {
+    private void onFillEnabled(final boolean enabled) {
         if (!enabled) {
-            if (thisSkinnable().isSelected()) { return; }
+            // don't alter fillable's look if its selected
+            if (getFillable().isSelected()) { return; }
             
-            // go back to start, set fill to fill-from
-            gotoStartOfTransition();
+            // go back to start, reset fillable to its pre-fill state
+            jfTrans.jumpToStart();
         } else {
             // if fill transition is enabled while hover or focus then play fill
-            if (thisSkinnable().isHover() || thisSkinnable().isFocused()) {
-                playForward();
+            if (getFillable().isHover() || getFillable().isFocused()) {
+                jfTrans.playForward();
             }
         }
     }
     
-    private void handleButtonSelected(boolean selected) {
+    private void onSelected(boolean selected) {
         if (selected) {
-            gotoEndOfTransition();
+            jfTrans.jumpToEnd();
         } else {
-            gotoStartOfTransition();
+            jfTrans.jumpToStart();
         }
     }
     
-    private void handleButtonArmed(boolean armed) {
-        if (thisSkinnable().isSelected()) { return; }
+    private void onArmed(boolean armed) {
+        // don't alter the button if fill is disabled or it's selected
+        if (fillDisabledOrSelected.get()) { return; }
         
-        if (armed) {
-            // fillTrans.stop();
-        } else {
-            playBackward();
+        if (!armed) {
+            jfTrans.playBackward();
         }
         
     }
     
-    private void handleButtonHover(boolean isHovering) {
-        // don't alter the button if it's selected
-        if (thisSkinnable().isSelected()) { return; }
+    private void onHover(boolean isHovering) {
+        // don't alter the button if fill is disabled or it's selected
+        if (fillDisabledOrSelected.get()) { return; }
         
         if (isHovering) {
-            playForward();
+            jfTrans.playForward();
         } else {
-            
-            if (thisSkinnable().isArmed() && thisSkinnable().isFocused()) {
-                
-            }
-            if (thisSkinnable().isArmed()) {
-                playBackward();
+            final C fable = getFillable();
+            if (fable.isArmed()) {
+                jfTrans.playBackward();
                 return;
             }
             
             // don't un-fill if the button has focus and it's not armed
-            if (thisSkinnable().isFocused()) { return; }
+            if (fable.isFillOnFocus() && fable.isFocused()) { return; }
             
-            playBackward();
+            jfTrans.playBackward();
         }
     }
     
-    private void handleButtonFocused(boolean isFocused) {
+    private void onFocused(boolean isFocused) {
         // don't alter the button if it's being hovered or it's selected
-        if (thisSkinnable().isHover() || thisSkinnable().isSelected()) { return; }
+        if (fillDisabledOrSelected.get() || getFillable().isHover()) { return; }
         
-        if (isFocused && !thisSkinnable().isPressed()) {
-            playForward();
+        if (isFocused && !getFillable().isPressed()) {
+            jfTrans.playForward();
         } else {
-            playBackward();
+            jfTrans.playBackward();
         }
         
     }
     
-    /** Plays transition forward, on finish sets fill to control's fill-from. */
-    private void playForward() {
-        if (jfTrans == null || jfTrans.isAtEnd() || jfTrans.isPlayingForward()) { return; }
-        
-        // play forward if at start, rate is <= 0 or transition isn't playing
-        jfTrans.setRate(1.0);
-        jfTrans.play();
-    }
-    
-    /** Plays transition forward, on finish sets fill to control's fill-to. */
-    private void playBackward() {
-        if (jfTrans == null || jfTrans.isAtStart() || jfTrans.isPlayingBackward()) { return; }
-        
-        // play backward if at end, rate is >= 0 or transition isn't playing
-        jfTrans.setRate(-1.0);
-        jfTrans.play();
-    }
-    
-    /** Goes to end of transition, sets fill to control's fill-to. */
-    private void gotoEndOfTransition() {
-        if (jfTrans == null || jfTrans.isAtEnd()) { return; }
-        jfTrans.stop();
-        jfTrans.jumpTo(jfTrans.getTotalDuration());
-        jfTrans.setRate(-1.0);
-        
-        thisSkinnable().getFillApplier().interpolateAndApply(1.0);
-    }
-    
-    /** Goes to start of transition, resets control's background. */
-    private void gotoStartOfTransition() {
-        if (jfTrans == null || jfTrans.isAtStart()) { return; }
-        jfTrans.stop();
-        jfTrans.jumpTo(Duration.ZERO);
-        jfTrans.setRate(1.0);
-        
-        thisSkinnable().getFillApplier().interpolateAndApply(0.0);
-    }
-    
-    /** Helper that updates 'juiFillTrans' when fillable's fill changes. */
-    private void updateJuiFillTransition(Fillable fillable) {
-        final Fill fill = fillable.getFill();
-        if (!fill.hasFillSpans()) {
-            // we don't need a fill transition if we don't have fill spans
-            disposeOfJuiFillTransition();
-            return;
-        }
-        
-        if (jfTrans == null) {
-            createJuiFillTransition(fillable);
-            return;
-        }
-    }
-    
-    /** Helper that creates a single or multi fill transition. */
-    private void createJuiFillTransition(Fillable fillable) {
-        jfTrans = new SingleFillTransition(fillable);
-        jfTrans.setCycleCount(1);
-    }
-    
-    /** Null-safe helper that stops, disposes and nulls out 'juiFillTrans'. */
-    private void disposeOfJuiFillTransition() {
-        if (jfTrans != null) {
-            jfTrans.stop();
-            jfTrans.dispose();
-            jfTrans = null;
-        }
-    }
-    
-    
-    @Override
-    public FillApplier<?> createDefaultFillApplier() { // TODO Auto-generated method stub
-        return null;
-    }
-    
-    
-    @Override
-    public void addChangeListener(ObservableValue<?> property, Consumer<ObservableValue<?>> consumer) {
-        
-    }
     
 }

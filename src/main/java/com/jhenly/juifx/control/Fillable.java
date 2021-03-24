@@ -18,14 +18,15 @@ import java.util.List;
 
 import com.jhenly.juifx.control.skin.FillableSkin;
 
+import impl.com.jhenly.juifx.fill.BorderFillSpan;
 import impl.com.jhenly.juifx.fill.Fill;
-import impl.com.jhenly.juifx.fill.FillApplier;
 import impl.com.jhenly.juifx.fill.FillCssMetaData;
-import impl.com.jhenly.juifx.fill.FillProperty;
 import impl.com.jhenly.juifx.fill.FillSpan;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.css.CssMetaData;
+import javafx.css.PseudoClass;
 import javafx.css.Styleable;
 import javafx.css.StyleableProperty;
 import javafx.css.converter.BooleanConverter;
@@ -48,10 +49,11 @@ public interface Fillable extends Skinnable, Styleable {
     
     /**************************************************************************
      *                                                                        *
-     * Properties                                                             *
+     * Fillable Related Properties                                            *
      *                                                                        *
      *************************************************************************/
     
+    /* --- Fill Enabled --- */
     /**
      * The fill enabled property, which indicates if this {@code Fillable}
      * instance's fill transition should run or not.
@@ -73,6 +75,8 @@ public interface Fillable extends Skinnable, Styleable {
      */
     default boolean isFillEnabled() { return true; }
     
+    
+    /* --- Fill Duration --- */
     /**
      * The fill transition duration property, which specifies how long it will
      * take the fill transition to go from start to end.
@@ -103,11 +107,15 @@ public interface Fillable extends Skinnable, Styleable {
     /** The default {@code Fill} duration. */
     Duration DEFAULT_DURATION = Duration.millis(200.0);
     
+    
+    /* --- Fill --- */
     /**
      * This {@code Fillable} instance's {@link Fill} property, which
      * encapsulates the {@link FillSpan} instance(s) used by the fill transition.
+     * 
+     * @defaultValue {@link #DEFAULT_FILL}
      */
-    FillProperty fillProperty();
+    ObjectProperty<Fill> fillProperty();
     /** 
      * Sets this {@code Fillable} instance's {@link Fill} to the specified
      * fill.
@@ -120,25 +128,60 @@ public interface Fillable extends Skinnable, Styleable {
      */
     Fill getFill();
     
-//    /**
-//     * The {@link FillType} property, which specifies what type of fill(s) the
-//     * {@code Fillable} contains.
-//     * 
-//     * @defaultValue {@link FillType#BG}
-//     */
-//    ObjectProperty<FillType> fillTypeProperty();
-//    /**
-//     * Sets this {@code Fillable} instance's {@link FillType}.
-//     * @param value - the new {@code FillType}
-//     */
-//    default void setFillType(FillType value) { fillTypeProperty().set(value); }
-//    /**
-//     * Gets this {@code Fillable} instance's {@link FillType}.
-//     * @return this {@code Fillable} instance's {@code FillType}
-//     */
-//    default FillType getFillType() { return fillTypeProperty().get(); }
+    /** 
+     * The {@linkplain Fill#getDefault() default Fill}, which contains no {@link FillSpan} or
+     * {@link BorderFillSpan} instances.
+     */
+    Fill DEFAULT_FILL = Fill.getDefault();
     
     
+    /* --- Fill On Focus --- */
+    /**
+     * The fill on focus property, which indicates if this {@code Fillable}
+     * instance's fill transition should run when it gains focus.
+     * 
+     * @defaultValue {@code false}
+     */
+    BooleanProperty fillOnFocusProperty();
+    /**
+     * Sets whether this {@code Fillable} instance's fill transition should run
+     * when it gains focus.
+     * @param value - whether the fill transition should run when it gains
+     *        focus or not
+     */
+    default void setFillOnFocus(boolean value) { fillOnFocusProperty().set(value); }
+    /**
+     * Gets whether this {@code Fillable} instance's fill transition should run
+     * when it gains focus.
+     * @return {@code true} if the fill transition should run when it gains
+     *         focus, otherwise {@code false}
+     */
+    default boolean isFillOnFocus() { return false; }
+    
+    
+    /* --- Fillable Skin --- */
+    /**
+     * The fillable skin property, which encapsulates this {@code Fillable}
+     * instance's underlying {@link FillableSkin} instance.
+     */
+    <F extends FillableSkin<? extends Fillable>> ReadOnlyObjectProperty<F> fillableSkinProperty();
+    /**
+     * Gets the {@link FillableSkin} attached to this {@code Fillable}
+     * instance.
+     * @return the {@code FillableSkin} attached to this {@code Fillable}
+     *         instance
+     */
+    @SuppressWarnings("unchecked")
+    default <F extends FillableSkin<? extends Fillable>> F getFillableSkin() { return (F) getSkin(); }
+    
+    
+    /**************************************************************************
+     *                                                                        *
+     * Region Related Properties                                              *
+     *                                                                        *
+     *************************************************************************/
+    
+    /* --- Background --- */
     /**
      * The background of the Region, which is made up of zero or more BackgroundFills, and
      * zero or more BackgroundImages. It is possible for a Background to be empty, where it
@@ -149,6 +192,8 @@ public interface Fillable extends Skinnable, Styleable {
     Background getBackground();
     void setBackground(Background value);
     
+    
+    /* --- Border --- */
     /**
      * The border of the Region, which is made up of zero or more BorderStrokes, and
      * zero or more BorderImages. It is possible for a Border to be empty, where it
@@ -159,15 +204,8 @@ public interface Fillable extends Skinnable, Styleable {
     Border getBorder();
     void setBorder(Border value);
     
-    /**
-     * The {@link Paint} used to fill the text.
-     *
-     * @defaultValue {@code Color.BLACK}
-     */
-    ObjectProperty<Paint> textFillProperty();
-    Paint getTextFill();
-    void setTextFill(Paint value);
     
+    /* --- Shape --- */
     /**
      * When specified, the {@code Shape} will cause the region to be
      * rendered as the specified shape rather than as a rounded rectangle.
@@ -185,23 +223,26 @@ public interface Fillable extends Skinnable, Styleable {
     
     /**************************************************************************
      *                                                                        *
-     * Methods                                                                *
+     * Labeled Related Properties                                             *
      *                                                                        *
      *************************************************************************/
     
+    /* --- Text --- */
     /**
-     * Gets this {@code Fillable} instance's {@code FillApplier} instance.
-     * @return this fillable's fill applier
+     * The {@link Paint} used to fill the text.
+     *
+     * @defaultValue {@code Color.BLACK}
      */
-    FillApplier<? extends Fillable> getFillApplier();
+    ObjectProperty<Paint> textFillProperty();
+    Paint getTextFill();
+    void setTextFill(Paint value);
     
-    /**
-     * Gets the {@link FillableSkin} attached to this {@code Fillable}
-     * instance.
-     * @return the {@code FillableSkin} attached to this {@code Fillable}
-     *         instance
-     */
-    default FillableSkin<? extends Fillable> getFillableSkin() { return (FillableSkin<?>) getSkin(); }
+    
+    /**************************************************************************
+     *                                                                        *
+     * Methods                                                                *
+     *                                                                        *
+     *************************************************************************/
     
     
     /**************************************************************************
@@ -210,20 +251,15 @@ public interface Fillable extends Skinnable, Styleable {
      *                                                                        *
      *************************************************************************/
     
+    /** 
+     * CSS ':fill-disabled' signals that the {@code Fillable} instance's fill
+     * transition is disabled. 
+     */
+    PseudoClass FILL_DISABLED_PSEUDO_CLASS = PseudoClass.getPseudoClass("fill-disabled"); //$NON-NLS-1$
+    
+    
     /** Instantiates the {@link Fillable} interface's CSS styleable properties. */
     static class StyleableProperties {
-        
-        public static final FillCssMetaData<Fillable> FILL = new FillCssMetaData<Fillable>("-fill", Fill.getDefault())
-        {
-            @Override
-            public boolean isSettable(Fillable fillable) {
-                return fillable.getFill() == null || !fillable.fillProperty().isBound();
-            }
-            @Override
-            public StyleableProperty<Fill> getStyleableProperty(Fillable fillable) {
-                return (StyleableProperty<Fill>) fillable.fillProperty();
-            }
-        };
         
         /* --- Fill Enabled --- */
         public static final CssMetaData<Fillable, Boolean> FILL_ENABLED =
@@ -246,7 +282,7 @@ public interface Fillable extends Skinnable, Styleable {
         {
             @Override
             public boolean isSettable(Fillable fillable) {
-                return fillable.getFillDuration() == null || !fillable.fillDurationProperty().isBound();
+                return fillable.getFillDuration() == DEFAULT_DURATION || !fillable.fillDurationProperty().isBound();
             }
             @SuppressWarnings("unchecked")
             @Override
@@ -255,12 +291,42 @@ public interface Fillable extends Skinnable, Styleable {
             }
         };
         
+        /* --- Fill --- */
+        public static final FillCssMetaData<Fillable> FILL = new FillCssMetaData<Fillable>("-fill", Fill.getDefault())
+        {
+            @Override
+            public boolean isSettable(Fillable fillable) {
+                return fillable.getFill() == DEFAULT_FILL || !fillable.fillProperty().isBound();
+            }
+            @SuppressWarnings("unchecked")
+            @Override
+            public StyleableProperty<Fill> getStyleableProperty(Fillable fillable) {
+                return (StyleableProperty<Fill>) fillable.fillProperty();
+            }
+        };
+        
+        /* --- Fill On Focus --- */
+        public static final CssMetaData<Fillable, Boolean> FILL_ON_FOCUS =
+        new CssMetaData<Fillable, Boolean>("-fill-on-focus", BooleanConverter.getInstance(), false)
+        {
+            @Override
+            public boolean isSettable(Fillable fillable) {
+                return !fillable.fillOnFocusProperty().isBound();
+            }
+            @SuppressWarnings("unchecked")
+            @Override
+            public StyleableProperty<Boolean> getStyleableProperty(Fillable fillable) {
+                return (StyleableProperty<Boolean>) fillable.fillOnFocusProperty();
+            }
+        };
+        
+        /* --- Styleables --- */
         private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES =
-        List.of(FILL, FILL_ENABLED, FILL_DURATION);
+        List.of(FILL_ENABLED, FILL_DURATION, FILL, FILL_ON_FOCUS);
     }
     
     /**
-     * Gets the {@code CssMetaData} associated with this interface..
+     * Gets the {@code CssMetaData} associated with this interface.
      *
      * @return the {@code CssMetaData} associated with this interface 
      */

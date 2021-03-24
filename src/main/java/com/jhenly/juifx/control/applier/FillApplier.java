@@ -1,5 +1,7 @@
 package com.jhenly.juifx.control.applier;
 
+import java.util.Collection;
+
 import com.jhenly.juifx.control.Fillable;
 
 import impl.com.jhenly.juifx.fill.Fill;
@@ -38,15 +40,6 @@ public interface FillApplier<F extends Fillable> {
      */
     F getFillable();
     
-    /***
-     * Allows a {@code FillApplier} to implement any logic necessary to clean
-     * itself up after the {@code FillApplier} is no longer needed.
-     * <p>
-     * The method {@link #getFillable()} should return {@code null} following a
-     * call to dispose. Calling dispose twice has no effect.
-     */
-    void dispose();
-    
     /**
      * Gets whether or not this {@code FillApplier} instance is currently
      * applying the {@code Fillable} instance's {@code Fill}.
@@ -55,6 +48,15 @@ public interface FillApplier<F extends Fillable> {
      *         fillable's fill, otherwise {@code false}
      */
     boolean isApplying();
+    
+    /***
+     * Allows a {@code FillApplier} to implement any logic necessary to clean
+     * itself up after the {@code FillApplier} is no longer needed.
+     * <p>
+     * The method {@link #getFillable()} should return {@code null} following a
+     * call to dispose. Calling dispose twice has no effect.
+     */
+    void dispose();
     
     /**
      * Attaches a specified {@code FillApplier} to this {@code FillApplier}.
@@ -73,7 +75,56 @@ public interface FillApplier<F extends Fillable> {
      * @return {@code true} if the specified {@code FillApplier} was attached
      *         to this {@code FillApplier}, otherwise {@code false}
      */
-    boolean attach(FillApplier<? extends Fillable> applier);
+    boolean attach(FillApplier<?> applier);
+    
+    /**
+     * Attaches all of the specified {@code FillApplier} instances to this
+     * {@code FillApplier}.
+     * <p>
+     * Invoking {@link #interpolateAndApply(double)} on a {@code FillApplier}
+     * will invoke {@code interpolateAndApply(double)} on any attached
+     * {@code FillApplier} instances, as well as any {@code FillApplier}
+     * instances attached to them.
+     * <p>
+     * Due to this, if attaching a {@code FillApplier} were to create a
+     * circular reference then it will not be attached.
+     * 
+     * @param appliers - the collection of {@code FillApplier} instances to
+     *        attach to this {@code FillApplier}
+     * @return {@code true} if any of the specified {@code FillApplier}
+     *         instances were attached to this {@code FillApplier}, otherwise
+     *         {@code false}
+     */
+    boolean attachAll(Collection<FillApplier<?>> appliers);
+    
+    /**
+     * Detaches a specified attached {@code FillApplier} from this
+     * {@code FillApplier}, if one is attached.
+     * 
+     * @param applier - the {@code FillApplier} to detach from this
+     *        {@code FillApplier}
+     * @return {@code true} if the specified {@code FillApplier} was detached
+     *         from this {@code FillApplier}, otherwise {@code false}
+     */
+    boolean detach(FillApplier<?> applier);
+    
+    /**
+     * Detaches all of the specified attached {@code FillApplier} instances
+     * from this {@code FillApplier}, if any are attached.
+     * 
+     * @param applier - the collection of {@code FillApplier} instances to
+     *        detach from this {@code FillApplier}
+     * @return {@code true} if any of the specified {@code FillApplier}
+     *         instances were detached from this {@code FillApplier}, otherwise
+     *         {@code false}
+     */
+    boolean detachAll(Collection<FillApplier<?>> appliers);
+    
+    /**
+     * Detaches all of the attached {@code FillApplier} instances from this
+     * {@code FillApplier}, if any are attached.
+     */
+    void detachAll();
     
     /**
      * Applies the {@code Fillable} instance's text, shape, stroke, background
@@ -88,5 +139,11 @@ public interface FillApplier<F extends Fillable> {
      * @param frac - the interpolate fraction
      */
     void interpolateAndApply(double frac);
+    
+    /**
+     * Resets the {@code Fillable} instance's properties to their original
+     * state.
+     */
+    void resetFillable();
     
 }

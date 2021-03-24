@@ -1,8 +1,10 @@
 package com.jhenly.juifx.control.applier;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.jhenly.juifx.control.Fillable;
 
@@ -12,16 +14,16 @@ import impl.com.jhenly.juifx.fill.FillHelper;
 import impl.com.jhenly.juifx.fill.FillSpan;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableObjectValue;
+import javafx.scene.control.Skin;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
-import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Shape;
 
 
-public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
+public abstract class FillApplierBase<F extends Fillable> implements FillApplier<F> {
     
     /**
      * The {@code Fillable} that is referencing this {@code FillApplier}. There
@@ -37,12 +39,15 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
     private final ChangeListener<Shape> shapeChanged;
     
     private boolean fillInvalid;
-    private boolean cachesInvalid;
     private boolean applying;
-    private List<FillApplier<?>> attached;
+    private AttachedList attached;
+    private Map<Class<? extends SubApplier>, SubApplier> subAppliers;
     
-    protected List<BackgroundFill> bgFillsCache;
-    protected List<BorderStroke> bdStrokesCache;
+    protected Paint textCache;
+    protected Paint shapeCache;
+    protected Paint strokeCache;
+    protected Background bgCache;
+    protected Border bdCache;
     
     
     /***************************************************************************
@@ -58,7 +63,7 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
      *        {@code FillApplier} should attach to.
      */
     protected FillApplierBase(F fillable) {
-        if (fillable == null) { throw new IllegalArgumentException("cannot pass null for fillable"); }
+        if (fillable == null) { throw new IllegalArgumentException("the 'fillable' parameter cannot be null"); }
         
         fable = fillable;
         
@@ -67,16 +72,10 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
         
         //
         propInvalidated = obv -> {
-            if (applying || cachesInvalid) { return; }
+            if (applying || fillInvalid) { return; }
             
             // fill is invalid if any of its 5 properties change
             fillInvalid = true;
-            
-            Object val = ((ObservableObjectValue<?>) obv).get();
-            if (val.getClass() == Background.class || val.getClass() == Border.class) {
-                // caches are invalid if fable's background or border change
-                cachesInvalid = true;
-            }
         };
         
         // handles shape's stroke property
@@ -87,7 +86,8 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
         
         fable.fillProperty().addListener(fillInvalidated);
         
-        fillInvalid = cachesInvalid = true;
+        fillInvalid = true;
+        updateFill();
     }
     
     
@@ -99,13 +99,19 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
     
     /** {@inheritDoc} */
     @Override
+    public final F getFillable() { return fable; }
+    
+    /** {@inheritDoc} */
+    @Override
+    public final boolean isApplying() { return applying; }
+    
+    /** {@inheritDoc} */
+    @Override
     public void dispose() {
-        if (fable == null) { return; }
+        // remove any attached appliers
+        detachAll();
         
-        if (attached != null) {
-            attached.clear();
-            attached = null;
-        }
+        if (fable == null) { return; }
         
         removePropListeners();
         
@@ -117,29 +123,10 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
     
     /** {@inheritDoc} */
     @Override
-    public final F getFillable() { return fable; }
-    
-    /** {@inheritDoc} */
-    @Override
-    public final boolean isApplying() { return applying; }
-    
-    /** {@inheritDoc} */
-    @Override
-    public final boolean attach(FillApplier<? extends Fillable> applier) {
-        if (attached == null) { attached = new LinkedList<FillApplier<? extends Fillable>>(); }
-        
-        // do a simple circular reference check, applying should cover the rest
-        if (attached.stream().anyMatch(a -> a == applier)) { return false; }
-        
-        return attached.add(applier);
-    }
-    
-    /** {@inheritDoc} */
-    @Override
     public final void interpolateAndApply(double frac) {
         if (applying) { return; }
         
-        // signal that fill applier is changing text, shape, etc. fill
+        // signal that fill applier is changing some fill
         applying = true;
         
         if (fill != null && fill.hasFillSpans()) {
@@ -147,17 +134,37 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
             // update fill and caches if invalid (cachesInvalid -> fillInvalid)
             if (fillInvalid) { updateInvalid(); }
             
-            interpolateAndApplyImpl(frac);
+            if (subAppliers != null) {
+                subAppliers.values().forEach(applier -> applier.interpolateAndApply(frac));
+            }
+            
         }
         
         if (attached != null) {
-            attached.forEach(applier -> applier.interpolateAndApply(frac));
+            attached.interpolateAndApply(frac);
         }
         
-        // signal that fill applier is no longer changing text, etc. fill
+        // signal that fill applier is no longer changing some fill
         applying = false;
     }
     
+    @Override
+    public void resetFillable() {
+        applying = true;
+        
+        if (textCache != null) { fable.setTextFill(textCache); }
+        
+        final Shape shape = fable.getShape();
+        if (shape != null) {
+            shape.setFill(shapeCache);
+            shape.setStroke(strokeCache);
+        }
+        
+        if (bgCache != null) { fable.setBackground(bgCache); }
+        if (bdCache != null) { fable.setBorder(bdCache); }
+        
+        applying = false;
+    }
     
     /***************************************************************************
      *                                                                         *
@@ -165,91 +172,272 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
      *                                                                         *
      **************************************************************************/
     
-    protected void interpolateAndApplyImpl(double frac) {
-        // apply the text fill span
-        if (fill.hasTextFillSpan()) { applyTextFillSpan(fill.getTextFillSpan(), frac); }
-        
-        // apply the shape and stroke fill spans
-        final Shape shape = fable.getShape();
-        if (shape != null) {
-            if (fill.hasShapeFillSpan()) { applyShapeFillSpan(shape, fill.getShapeFillSpan(), frac); }
-            if (fill.hasStrokeFillSpan()) { applyStrokeFillSpan(shape, fill.getStrokeFillSpan(), frac); }
-        }
-        
-        // apply the background fill span(s)
-        if (fill.hasBgFillSpans() && bgFillsCache != null) {
-            applyBgFillSpans(bgFillsCache, fill.getBgFillSpans(), frac);
-        }
-        
-        // apply the border fill span(s)
-        if (fill.hasBorderFillSpans() && bdStrokesCache != null) {
-            applyBorderFillSpans(bdStrokesCache, fill.getBorderFillSpans(), frac);
+    protected void updateSubAppliers() {
+        registerTextFillApplier();
+        registerShapeFillApplier();
+        registerStrokeFillApplier();
+        registerBgFillApplier();
+        registerBorderFillApplier();
+    }
+    
+    private void registerTextFillApplier() {
+        if (fill.hasTextFillSpan()) {
+            if (!subApplierIsRegistered(TextFillApplier.class)) {
+                registerSubApplier(new TextFillApplier());
+            }
+        } else {
+            unregisterSubApplier(TextFillApplier.class);
         }
     }
     
-    /**
-     * Applies the {@code Fillable} instance's text {@code FillSpan}, if
-     * any, to the {@code Fillable} instance.
-     * 
-     * @param span - the {@code Fillable} instance's text {@code FillSpan}
-     * @param frac - the interpolate fraction
-     */
-    protected void applyTextFillSpan(FillSpan span, double frac) {
-        fable.setTextFill(span.interpolate(frac));
+    private void registerShapeFillApplier() {
+        if (fill.hasShapeFillSpan()) {
+            if (!subApplierIsRegistered(ShapeFillApplier.class)) {
+                registerSubApplier(new ShapeFillApplier());
+            }
+        } else {
+            unregisterSubApplier(ShapeFillApplier.class);
+        }
+    }
+    
+    private void registerStrokeFillApplier() {
+        if (fill.hasStrokeFillSpan()) {
+            if (!subApplierIsRegistered(StrokeFillApplier.class)) {
+                registerSubApplier(new StrokeFillApplier());
+            }
+        } else {
+            unregisterSubApplier(StrokeFillApplier.class);
+        }
+    }
+    
+    private void registerBgFillApplier() {
+        if (fill.hasBgFillSpans()) {
+            if (!subApplierIsRegistered(BgFillApplier.class)) {
+                registerSubApplier(new BgFillApplier());
+            }
+        } else {
+            unregisterSubApplier(BgFillApplier.class);
+        }
+    }
+    
+    private void registerBorderFillApplier() {
+        if (fill.hasBorderFillSpans()) {
+            if (!subApplierIsRegistered(BorderFillApplier.class)) {
+                registerSubApplier(new BorderFillApplier());
+            }
+        } else {
+            unregisterSubApplier(BorderFillApplier.class);
+        }
+    }
+    
+    /***************************************************************************
+     *                                                                         *
+     * Attach/Detach API                                                       *
+     *                                                                         *
+     **************************************************************************/
+    
+    /** {@inheritDoc} */
+    @Override
+    public final boolean attach(FillApplier<?> applier) {
+        if (applier == null) { return false; }
+        
+        if (attached == null) {
+            attached = new AttachedList(applier);
+            return true;
+        }
+        
+        // does a simple circular reference check, applying should cover the rest
+        return attached.add(applier);
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public final boolean attachAll(Collection<FillApplier<?>> appliers) {
+        if (appliers == null) { return false; }
+        
+        final int preAttachSize = (attached == null) ? 0 : attached.size();
+        
+        appliers.forEach(a -> attach(a));
+        
+        return (attached == null) ? false : attached.size() != preAttachSize;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public final boolean detach(FillApplier<?> applier) {
+        if (applier == null || attached == null) { return false; }
+        
+        final boolean removed = attached.remove(applier);
+        if (removed && attached.size() <= 0) { attached = null; }
+        
+        return removed;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public final boolean detachAll(Collection<FillApplier<?>> appliers) {
+        if (appliers == null || attached == null) { return false; }
+        
+        final int preDetachSize = attached.size();
+        
+        appliers.forEach(a -> detach(a));
+        
+        return attached.size() != preDetachSize;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public final void detachAll() {
+        if (attached == null) { return; }
+        attached.clear();
+        attached = null;
     }
     
     
-    /**
-     * Applies the {@code Fillable} instance's shape {@code FillSpan}, if
-     * any, to the {@code Fillable} instance's {@code shape} property.
-     * 
-     * @param shape - the {@code Fillable} instance's shape
-     * @param span - the {@code Fillable} instance's shape {@code FillSpan}
-     * @param frac - the interpolate fraction
-     */
-    protected void applyShapeFillSpan(Shape shape, FillSpan span, double frac) {
-        shape.setFill(span.interpolate(frac));
-    }
+    /***************************************************************************
+     *                                                                         *
+     * Attached List Implementation                                            *
+     *                                                                         *
+     **************************************************************************/
     
-    
-    /**
-     * Applies the {@code Fillable} instance's stroke {@code FillSpan}, if
-     * any, to the {@code Fillable} instance's {@code shape} property.
-     * 
-     * @param shape - the {@code Fillable} instance's shape
-     * @param span - the {@code Fillable} instance's stroke {@code FillSpan}
-     * @param frac - the interpolate fraction
-     */
-    protected void applyStrokeFillSpan(Shape shape, FillSpan span, double frac) {
-        shape.setStroke(span.interpolate(frac));
-    }
-    
-    
-    /**
-     * Applies the {@code Fillable} instance's list of {@code FillSpan}, if
-     * any, to the {@code Fillable}.
-     * 
-     * @param bgSpans - the {@code Fillable} instance's list of background
-     *        {@code FillSpan} instances
-     * @param frac - the interpolate fraction
-     */
-    protected void applyBgFillSpans(List<BackgroundFill> bgFills, List<FillSpan> bgSpans, double frac) {
-        fable.setBackground(
-            new Background(interpolateBgFillSpans(bgFills, bgSpans, frac), fable.getBackground().getImages()));
-    }
-    
-    /**
-     * Applies the {@code Fillable} instance's list of {@code BorderFillSpan},
-     * if any, to the {@code Fillable}.
-     * 
-     * @param bdSpans - the {@code Fillable} instance's list of
-     *        {@code BorderFillSpan} instances
-     * @param frac - the interpolate fraction
-     */
-    protected void applyBorderFillSpans(List<BorderStroke> bdStrokes, List<BorderFillSpan> bdSpans, double frac) {
-        fable
-            .setBorder(new Border(interpolateBorderFillSpans(bdStrokes, bdSpans, frac), fable.getBorder().getImages()));
-    }
+    /** Helper doubly linked list node class. */
+    private static class AttachedList {
+        private AttachedApplier head;
+        private int size;
+        
+        AttachedList(FillApplier<?> first) {
+            head = new AttachedApplier(first);
+            size = 1;
+        }
+        
+        boolean add(FillApplier<?> toAdd) {
+            // create and set head if it was removed
+            if (head == null) {
+                head = new AttachedApplier(toAdd);
+                size += 1;
+                return true;
+            }
+            
+            AttachedApplier cur = head;
+            
+            // circular reference check
+            while (cur.next != null) {
+                if (cur.attached.equals(toAdd)) { return false; }
+                cur = cur.next;
+            }
+            // need to check the last node in the list
+            if (cur.attached.equals(toAdd)) { return false; }
+            
+            // create and add fill applier to the list
+            AttachedApplier tmp = new AttachedApplier(toAdd);
+            cur.next = tmp;
+            tmp.prev = cur;
+            
+            size += 1;
+            return true;
+        }
+        
+        boolean remove(FillApplier<?> toRemove) {
+            if (head == null) { return false; }
+            
+            AttachedApplier cur = head;
+            
+            while (cur != null) {
+                if (cur.attached.equals(toRemove)) {
+                    if (cur == head) {
+                        if (cur.next != null) {
+                            head = cur.next;
+                        } else {
+                            head = null;
+                        }
+                    }
+                    
+                    cur.dispose();
+                    size -= 1;
+                    return true;
+                }
+                
+                cur = cur.next;
+            }
+            
+            return false;
+        }
+        
+        void clear() {
+            if (head == null) { return; }
+            
+            AttachedApplier cur = head;
+            
+            while (cur != null) {
+                AttachedApplier tmp = cur.next;
+                cur.dispose();
+                cur = tmp;
+            }
+            
+            head = null;
+            size = 0;
+        }
+        
+        int size() { return size; }
+        
+        void interpolateAndApply(double frac) {
+            if (head == null) { return; }
+            
+            AttachedApplier cur = head;
+            
+            while (cur != null) {
+                cur.interpolateAndApply(frac);
+                cur = cur.next;
+            }
+        }
+        
+        /** Helper doubly linked list node class. */
+        private static class AttachedApplier {
+            private AttachedApplier next, prev;
+            private FillApplier<?> attached;
+            private final ChangeListener<Skin<?>> skinChange;
+            private final ChangeListener<FillApplier<?>> applierChange;
+            
+            AttachedApplier(FillApplier<?> toAttach) {
+                attached = toAttach;
+                
+                skinChange = (obv, o, n) -> dispose();
+                applierChange = (obv, o, n) -> dispose();
+                
+                attached.getFillable().skinProperty().addListener(skinChange);
+                attached.getFillable().getFillableSkin().fillApplierProperty().addListener(applierChange);
+            }
+            
+            void dispose() {
+                if (attached != null) {
+                    attached.getFillable().skinProperty().removeListener(skinChange);
+                    attached.getFillable().getFillableSkin().fillApplierProperty().removeListener(applierChange);
+                }
+                
+                if (prev != null) {
+                    prev.next = next;
+                }
+                
+                if (next != null) {
+                    next.prev = prev;
+                }
+                
+                prev = null;
+                next = null;
+                
+                attached = null;
+            }
+            
+            void interpolateAndApply(double frac) {
+                if (attached == null) { return; }
+                
+                attached.interpolateAndApply(frac);
+            }
+            
+        } // class AttachedApplier
+        
+        
+    } // class AttachedList
     
     
     /***************************************************************************
@@ -295,19 +483,31 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
         // some aspect of fill has changed, need to reset property listeners
         removePropListeners();
         if (newFill == null) {
+            clearSubAppliers();
             fill = null;
+            return;
+        }
+        
+        if (!newFill.hasFillSpans()) {
+            fill = newFill;
+            clearSubAppliers();
             return;
         }
         
         final boolean hasSpecial = FillHelper.fillHasSpecial(newFill);
         fill = hasSpecial ? FillHelper.replaceSpecialsInFill(newFill, fable) : newFill;
-        
         addPropListeners(hasSpecial);
+        
+        updateSubAppliers();
+    }
+    
+    private void clearSubAppliers() {
+        if (subAppliers != null) { subAppliers.clear(); }
     }
     
     /** Updates 'fill' and caches if they are invalid. */
     private void updateInvalid() {
-        if (cachesInvalid) { updateCaches(); }
+        updateCaches();
         
         final Fill f = fable.getFill();
         fill = FillHelper.fillHasSpecial(f) ? FillHelper.replaceSpecialsInFill(f, fable) : fill;
@@ -315,18 +515,16 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
         fillInvalid = false;
     }
     
-    /**
-     * Updates this {@code FillApplier} instance's cached background fills and
-     * border strokes.
-     */
+    /** Updates this {@code FillApplier} instance's cached properties. */
     private void updateCaches() {
-        final Background bg = fable.getBackground();
-        bgFillsCache = (bg != null) ? bg.getFills() : null;
+        textCache = fable.getTextFill();
         
-        final Border bd = fable.getBorder();
-        bdStrokesCache = (bd != null) ? bd.getStrokes() : null;
+        final Shape shape = fable.getShape();
+        shapeCache = (shape == null) ? null : shape.getFill();
+        strokeCache = (shape == null) ? null : shape.getStroke();
         
-        cachesInvalid = false;
+        bgCache = fable.getBackground();
+        bdCache = fable.getBorder();
     }
     
     
@@ -335,6 +533,37 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
      * SubApplier Implementation                                               *
      *                                                                         *
      **************************************************************************/
+    
+    /**
+     * 
+     * @param subApplier - the {@code SubApplier} to register
+     */
+    protected final void registerSubApplier(SubApplier subApplier) {
+        if (subAppliers == null) { subAppliers = new LinkedHashMap<>(5); }
+        
+        subAppliers.put(subApplier.getClass(), subApplier);
+    }
+    
+    /**
+     * 
+     * @param subApplierClass - the class of the {@code SubApplier} to unregister
+     */
+    protected final void unregisterSubApplier(Class<? extends SubApplier> subApplierClass) {
+        if (subAppliers == null) { return; }
+        
+        subAppliers.remove(subApplierClass);
+    }
+    
+    /**
+     * 
+     * @param subApplierClass - the class of the {@code SubApplier} to see if
+     *        it's registered
+     */
+    protected final boolean subApplierIsRegistered(Class<? extends SubApplier> subApplierClass) {
+        if (subAppliers == null) { return false; }
+        
+        return subAppliers.containsKey(subApplierClass);
+    }
     
     /** */
     protected interface SubApplier {
@@ -365,7 +594,6 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
         public final Fill getFill() { return FillApplierBase.this.fill; }
     }
     
-    
     /**
      * Applies the {@code Fillable} instance's text {@code FillSpan}, if
      * any, to the {@code Fillable} instance.
@@ -389,7 +617,8 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
     
     
     /**
-     *
+     * Applies the {@code Fillable} instance's shape {@code FillSpan}, if
+     * any, to the {@code Fillable} instance's {@code shape} property.
      */
     protected class ShapeFillApplier extends SubApplierBase {
         
@@ -405,7 +634,8 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
     
     
     /**
-     *
+     * Applies the {@code Fillable} instance's stroke {@code FillSpan}, if
+     * any, to the {@code Fillable} instance's {@code shape} property.
      */
     protected class StrokeFillApplier extends SubApplierBase {
         
@@ -421,14 +651,15 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
     
     
     /**
-     * 
+     * Applies the {@code Fillable} instance's list of {@code FillSpan}, if
+     * any, to the {@code Fillable}.
      */
     protected class BgFillApplier extends SubApplierBase {
         
         @Override
         public void interpolateAndApply(double frac) {
-            if (bgFillsCache != null) {
-                List<BackgroundFill> interped = interpolateBgFillSpans(bgFillsCache, fill.getBgFillSpans(), frac);
+            if (bgCache != null) {
+                List<BackgroundFill> interped = interpolateBgFillSpans(bgCache.getFills(), fill.getBgFillSpans(), frac);
                 
                 fable.setBackground(new Background(interped, fable.getBackground().getImages()));
             }
@@ -462,15 +693,16 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
     
     
     /**
-     * 
+     * Applies the {@code Fillable} instance's list of {@code BorderFillSpan},
+     * if any, to the {@code Fillable}.
      */
     protected class BorderFillApplier extends SubApplierBase {
         
         @Override
         public void interpolateAndApply(double frac) {
-            if (bdStrokesCache != null) {
+            if (bdCache != null) {
                 List<BorderStroke> interped =
-                interpolateBorderFillSpans(bdStrokesCache, fill.getBorderFillSpans(), frac);
+                interpolateBorderFillSpans(bdCache.getStrokes(), fill.getBorderFillSpans(), frac);
                 
                 fable.setBorder(new Border(interped, fable.getBorder().getImages()));
             }
@@ -499,18 +731,18 @@ public class FillApplierBase<F extends Fillable> implements FillApplier<F> {
         
         /** Helper used by 'interpolateBorderFillSpans'. */
         private BorderStroke createBorderStroke(BorderStroke os, BorderFillSpan span, double frac) {
+            // span.isUniform implies top == right == bottom == left
             if (span.isUniform()) {
                 return new BorderStroke(span.getTop().interpolate(frac), os.getTopStyle(), os.getRadii(),
                     os.getWidths(), os.getInsets());
             }
             
             // 'is' stands for 'interpolated span'
-            Color[] is = span.interpolate(frac);
+            Paint[] is = span.interpolate(frac);
             return new BorderStroke(is[0], is[1], is[2], is[3], os.getTopStyle(), os.getRightStyle(),
                 os.getBottomStyle(), os.getLeftStyle(), os.getRadii(), os.getWidths(), os.getInsets());
         }
         
     } // class BorderFillApplier
-    
     
 }

@@ -128,6 +128,107 @@ public final class Utils {
     }
     
     /**
+     * Splits a specified string into an array of strings, optionally stripped
+     * of all whitespace, based on a specified delimiter character, unless the
+     * delimiter falls within a pair of brackets ({@code [...]}).
+     * 
+     * @param str - the string to split and strip
+     * @param delim - the character to split the specified string on
+     * @param strip - whether or not to strip all whitespace characters
+     * @return an array of split strings, optionally stripped of whitespace
+     *         characters
+     */
+    public static String[] splitWithParentheses(String str, char delim, boolean strip) {
+        if (str == null || (strip) ? str.strip().isEmpty() : str.isEmpty()) { return new String[] {}; }
+        
+        char[] chars = str.toCharArray();
+        String[] ret = {};
+        int tail = 0;
+        boolean inParentheses = false;
+        
+        for (int i = 0, n = chars.length; i < n; i++) {
+            final char cur = chars[i];
+            
+            if (strip && (!inParentheses) && Character.isWhitespace(cur)) { continue; }
+            
+            if (cur == '(') { inParentheses = true; }
+            if (cur == ')') { inParentheses = false; }
+            
+            if (cur == delim && !inParentheses) {
+                if (tail == 0) { continue; }
+                ret = addString(ret, new String(chars, 0, tail));
+                tail = 0;
+                
+                continue;
+            }
+            
+            chars[tail++] = cur;
+        }
+        
+        if (tail > 0) { return addString(ret, new String(chars, 0, tail)); }
+        
+        return ret;
+    }
+    
+    /**
+     * Splits a specified string into an array of strings, optionally stripped
+     * of all whitespace, based on a specified delimiter character, unless the
+     * delimiter falls within a pair of brackets ({@code [...]}).
+     * 
+     * @param str - the string to split and strip
+     * @param delim - the character to split the specified string on
+     * @param strip - whether or not to strip all whitespace characters
+     * @return an array of split strings, optionally stripped of whitespace
+     *         characters
+     */
+    public static String[] splitWithBracketsAndParentheses(String str, char delim, boolean strip) {
+        if (str == null || (strip) ? str.strip().isEmpty() : str.isEmpty()) { return new String[] {}; }
+        
+        char[] chars = str.toCharArray();
+        String[] ret = {};
+        int tail = 0;
+        boolean inBrackets = false;
+        boolean inParentheses = false;
+        
+        for (int i = 0, n = chars.length; i < n; i++) {
+            final char cur = chars[i];
+            
+            if (strip && !inParentheses && (inBrackets || cur != delim) && Character.isWhitespace(cur)) { continue; }
+            
+            switch (cur) {
+                case '[':
+                    if (!inParentheses) { inBrackets = true; }
+                    break;
+                case '(':
+                    if (!inBrackets) { inParentheses = true; }
+                    break;
+                case ']':
+                    inBrackets = false;
+                    break;
+                case ')':
+                    inParentheses = false;
+                    break;
+                default:
+                    break;
+            }
+            
+            if (cur == delim && !inParentheses) {
+                if (tail == 0) { continue; }
+                ret = addString(ret, new String(chars, 0, tail));
+                tail = 0;
+                
+                continue;
+            }
+            
+            chars[tail++] = cur;
+        }
+        
+        if (tail > 0) { return addString(ret, new String(chars, 0, tail)); }
+        
+        return ret;
+    }
+    
+    /**
      * Splits a specified string into an array of strings, stripped of all
      * whitespace, based on a specified delimiter character.
      * 

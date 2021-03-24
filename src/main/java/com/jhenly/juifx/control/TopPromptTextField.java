@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,8 +19,7 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.control;
 
 import java.util.ArrayList;
@@ -323,25 +321,25 @@ public class TopPromptTextField extends Control {
      */
     public final BooleanProperty usePromptAsPromptTextProperty() {
         if (usePromptAsPromptText == null) {
-            usePromptAsPromptText
-                = new SimpleBooleanProperty(this, "usePromptAsPromptText", DEFAULT_USE_PROMPT_AS_PROMPT_TEXT) //$NON-NLS-1$
-                {
-                    @Override
-                    protected void invalidated() {
-                        boolean value = get();
+            usePromptAsPromptText =
+            new SimpleBooleanProperty(this, "usePromptAsPromptText", DEFAULT_USE_PROMPT_AS_PROMPT_TEXT) //$NON-NLS-1$
+            {
+                @Override
+                protected void invalidated() {
+                    boolean value = get();
+                    
+                    if (value) {
+                        Labeled tmpPrompt = promptProperty().get();
+                        if (tmpPrompt == null || tmpPrompt.getText() == null) { return; }
                         
-                        if (value) {
-                            Labeled tmpPrompt = promptProperty().get();
-                            if (tmpPrompt == null || tmpPrompt.getText() == null) { return; }
-                            
-                            String tmpTFPromptText = tfPromptTextProperty().get();
-                            if (tmpTFPromptText == null || tmpTFPromptText.isEmpty()) {
-                                tfPromptTextProperty().set(tmpPrompt.getText());
-                            }
+                        String tmpTFPromptText = tfPromptTextProperty().get();
+                        if (tmpTFPromptText == null || tmpTFPromptText.isEmpty()) {
+                            tfPromptTextProperty().set(tmpPrompt.getText());
                         }
-                        
                     }
-                };
+                    
+                }
+            };
         }
         return usePromptAsPromptText;
     }
@@ -375,25 +373,25 @@ public class TopPromptTextField extends Control {
      */
     public final BooleanProperty useDefaultValueProperty() {
         if (useDefaultValue == null) {
-            useDefaultValue
-                = new SimpleBooleanProperty(TopPromptTextField.this, "useDefaultValue", DEFAULT_USE_DEFAULT_VALUE) //$NON-NLS-1$
-                {
-                    @Override
-                    protected void invalidated() {
-                        boolean value = get();
+            useDefaultValue =
+            new SimpleBooleanProperty(TopPromptTextField.this, "useDefaultValue", DEFAULT_USE_DEFAULT_VALUE) //$NON-NLS-1$
+            {
+                @Override
+                protected void invalidated() {
+                    boolean value = get();
+                    
+                    if (value) {
+                        Labeled tmpDefValue = defaultValueProperty().get();
+                        if (tmpDefValue == null || tmpDefValue.getText() == null) { return; }
                         
-                        if (value) {
-                            Labeled tmpDefValue = defaultValueProperty().get();
-                            if (tmpDefValue == null || tmpDefValue.getText() == null) { return; }
-                            
-                            String tmpTFText = tfTextProperty().get();
-                            if (tmpTFText == null || tmpTFText.isEmpty()) {
-                                tfTextProperty().set(tmpDefValue.getText());
-                            }
+                        String tmpTFText = tfTextProperty().get();
+                        if (tmpTFText == null || tmpTFText.isEmpty()) {
+                            tfTextProperty().set(tmpDefValue.getText());
                         }
-                        
                     }
-                };
+                    
+                }
+            };
         }
         return useDefaultValue;
     }
@@ -445,7 +443,7 @@ public class TopPromptTextField extends Control {
      *
      * @return {@code true} if the prompt has settled, otherwise {@code false}
      */
-    public final boolean isSettled() { return settled != null ? settled.get() : false; }
+    public final boolean isSettled() { return settledProperty().get(); }
     
     
     /* --- Text Field Properties --- */
@@ -455,7 +453,7 @@ public class TopPromptTextField extends Control {
      * The editable property associated with this {@code TopPromptTextField}
      * instance's text field.
      * <p>
-     * The text field is editable by default.
+     * @defaultValue {@code true}
      */
     private BooleanProperty tfEditable;
     public final BooleanProperty tfEditableProperty() {
@@ -831,89 +829,85 @@ public class TopPromptTextField extends Control {
         
         /* --- Prompt Translate Duration --- */
         private static final String PROMPT_T_D = "-prompt-transition-duration"; //$NON-NLS-1$
-        private static final CssMetaData<TopPromptTextField, Number> PROMPT_TRANSLATE_DURATION
-            = new CssMetaData<TopPromptTextField, Number>(PROMPT_T_D, SizeConverter.getInstance(),
-                DEFAULT_PROMPT_TRANSLATE_DURATION)
-            {
-                @Override
-                public boolean isSettable(TopPromptTextField tptf) {
-                    return tptf.promptTransitionDuration == null || !tptf.promptTransitionDuration.isBound();
-                }
-                @Override
-                public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
-                    return (StyleableProperty<Number>) tptf.promptTransitionDurationProperty();
-                }
-            };
+        private static final CssMetaData<TopPromptTextField, Number> PROMPT_TRANSLATE_DURATION =
+        new CssMetaData<TopPromptTextField, Number>(PROMPT_T_D, SizeConverter.getInstance(),
+            DEFAULT_PROMPT_TRANSLATE_DURATION)
+        {
+            @Override
+            public boolean isSettable(TopPromptTextField tptf) {
+                return tptf.promptTransitionDuration == null || !tptf.promptTransitionDuration.isBound();
+            }
+            @Override
+            public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
+                return (StyleableProperty<Number>) tptf.promptTransitionDurationProperty();
+            }
+        };
         
         /* --- Prompt Translate X --- */
         private static final String PROMPT_T_X = "-prompt-translate-x"; //$NON-NLS-1$
-        private static final CssMetaData<TopPromptTextField, Number> PROMPT_TRANSLATE_X
-            = new CssMetaData<TopPromptTextField, Number>(PROMPT_T_X, SizeConverter.getInstance(),
-                DEFAULT_PROMPT_TRANSLATE_X)
-            {
-                @Override
-                public boolean isSettable(TopPromptTextField tptf) {
-                    return tptf.promptTranslateX == null || !tptf.promptTranslateX.isBound();
-                }
-                @Override
-                public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
-                    return (StyleableProperty<Number>) tptf.promptTranslateXProperty();
-                }
-            };
+        private static final CssMetaData<TopPromptTextField, Number> PROMPT_TRANSLATE_X =
+        new CssMetaData<TopPromptTextField, Number>(PROMPT_T_X, SizeConverter.getInstance(), DEFAULT_PROMPT_TRANSLATE_X)
+        {
+            @Override
+            public boolean isSettable(TopPromptTextField tptf) {
+                return tptf.promptTranslateX == null || !tptf.promptTranslateX.isBound();
+            }
+            @Override
+            public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
+                return (StyleableProperty<Number>) tptf.promptTranslateXProperty();
+            }
+        };
         
         /* --- Prompt Translate Y --- */
         private static final String PROMPT_T_Y = "-prompt-translate-y"; //$NON-NLS-1$
-        private static final CssMetaData<TopPromptTextField, Number> PROMPT_TRANSLATE_Y
-            = new CssMetaData<TopPromptTextField, Number>(PROMPT_T_Y, SizeConverter.getInstance(),
-                DEFAULT_PROMPT_TRANSLATE_Y)
-            {
-                @Override
-                public boolean isSettable(TopPromptTextField tptf) {
-                    return tptf.promptTranslateY == null || !tptf.promptTranslateY.isBound();
-                }
-                @Override
-                public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
-                    return (StyleableProperty<Number>) tptf.promptTranslateYProperty();
-                }
-            };
+        private static final CssMetaData<TopPromptTextField, Number> PROMPT_TRANSLATE_Y =
+        new CssMetaData<TopPromptTextField, Number>(PROMPT_T_Y, SizeConverter.getInstance(), DEFAULT_PROMPT_TRANSLATE_Y)
+        {
+            @Override
+            public boolean isSettable(TopPromptTextField tptf) {
+                return tptf.promptTranslateY == null || !tptf.promptTranslateY.isBound();
+            }
+            @Override
+            public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
+                return (StyleableProperty<Number>) tptf.promptTranslateYProperty();
+            }
+        };
         
         /* --- Prompt Scale X --- */
         private static final String PROMPT_S_X = "-prompt-scale-x"; //$NON-NLS-1$
-        private static final CssMetaData<TopPromptTextField, Number> PROMPT_SCALE_X
-            = new CssMetaData<TopPromptTextField, Number>(PROMPT_S_X, SizeConverter.getInstance(),
-                DEFAULT_PROMPT_SCALE_X)
-            {
-                @Override
-                public boolean isSettable(TopPromptTextField tptf) {
-                    return tptf.promptScaleX == null || !tptf.promptScaleX.isBound();
-                }
-                @Override
-                public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
-                    return (StyleableProperty<Number>) tptf.promptScaleXProperty();
-                }
-            };
+        private static final CssMetaData<TopPromptTextField, Number> PROMPT_SCALE_X =
+        new CssMetaData<TopPromptTextField, Number>(PROMPT_S_X, SizeConverter.getInstance(), DEFAULT_PROMPT_SCALE_X)
+        {
+            @Override
+            public boolean isSettable(TopPromptTextField tptf) {
+                return tptf.promptScaleX == null || !tptf.promptScaleX.isBound();
+            }
+            @Override
+            public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
+                return (StyleableProperty<Number>) tptf.promptScaleXProperty();
+            }
+        };
         
         /* --- PROMPT_SCALE_Y --- */
         private static final String PROMPT_S_Y = "-prompt-scale-y"; //$NON-NLS-1$
-        private static final CssMetaData<TopPromptTextField, Number> PROMPT_SCALE_Y
-            = new CssMetaData<TopPromptTextField, Number>(PROMPT_S_Y, SizeConverter.getInstance(),
-                DEFAULT_PROMPT_SCALE_Y)
-            {
-                @Override
-                public boolean isSettable(TopPromptTextField tptf) {
-                    return tptf.promptScaleY == null || !tptf.promptScaleY.isBound();
-                }
-                @Override
-                public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
-                    return (StyleableProperty<Number>) tptf.promptScaleYProperty();
-                }
-            };
+        private static final CssMetaData<TopPromptTextField, Number> PROMPT_SCALE_Y =
+        new CssMetaData<TopPromptTextField, Number>(PROMPT_S_Y, SizeConverter.getInstance(), DEFAULT_PROMPT_SCALE_Y)
+        {
+            @Override
+            public boolean isSettable(TopPromptTextField tptf) {
+                return tptf.promptScaleY == null || !tptf.promptScaleY.isBound();
+            }
+            @Override
+            public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
+                return (StyleableProperty<Number>) tptf.promptScaleYProperty();
+            }
+        };
         
         
         private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
         static {
-            final List<CssMetaData<? extends Styleable, ?>> styleables
-                = new ArrayList<>(SkinBase.getClassCssMetaData());
+            final List<CssMetaData<? extends Styleable, ?>> styleables =
+            new ArrayList<>(SkinBase.getClassCssMetaData());
             styleables.add(PROMPT_TRANSLATE_DURATION);
             styleables.add(PROMPT_TRANSLATE_X);
             styleables.add(PROMPT_TRANSLATE_Y);

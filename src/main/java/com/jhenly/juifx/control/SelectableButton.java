@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,8 +19,7 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.control;
 
 import com.jhenly.juifx.control.event.SelectionEvent;
@@ -34,6 +32,7 @@ import javafx.event.EventHandler;
 import javafx.scene.AccessibleAttribute;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+
 
 /**
  * A simple button control with a selected state.
@@ -52,12 +51,14 @@ public class SelectableButton extends Button implements Selectable {
      * Constructor(s)                                                          *
      *                                                                         *
      **************************************************************************/
-    
+//                                                                                
     /**
      * Creates a {@code SelectableButton} instance, with an empty string for
      * its text, in the non-selected state.
      */
-    public SelectableButton() { this(false); }
+    public SelectableButton() {
+        this(false);
+    }
     
     /**
      * Creates a {@code SelectableButton} instance, with an empty string for
@@ -240,12 +241,6 @@ public class SelectableButton extends Button implements Selectable {
         }
     }
     
-    /**
-     * Simply returns this {@code SelectableButton} instance.
-     * @return this {@code SelectableButton} instance
-     */
-    @Override
-    public Node getNode() { return this; }
     
     /**
      * Invokes this button's {@link #select()} method and then calls

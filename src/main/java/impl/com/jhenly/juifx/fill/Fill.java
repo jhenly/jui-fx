@@ -131,71 +131,6 @@ public class Fill {
     
     /***************************************************************************
      *                                                                         *
-     * Fill Type                                                               *
-     *                                                                         *
-     **************************************************************************/
-    
-//    /**
-//     * {@code FillType} indicates what part(s) of a {@link Fillable} should be
-//     * filled.
-//     * 
-//     * @since JuiFX 1.0
-//     * @see #NONE
-//     * @see #ALL
-//     * @see #BG
-//     * @see #TEXT
-//     * @see #SHAPE
-//     * @see #BG_TEXT
-//     * @see #BG_SHAPE
-//     * @see #TEXT_SHAPE
-//     */
-//    public static enum FillType {
-//        /**
-//         * Indicates the {@link Fillable} instance has nothing to be filled.
-//         */
-//        NONE,
-//        /** 
-//         * Indicates all parts of the {@link Fillable} instance should be
-//         * filled.
-//         */
-//        ALL,
-//        /** 
-//         * Indicates the {@link Fillable} instance's background should be
-//         * filled.
-//         */
-//        BG,
-//        /**
-//         * Indicates the {@link Fillable} instance's background and text
-//         * should be filled.
-//         */
-//        BG_TEXT,
-//        /**
-//         * Indicates the {@link Fillable} instance's background and shape
-//         * should be filled.
-//         */
-//        BG_SHAPE,
-//        /**
-//         * Indicates the {@link Fillable} instance's text should be filled.
-//         */
-//        TEXT,
-//        /** 
-//         * Indicates the {@link Fillable} instance's text and shape should
-//         * be filled.
-//         */
-//        TEXT_SHAPE,
-//        /**
-//         * Indicates the {@link Fillable} instance's shape should be filled.
-//         */
-//        SHAPE;
-//    }
-    
-    {
-        // initialize the class helper at the beginning of each constructor
-        FillHelper.initHelper(this);
-    }
-    
-    /***************************************************************************
-     *                                                                         *
      * Private Members                                                         *
      *                                                                         *
      **************************************************************************/
@@ -224,6 +159,11 @@ public class Fill {
      * Constructor(s)                                                          *
      *                                                                         *
      **************************************************************************/
+    
+    {
+        // initialize the class helper at the beginning of each constructor
+        FillHelper.initHelper(this);
+    }
     
     /** Empty constructor only used by {@link Default#DEFAULT_FILL}. */
     private Fill() {

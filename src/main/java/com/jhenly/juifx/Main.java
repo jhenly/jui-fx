@@ -41,9 +41,72 @@ public class Main extends Application {
     private static final double ROOT_WIDTH = 700.0;
     private static final double ROOT_HEIGHT = 600.0;
     
+    private static TopPromptTextField one;
+    private static TopPromptTextField twio;
+    
     private static final List<String> RAND_STRS = List.of("Foo", "Bazzar", "Random", "A", "whats up?");
     
     private static ChangeListener<String> change;
+    
+    private static HBox createTPTFs() {
+        
+        VBox left = new VBox();
+        left.getStyleClass().add("left");
+        FillButton up = new FillButton("Fill'er Up!");
+        up.getStyleClass().add("up");
+        
+//        SelectableButton down = new SelectableButton("Fill'er down!");
+        Button down = new Button("Fill'er down!");
+        down.getStyleClass().add("down");
+        
+        InsetToggleSwitch under = new InsetToggleSwitch();
+        under.getStyleClass().add("under");
+        
+        Label text = new Label("Prompt Text");
+        Label defaultStub = new Label("default:");
+        Label defaultText = new Label("192.168.0.1/28");
+        one = new TopPromptTextField(text, defaultStub, defaultText);
+        one.setUseDefaultValue(true);
+        one.setUsePromptAsPromptText(true);
+        one.setDisable(false);
+        one.getStyleClass().addAll("tp", "one");
+        // VBox.setVgrow(one, Priority.ALWAYS);
+        
+        twio = new TopPromptTextField(new Label("Prompt Text"), new Label("default:"), new Label("192.168.0.1/28"));
+        twio.setUseDefaultValue(false);
+        twio.setUsePromptAsPromptText(true);
+        twio.setDisable(false);
+        twio.getStyleClass().addAll("tp", "twio");
+        
+        left.getChildren().addAll(up, one, down, /* twio, */ under);
+        
+        TopPromptTextField two = new TopPromptTextField();
+        two.setDisable(false);
+        two.setTFPromptText("Foo Bar Baz");
+        two.setDefaultStubText("def:");
+        two.getStyleClass().addAll("tp", "two");
+        
+        
+        Label a = new Label("Prompt Text");
+        Label b = new Label("default:");
+        Label c = new Label("192.168.0.1/28");
+        
+        a.getStyleClass().add("aaa");
+        b.getStyleClass().add("bbb");
+        c.getStyleClass().add("ccc");
+        
+        VBox right = new VBox(a, /* two, */ b, c);
+        
+        
+        HBox.setHgrow(left, Priority.ALWAYS);
+        HBox.setHgrow(right, Priority.ALWAYS);
+        HBox ret = new HBox(20.0, left, right);
+        ret.setFillHeight(true);
+        
+        ret.getStyleClass().add("ret");
+        ret.setMinSize(400.0, 400.0);
+        return ret;
+    }
     
     
     @Override
@@ -51,7 +114,6 @@ public class Main extends Application {
         VBox main = new VBox();
         main.setFillWidth(true);
         main.setSpacing(10.0);
-        
         HBox topHbox = createTopHbox();
         VBox.setVgrow(topHbox, Priority.ALWAYS);
         
@@ -75,7 +137,8 @@ public class Main extends Application {
         root.setMinWidth(ROOT_WIDTH);
         root.setMinHeight(ROOT_HEIGHT);
         
-        root.setCenter(main);
+//        root.setCenter(main);
+        root.setCenter(createTPTFs());
         
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("main.css").toExternalForm());
@@ -83,7 +146,11 @@ public class Main extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         
+        System.out.println(" :: ONE HEIGHT :: one.getHeight() = " + one.getHeight());
+        // System.out.println(" :: TWIO HEIGHT :: twio.getHeight() = " +
+        // twio.getHeight());
     }
+    
     
     private static HBox createTopHbox() {
         SelectHBox shb = new SelectHBox();
@@ -177,6 +244,7 @@ public class Main extends Application {
         tptf.setUseDefaultValue(true);
         tptf.setUsePromptAsPromptText(true);
         tptf.setDisable(false);
+        tptf.getStyleClass().add("tptf");
         
         TopPromptTextField second = new TopPromptTextField();
         second.setDisable(false);

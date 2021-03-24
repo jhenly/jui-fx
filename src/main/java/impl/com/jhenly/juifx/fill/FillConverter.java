@@ -355,7 +355,7 @@ public final class FillConverter extends StyleConverter<ParsedValue[], Fill> {
                 final String cleanValue = ((String) val).strip().toLowerCase(Locale.ENGLISH);
                 if (cleanValue.isBlank() || "null".equals(val)) { return null; }
                 
-                final String[] strColors = Utils.splitAndStrip(cleanValue, ',');
+                final String[] strColors = Utils.splitWithParentheses(cleanValue, ',', true);
                 if (strColors.length == 0) { return null; }
                 
                 return parseSequence(strColors);
@@ -423,7 +423,7 @@ public final class FillConverter extends StyleConverter<ParsedValue[], Fill> {
                 final String cleanValue = ((String) val).strip().toLowerCase(Locale.ENGLISH);
                 if (cleanValue.isBlank() || "null".equals(val)) { return null; }
                 
-                final String[] strBorder = Utils.split(cleanValue, ',');
+                final String[] strBorder = Utils.splitWithParentheses(cleanValue, ',', false);
                 if (strBorder.length == 0) { return null; }
                 
                 return parseBorderSequence(strBorder);
@@ -438,7 +438,7 @@ public final class FillConverter extends StyleConverter<ParsedValue[], Fill> {
             BorderFillSpanHalf[] ret = new BorderFillSpanHalf[seq.length];
             
             for (int i = 0, n = seq.length; i < n; i++) {
-                final String[] borderStrings = Utils.splitWithBrackets(seq[i], ' ', true);
+                final String[] borderStrings = Utils.splitWithBracketsAndParentheses(seq[i], ' ', true);
                 
                 ret[i] = parseBorderStrings(borderStrings);
             }

@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,8 +19,7 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.control.skin;
 
 import com.jhenly.juifx.control.TopPromptTextField;
@@ -30,6 +28,7 @@ import javafx.animation.Animation;
 import javafx.animation.ScaleTransition;
 import javafx.animation.Transition;
 import javafx.animation.TranslateTransition;
+import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -65,7 +64,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     private static final PseudoClass FOCUSED_PSEUDO_CLASS = PseudoClass.getPseudoClass("focused"); //$NON-NLS-1$
     private static final PseudoClass NOT_EDITABLE_PSEUDO_CLASS = PseudoClass.getPseudoClass("not-editable"); //$NON-NLS-1$
     
-    private final TopPromptTextField control;
+//    private final TopPromptTextField control;
     
     private StackPane topPane;
     private StackPane promptPane;
@@ -125,7 +124,6 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
      */
     public TopPromptTextFieldSkin(final TopPromptTextField control) {
         super(control);
-        this.control = control;
         // forward control focus to textfield
         control.setFocusTraversable(false);
         
@@ -133,23 +131,14 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         vbox = new VBox();
         defaultPane = new HBox();
         textField = new TextField();
-        underline = new Line(-1.0, 0.0, 0.0, 0.0);
+        underline = new Line(0.0, 0.0, 1, 0.0);
+        
         
         // initialize prompt texts so a NPE isn't thrown later
         oldPromptText = "";
         currentPromptText = "";
         
-        textFieldHasText = new BooleanBinding()
-        {
-            {
-                bind(textField.lengthProperty());
-            }
-            @Override
-            protected boolean computeValue() {
-                int length = textField.lengthProperty().get();
-                return length != 0;
-            }
-        };
+        textFieldHasText = Bindings.greaterThan(textField.lengthProperty(), 0);
         
         // we manage vbox and underline in layoutChildren
         vbox.setManaged(false);
@@ -165,12 +154,10 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         vbox.setFillWidth(true);
         vbox.setAlignment(Pos.BOTTOM_LEFT);
         
-        vbox.getChildren().add(textField);
-        vbox.getChildren().add(defaultPane);
+        vbox.getChildren().addAll(textField, defaultPane);
         
         // add vbox and underline to top stack pane
-        topPane.getChildren().add(vbox);
-        topPane.getChildren().add(underline);
+        topPane.getChildren().addAll(vbox, underline);
         
         // initialize underline transition before updating children
         initUnderlineTransition();
@@ -201,7 +188,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     
     /* register most change listeners */
     private void setUpListenersAndHandlers() {
-        registerChangeListener(control.useDefaultValueProperty(), o -> useDefaultTextChanged());
+        registerChangeListener(getSkinnable().useDefaultValueProperty(), o -> useDefaultTextChanged());
         registerChangeListener(textField.focusedProperty(), o -> onTextFieldFocusEvent((ObservableBooleanValue) o));
 //        registerChangeListener(textField.editableProperty(), e -> {});
         
@@ -213,20 +200,22 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         editableChanged = (observer, old, ne) -> {
             textField.setFocusTraversable(ne);
             underline.setVisible(ne);
-            control.pseudoClassStateChanged(NOT_EDITABLE_PSEUDO_CLASS, !ne);
+            getSkinnable().pseudoClassStateChanged(NOT_EDITABLE_PSEUDO_CLASS, !ne);
         };
-        control.tfEditableProperty().addListener(editableChanged);
+        getSkinnable().tfEditableProperty().addListener(editableChanged);
         
         // allows us to be notified of when tf's prompt should change
         usePromptTextChanged = (observer, old, ne) -> { handlePromptAsPromptText(ne); };
-        control.usePromptAsPromptTextProperty().addListener(usePromptTextChanged);
+        getSkinnable().usePromptAsPromptTextProperty().addListener(usePromptTextChanged);
     }
     
     private void bindTextFieldProperties() {
-        textField.textProperty().bindBidirectional(control.tfTextProperty());
-        textField.alignmentProperty().bind(control.tfAlignmentProperty());
-        textField.editableProperty().bind(control.tfEditableProperty());
-        textField.onActionProperty().bind(control.onTFActionProperty());
+        final TopPromptTextField skinnable = getSkinnable();
+        
+        textField.textProperty().bindBidirectional(skinnable.tfTextProperty());
+        textField.alignmentProperty().bind(skinnable.tfAlignmentProperty());
+        textField.editableProperty().bind(skinnable.tfEditableProperty());
+        textField.onActionProperty().bind(skinnable.onTFActionProperty());
     }
     
     /* updates prompt, defaultStub and defaultText */
@@ -248,7 +237,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         }
         
         // TopPromptTextField is always settled when no prompt exists
-        control.pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, newPrompt == null);
+        getSkinnable().pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, newPrompt == null);
     }
     
     /* prompt update children helper */
@@ -351,13 +340,13 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
                 currentPromptText = textField.getPromptText();
                 textField.setPromptText("");
                 jumpToEndOfTransitions();
-                control.pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, true);
+                getSkinnable().pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, true);
                 
-                control.requestLayout();
+                getSkinnable().requestLayout();
                 promptPane.setVisible(true);
             } else {
                 
-                control.pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, false);
+                getSkinnable().pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, false);
             }
         } else {
             // no longer using prompt as prompt text, revert back to original
@@ -375,7 +364,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
             return;
         }
         
-        if (control.useDefaultValueProperty().get()) {
+        if (getSkinnable().useDefaultValueProperty().get()) {
             // if TF is empty then fill it with default value text
             if (!textFieldHasText.get()) {
                 textField.setText(dtextNode.getText());
@@ -385,8 +374,8 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
             if (promptPane != null) {
                 jumpToEndOfTransitions();
                 promptPane.setVisible(true);
-                control.requestLayout();
-                control.pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, true);
+                getSkinnable().requestLayout();
+                getSkinnable().pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, true);
             }
             
         } else {
@@ -399,9 +388,9 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
                 if (promptPane != null) {
                     jumpToStartOfTransitions();
                     // prompt's visibility depends on use prompt as prompt text
-                    promptPane.setVisible(control.usePromptAsPromptTextProperty().get());
-                    control.requestLayout();
-                    control.pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, false);
+                    promptPane.setVisible(getSkinnable().usePromptAsPromptTextProperty().get());
+                    getSkinnable().requestLayout();
+                    getSkinnable().pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, false);
                 }
             }
         }
@@ -440,7 +429,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     
     /* helper that initializes move and scale transitions */
     private void initPromptTransitions() {
-        Duration duration = Duration.millis(control.getPromptTransitionDuration());
+        Duration duration = Duration.millis(getSkinnable().getPromptTransitionDuration());
         
         moveTransition = new TranslateTransition(duration, promptPane);
         moveTransition.setFromY(0.0);
@@ -453,7 +442,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     
     /* helper that initializes underline's scale transition */
     private void initUnderlineTransition() {
-        Duration duration = Duration.millis(control.getPromptTransitionDuration());
+        Duration duration = Duration.millis(getSkinnable().getPromptTransitionDuration());
         
         lineTransition = new ScaleTransition(duration, underline);
         lineTransition.setFromX(1.0);
@@ -468,7 +457,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         }
         
         // signal CSS 'top-prompt-text-field:focused' state
-        control.pseudoClassStateChanged(FOCUSED_PSEUDO_CLASS, focus.get());
+        getSkinnable().pseudoClassStateChanged(FOCUSED_PSEUDO_CLASS, focus.get());
         
         if (focus.get()) {
             updatePromptOnTextFieldInFocus();
@@ -513,7 +502,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
             
             moveTransition.setOnFinished(event -> {
                 // signal that the prompt node has settled above the textfield
-                control.pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, true);
+                getSkinnable().pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, true);
             });
             
             scaleTransition.play();
@@ -536,7 +525,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         // if textfield has no content then we need to go from top to bottom
         if (!textFieldHasText.get() && promptPane != null) {
             // signal that the prompt node is no longer settled
-            control.pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, false);
+            getSkinnable().pseudoClassStateChanged(SETTLED_PSEUDO_CLASS, false);
             
             // animate prompt back to its original position
             moveTransition.setRate(-1.0);
@@ -570,19 +559,24 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     /** {@inheritDoc} */
     @Override
     protected void layoutChildren(double contentX, double contentY, double contentWidth, double contentHeight) {
+        System.out.printf(
+            "layoutChildren(...) -> [ contentX = %.2f ] [ contentY = %.2f ] [ contentWidth = %.2f ] [ contentHeight = %.2f ]%n",
+            contentX, contentY, contentWidth, contentHeight);
+        
         // let SkinBase layout all managed children first
         super.layoutChildren(contentX, contentY, contentWidth, contentHeight);
         
+        
         // lay out the vbox normally but use VPos.BOTTOM instead of CENTER
-        layoutInArea(vbox, contentX, contentY, contentWidth, contentHeight, -1, HPos.CENTER, VPos.BOTTOM);
+        layoutInArea(vbox, contentX, contentY, contentWidth, contentHeight, 0, HPos.CENTER, VPos.CENTER);
         
         // lay out underline at the bottom center of the textfield
         double dtextNodeHeight = (dtextNode == null) ? 0.0 : dtextNode.prefHeight(-1);
         double dstubNodeHeight = (dstubNode == null) ? 0.0 : dstubNode.prefHeight(-1);
         double maxUnderNodeHeight = snapSizeY(Math.max(dtextNodeHeight, dstubNodeHeight));
         
-        underline.setLayoutY(snapPositionY((contentHeight - maxUnderNodeHeight) - 1.0));
-        underline.setLayoutX(snapPositionX(vbox.getWidth() / 2));
+        underline.setLayoutY(snapPositionY((contentHeight - maxUnderNodeHeight) - 1.0 + contentY));
+        underline.setLayoutX(snapSizeX(vbox.getWidth() / 2.0));
         
         if (promptPane != null) {
             promptPane.resize(snapSizeX(promptPane.prefWidth(-1)), snapSizeY(promptPane.prefHeight(-1)));
@@ -591,7 +585,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
             // layout the prompt pane over the textfield prompt, account for textfield
             // insets, add 1 so that snapPosition does not round down
             promptPane.setLayoutX(snapPositionX(textField.getLayoutX() + ins.getLeft() + 1));
-            promptPane.setLayoutY(snapPositionY(contentHeight - vbox.prefHeight(-1) + ins.getTop()));
+            promptPane.setLayoutY(snapPositionY(contentHeight - vbox.prefHeight(-1) + contentY));
             
             handleTransitionsInLayout(contentX, contentY, contentWidth, contentHeight);
         }
@@ -606,20 +600,29 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     }
     
     /** layoutChildren helper method that handles move and scale transitions */
-    private void handleTransitionsInLayout(double contentX, double contentY, double contentWidth,
-        double contentHeight) {
-        double textfieldHeight = snapSizeY(textField.prefHeight(-1));
-        Insets ins = textField.getInsets();
+    private void
+    handleTransitionsInLayout(double contentX, double contentY, double contentWidth, double contentHeight)
+    {
+        final TopPromptTextField me = getSkinnable();
+        final double textfieldHeight = snapSizeY(textField.prefHeight(-1));
+        final Insets tfInsets = textField.getInsets();
         
+        System.out.printf(
+            "  textField.getBaselineOffset = %.2f  textField.getLayoutY = %.2f%ntextField.topInset = %.2f  textField.getHeight = %.2f%n",
+            textField.getBaselineOffset(), textField.getLayoutY(), tfInsets.getTop(), textField.getHeight());
         // each time the layout is done, recompute the prompt pane position
         // and apply it to the move and scale targets as well as the line position
-        final double moveTargetX = snapPositionX(-1 * promptPane.getLayoutX() + control.getPromptTranslateX());
-        final double moveTargetY = snapPositionY(-1 * (textfieldHeight - ins.getTop()) + control.getPromptTranslateY());
-        final double scaleTargetX = control.getPromptScaleX();
-        final double scaleTargetY = control.getPromptScaleY();
+        final double moveTargetX =
+        getSkinnable().snapPositionX(-1 * promptPane.getLayoutX() + me.getPromptTranslateX() - contentX);
+        final double moveTargetY =
+        snapPositionY(-1 * (textfieldHeight - tfInsets.getTop()) + me.getPromptTranslateY() - contentY);
+        
+        final double scaleTargetX = me.getPromptScaleX();
+        final double scaleTargetY = me.getPromptScaleY();
         
         moveTransition.setToX(moveTargetX);
         moveTransition.setToY(moveTargetY);
+        
         scaleTransition.setToX(scaleTargetX);
         scaleTransition.setToY(scaleTargetY);
         
@@ -629,8 +632,9 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     
     /* handleTransitionInLayout helper */
     private void handleTransition(Transition transition, Node node, double targetX, double targetY, double defX,
-        double defY, boolean translate) {
-        boolean hasText = textFieldHasText.get();
+                                  double defY, boolean translate)
+    {
+        final boolean tfHasText = textFieldHasText.get();
         
         // if the transition is running, it must be restarted for the value to
         // be properly updated
@@ -641,11 +645,11 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         } else {
             // if the transition is not running, simply apply values
             if (translate) {
-                node.setTranslateX(hasText ? targetX : defX);
-                node.setTranslateY(hasText ? targetY : defY);
+                node.setTranslateX(tfHasText ? targetX : defX);
+                node.setTranslateY(tfHasText ? targetY : defY);
             } else {
-                node.setScaleX(hasText ? targetX : defX);
-                node.setScaleY(hasText ? targetY : defY);
+                node.setScaleX(tfHasText ? targetX : defX);
+                node.setScaleY(tfHasText ? targetY : defY);
             }
         }
         
@@ -655,8 +659,8 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     @Override
     public void dispose() {
         // clean up change listeners
-        control.tfEditableProperty().removeListener(editableChanged);
-        control.usePromptAsPromptTextProperty().removeListener(usePromptTextChanged);
+        getSkinnable().tfEditableProperty().removeListener(editableChanged);
+        getSkinnable().usePromptAsPromptTextProperty().removeListener(usePromptTextChanged);
         
         textField.onActionProperty().unbind();
         textField.textProperty().unbind();
@@ -669,23 +673,31 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     
     /** {@inheritDoc} */
     @Override
-    protected double computeMinHeight(double width, double topInset, double rightInset, double bottomInset,
-        double leftInset) {
-        return computePrefHeight(width, topInset, rightInset, bottomInset, leftInset);
+    protected double
+    computeMinHeight(double width, double topInset, double rightInset, double bottomInset, double leftInset)
+    {
+        // only care about vbox and prompt stack pane heights
+        final double upph = vbox.prefHeight(-1);
+        final double ptph = (promptPane == null) ? 0.0 : promptPane.prefHeight(-1);
+        
+        return topInset + ptph + upph + bottomInset;
     }
     
     /** {@inheritDoc} */
     @Override
-    protected double computePrefHeight(double width, double topInset, double rightInset, double bottomInset,
-        double leftInset) {
-        double upph = vbox.prefHeight(-1);
-        double tfph = textField.prefHeight(-1);
-        double ptph = (promptPane == null) ? 0.0 : promptPane.prefHeight(-1);
+    protected double
+    computePrefHeight(double width, double topInset, double rightInset, double bottomInset, double leftInset)
+    {
+        // prefHeight is minHeight plus wiggle room
+        final double minHeight = computeMinHeight(width, topInset, rightInset, bottomInset, leftInset);
         
         // add 25% of promptPane's pref height as wiggle room
-        double wiggle = tfph * 0.25;
+        final double wiggle = (promptPane == null) ? 0.0 : 0.25 * promptPane.prefHeight(-1);
         
-        return topInset + ptph + upph + wiggle + bottomInset;
+        // we may end up adding 25% of textFields pref height instead
+        // final double tfph = textField.prefHeight(-1);
+        
+        return minHeight + wiggle;
     }
     
 }

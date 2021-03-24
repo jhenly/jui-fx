@@ -526,7 +526,7 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
         
         @Override
         protected List<Stop> interpolateStops(List<Stop> fStops, List<Stop> tStops, double frac) {
-            boolean fIsNew = true, tIsNew = true;
+            boolean fIsNew = false, tIsNew = false;
             int fIdx = 0, tIdx = 0;
             
             Color fColor = fStops.get(0).getColor();
@@ -534,14 +534,13 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
             
             final List<Stop> ret = new ArrayList<Stop>(offsets.size());
             for (int i = 0, n = offsets.size(); i < n; i++) {
-                fColor = fIsNew ? fStops.get(++fIdx).getColor() : fColor;
-                tColor = tIsNew ? tStops.get(++tIdx).getColor() : tColor;
+                if (fIsNew) { fColor = fStops.get(++fIdx).getColor(); }
+                if (tIsNew) { tColor = tStops.get(++tIdx).getColor(); }
                 
                 ret.add(new Stop(offsets.get(i), fColor.interpolate(tColor, frac)));
                 
                 fIsNew = fromBitIsSet(i);
                 tIsNew = toBitIsSet(i);
-                
             }
             
             return ret;
@@ -561,12 +560,12 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
         /**
          * Sets a specified 'to' bit in {@code fromToBits} to {@code 1}.
          */
-        private void setToBit(int which) { fromToBits |= (1 << (32 + which)); }
+        private void setToBit(int which) { fromToBits |= (1L << (32 + which)); }
         
         /**
          * Gets whether or not a specified 'to' bit in {@code fromToBits} is {@code 1}.
          */
-        private boolean toBitIsSet(int which) { return (fromToBits & (1 << (32 + which))) != 0; }
+        private boolean toBitIsSet(int which) { return (fromToBits & (1L << (32 + which))) != 0; }
         
         
     } // class LinearToLinearDisjunctFillSpan
@@ -738,7 +737,7 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
         
         @Override
         protected List<Stop> interpolateStops(List<Stop> fStops, List<Stop> tStops, double frac) {
-            boolean fIsNew = true, tIsNew = true;
+            boolean fIsNew = false, tIsNew = false;
             int fIdx = 0, tIdx = 0;
             
             Color fColor = fStops.get(0).getColor();
@@ -753,7 +752,6 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
                 
                 fIsNew = fromBitIsSet(i);
                 tIsNew = toBitIsSet(i);
-                
             }
             
             return ret;
@@ -773,12 +771,12 @@ abstract class GradientFillSpan<T extends Paint, E extends Paint> extends FillSp
         /**
          * Sets a specified 'to' bit in {@code fromToBits} to {@code 1}.
          */
-        private void setToBit(int which) { fromToBits |= (1 << (32 + which)); }
+        private void setToBit(int which) { fromToBits |= (1L << (32 + which)); }
         
         /**
          * Gets whether or not a specified 'to' bit in {@code fromToBits} is {@code 1}.
          */
-        private boolean toBitIsSet(int which) { return (fromToBits & (1 << (32 + which))) != 0; }
+        private boolean toBitIsSet(int which) { return (fromToBits & (1L << (32 + which))) != 0; }
         
         
     } // class RadialToRadialDisjunctFillSpan

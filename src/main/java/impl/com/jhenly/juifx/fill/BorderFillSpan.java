@@ -61,7 +61,7 @@ public class BorderFillSpan implements Interpolatable<Paint[]> {
     
     private final FillSpan top;
     protected boolean special;
-    private final int hash;
+    protected int hash;
     
     
     /**************************************************************************
@@ -81,20 +81,7 @@ public class BorderFillSpan implements Interpolatable<Paint[]> {
         
         special = t.isSpecial();
         
-        hash = preComputeHash();
-    }
-    
-    /** 
-     * Overridden by implementing classes to pre-compute the hash code.
-     * <p>
-     * Implementing classes should use the value returned by
-     * {@code super.preComputeHash()} when pre-computing the hash code.
-     * 
-     * @return the pre-computed hash code
-     */
-    protected int preComputeHash() {
-//        System.out.println("BorderFillSpan # preComputeHash()");
-        return 31 * top.hashCode();
+        hash = 31 * top.hashCode();
     }
     
     
@@ -349,12 +336,8 @@ public class BorderFillSpan implements Interpolatable<Paint[]> {
             right = rl;
             
             special |= rl.isSpecial();
-        }
-        
-        @Override
-        protected int preComputeHash() {
-//            System.out.println("BiBorderFillSpan # preComputeHash()");
-            return 31 * super.preComputeHash() + right.hashCode();
+            
+            hash += 31 * hash + right.hashCode();
         }
         
         @Override
@@ -403,12 +386,8 @@ public class BorderFillSpan implements Interpolatable<Paint[]> {
             
             special |= bottom.isSpecial();
             special |= left.isSpecial();
-        }
-        
-        @Override
-        protected int preComputeHash() {
-//            System.out.println("QuadBorderFillSpan # preComputeHash()");
-            return 31 * (31 * super.preComputeHash() + bottom.hashCode()) + left.hashCode();
+            
+            hash += 31 * (31 * hash + bottom.hashCode()) + left.hashCode();
         }
         
         @Override
