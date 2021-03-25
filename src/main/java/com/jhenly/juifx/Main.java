@@ -52,7 +52,7 @@ public class Main extends Application {
         
         VBox left = new VBox();
         left.getStyleClass().add("left");
-        FillButton up = new FillButton("Fill'er Up!");
+        FillButton up = new FillButton("Button");
         up.getStyleClass().add("up");
         
 //        SelectableButton down = new SelectableButton("Fill'er down!");
@@ -66,7 +66,7 @@ public class Main extends Application {
         Label defaultStub = new Label("default:");
         Label defaultText = new Label("192.168.0.1/28");
         one = new TopPromptTextField(text, defaultStub, defaultText);
-        one.setUseDefaultValue(true);
+        one.setUseDefaultValue(false);
         one.setUsePromptAsPromptText(true);
         one.setDisable(false);
         one.getStyleClass().addAll("tp", "one");
@@ -137,8 +137,10 @@ public class Main extends Application {
         root.setMinWidth(ROOT_WIDTH);
         root.setMinHeight(ROOT_HEIGHT);
         
+        HBox tptf = createTPTFs();
+        tptf.getChildren().add(topHbox);
 //        root.setCenter(main);
-        root.setCenter(createTPTFs());
+        root.setCenter(tptf);
         
         Scene scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("main.css").toExternalForm());
@@ -146,7 +148,8 @@ public class Main extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         
-        System.out.println(" :: ONE HEIGHT :: one.getHeight() = " + one.getHeight());
+        // System.out.println(" :: ONE HEIGHT :: one.getHeight() = " +
+        // one.getHeight());
         // System.out.println(" :: TWIO HEIGHT :: twio.getHeight() = " +
         // twio.getHeight());
     }

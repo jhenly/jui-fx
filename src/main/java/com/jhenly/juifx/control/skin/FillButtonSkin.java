@@ -1,4 +1,5 @@
-/** Copyright (c) 2021, JuiFX All rights reserved.
+/**
+ * Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -19,7 +20,8 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.jhenly.juifx.control.skin;
 
 import com.jhenly.juifx.animation.JuiFillTransition;
@@ -27,6 +29,7 @@ import com.jhenly.juifx.control.FillButton;
 import com.jhenly.juifx.control.applier.FillApplier;
 import com.jhenly.juifx.control.applier.FillButtonApplier;
 
+import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
@@ -52,14 +55,9 @@ public class FillButtonSkin<C extends FillButton> extends SelectableButtonSkin<C
      **************************************************************************/
     
     private JuiFillTransition jfTrans;
-    
-//    private ChangeListener<? super Skin<?>> skinInit;
-    
-    private BooleanBinding fillEnabled;
-    
+    private BooleanBinding fillDisabledOrSelected;
     private ChangeListener<Boolean> focusChange;
     
-    private BooleanBinding fillDisabledOrSelected;
     
     /***************************************************************************
      *                                                                         *
@@ -81,27 +79,7 @@ public class FillButtonSkin<C extends FillButton> extends SelectableButtonSkin<C
         jfTrans = new JuiFillTransition(getFillApplier());
         jfTrans.durationProperty().bind(control.fillDurationProperty());
         
-//        skinInit = (obv, o, n) -> {
-//            if (control.getSkin() != null) {
-//                createJuiFillTransition(control);
-//                
-//                control.skinProperty().removeListener(skinInit);
-//                skinInit = null;
-//            }
-//        };
-//        control.skinProperty().addListener(skinInit);
-        
-        fillDisabledOrSelected = new BooleanBinding()
-        {
-            {
-                bind(control.fillEnabledProperty(), control.selectedProperty());
-            }
-            
-            @Override
-            protected boolean computeValue() {
-                return control.isSelected() || !control.isFillEnabled();
-            }
-        };
+        fillDisabledOrSelected = Bindings.or(control.selectedProperty(), control.fillEnabledProperty().not());
         
         // register FillButton change listeners
         registerChangeListener(control.fillEnabledProperty(), o -> onFillEnabled(getFillable().isFillEnabled()));
@@ -175,8 +153,8 @@ public class FillButtonSkin<C extends FillButton> extends SelectableButtonSkin<C
         return fillApplier.getReadOnlyProperty();
     }
     protected void setFillApplier(FillApplier<C> value) { fillApplier.set(value); }
-    private ReadOnlyObjectWrapper<FillApplier<C>> fillApplier =
-    new ReadOnlyObjectWrapper<FillApplier<C>>(this, "fillApplier", createDefaultFillApplier());
+    private ReadOnlyObjectWrapper<FillApplier<C>> fillApplier
+        = new ReadOnlyObjectWrapper<FillApplier<C>>(this, "fillApplier", createDefaultFillApplier());
     
     
     /***************************************************************************

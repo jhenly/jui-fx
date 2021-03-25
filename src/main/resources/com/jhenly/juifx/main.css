@@ -17,34 +17,6 @@
  .selectable-button:selected {
      a-fx-background-color: #acacac, #fafafa;
  }
- 
- .fill-button {
-    -fx-background-color: #dfdfdf, #a0a0a0, #f4f4f6;
-    -fx-background-insets:  0, 1, 2 2 2 2;
-    -fx-background-radius: 1em, 1em, 1em;
-    -fx-padding: 0.333333em 0.666667em 0.333333em 0.666667em; /* 4 8 4 8 */
-    -fx-text-fill: #abc;
-    -fx-alignment: CENTER;
-    -fx-content-display: LEFT;
-    
-    a-fx-border-color: #0bc, #d0d #0d0;
-    a-fx-border-width: 2, 10;
-    a-fx-border-insets: 0, 2;
-    
-     -fill-duration: 300ms;
-     
-     -fill-bg-from: "cfcfcf, 9f9f9f, radial-gradient(radius 180%, burlywood, #fff, #f00)";
-     -fill-bg-to: "cfcfcf, 9f9f9f, radial-gradient(radius 180%, burlywood, #f00, #fff)";
-     a-fill-border-to: "border[0], linear-gradient(#0000ff 20%, #ff8c00 65%, #ff0000 100%) bs[t]";
-     -fill-text-to: "0bd";
- }
- 
- .fill-button:selected {
-     -fx-background-color: #acacac, #fff;
-     a-fx-background-insets: 0, 2;
-     a-fx-background-radius: 3px, 3px;
-     -fx-text-fill: #000;
-}
 
 .top-hbox {
 	-fx-padding: 20;
@@ -81,7 +53,7 @@
 }
 
 .one {
-	-fx-padding: 12 0 0 0;
+	-fx-padding: 0 40 30 50;
 }
 
 .twio {
@@ -96,9 +68,7 @@
 	-fx-padding: 10 0 0 0;
 }
 
-.up { -fx-padding: 0 0 0 0; }
 
-.down { -fx-padding: 0 0 0 0; }
 
 
 .tptf {

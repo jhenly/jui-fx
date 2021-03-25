@@ -14,9 +14,10 @@ module com.jhenly.juifx.controls {
     exports com.jhenly.juifx;
     exports com.jhenly.juifx.animation;
     exports com.jhenly.juifx.control;
+    exports com.jhenly.juifx.control.applier;
     exports com.jhenly.juifx.control.event;
     exports com.jhenly.juifx.control.skin;
     exports com.jhenly.juifx.layout;
     
-    exports impl.com.jhenly.juifx.fill to com.jhenly.juifx.animation, com.jhenly.juifx.control;
+    exports impl.com.jhenly.juifx.fill to com.jhenly.juifx.control, com.jhenly.juifx.control.applier;
 }

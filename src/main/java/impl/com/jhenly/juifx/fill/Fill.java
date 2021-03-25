@@ -1,4 +1,5 @@
-/** Licensed to the Apache Software Foundation (ASF) under one or more
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
  * licenses this file to you under the Apache License, Version 2.0 (the
@@ -11,14 +12,14 @@
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations under
- * the License. */
+ * the License.
+ */
 package impl.com.jhenly.juifx.fill;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.jhenly.juifx.animation.JuiFillTransition;
 import com.jhenly.juifx.control.Fillable;
 
 import javafx.scene.paint.Color;
@@ -26,8 +27,10 @@ import javafx.scene.paint.Color;
 
 /**
  * A {@code Fill} is an immutable object which encapsulates the
- * {@link FillSpan} instance(s) used to fill a {@link Fillable} instance over
- * the course of a {@link JuiFillTransition}.
+ * {@link FillSpan} instance(s) used by a
+ * {@link com.jhenly.juifx.control.Fillable Fillable} instance's
+ * {@link com.jhenly.juifx.control.applier.FillApplier FillApplier} over the course of a
+ * {@link com.jhenly.juifx.animation.JuiFillTransition JuiFillTransition}.
  * <p>
  * Because this class is immutable, you can freely reuse the same {@code Fill}
  * in many different {@code Fillable} instances.
@@ -160,8 +163,8 @@ public class Fill {
      *                                                                         *
      **************************************************************************/
     
+    // initialize the class helper at the beginning of each constructor
     {
-        // initialize the class helper at the beginning of each constructor
         FillHelper.initHelper(this);
     }
     
@@ -206,8 +209,7 @@ public class Fill {
      *        with a fill-from and fill-to of {@code Color.TRANSPARENT}
      */
     public Fill(FillSpan textFillSpan, FillSpan shapeFillSpan, FillSpan strokeFillSpan, FillSpan[] bgFillSpans,
-                BorderFillSpan[] borderFillSpans)
-    {
+        BorderFillSpan[] borderFillSpans) {
         this(textFillSpan, shapeFillSpan, strokeFillSpan,
             ((bgFillSpans == null || bgFillSpans.length == 0) ? (List<FillSpan>) null : List.of(bgFillSpans)),
             ((borderFillSpans == null || borderFillSpans.length == 0) ? (List<BorderFillSpan>) null
@@ -243,8 +245,7 @@ public class Fill {
      *        with a fill-from and fill-to of {@code Color.TRANSPARENT}
      */
     public Fill(FillSpan textFillSpan, FillSpan shapeFillSpan, FillSpan strokeFillSpan, List<FillSpan> bgFillSpans,
-                List<BorderFillSpan> borderFillSpans)
-    {
+        List<BorderFillSpan> borderFillSpans) {
         // used to precompute the hash code
         int preHash = 23;
         // used to signal that the fill has specials
@@ -274,8 +275,8 @@ public class Fill {
             
             /* used to replace nulls and create unmodifiable list
              * 
-             * Note: use 'ArrayList<>' over 'List<>' so that 'ArrayList#trimToSize()' can be
-             * used */
+             * Note: use 'ArrayList<>' over 'List<>' so that
+             * 'ArrayList#trimToSize()' can be used */
             ArrayList<FillSpan> tmpSpans = new ArrayList<>(bgFillSpans.size());
             
             // replace any null fill spans and check for all null fill spans
@@ -319,8 +320,8 @@ public class Fill {
             
             /* used to replace nulls and create unmodifiable list
              * 
-             * Note: use 'ArrayList<>' over 'List<>' so that 'ArrayList#trimToSize()' can be
-             * used */
+             * Note: use 'ArrayList<>' over 'List<>' so that
+             * 'ArrayList#trimToSize()' can be used */
             ArrayList<BorderFillSpan> tmpSpans = new ArrayList<>(borderFillSpans.size());
             
             // replace any null fill spans and check for all null fill spans
@@ -497,10 +498,10 @@ public class Fill {
         
         // if cache of fill spans is enabled then reference equality can be used
         return FillSpanHelper.fillSpansAreEqual(textSpan, that.textSpan)
-               && FillSpanHelper.fillSpansAreEqual(shapeSpan, that.shapeSpan)
-               && FillSpanHelper.fillSpansAreEqual(strokeSpan, that.strokeSpan)
-               && FillSpanHelper.fillSpanListsAreEqual(bgSpans, that.bgSpans)
-               && FillSpanHelper.borderFillSpanListsAreEqual(bdSpans, that.bdSpans);
+            && FillSpanHelper.fillSpansAreEqual(shapeSpan, that.shapeSpan)
+            && FillSpanHelper.fillSpansAreEqual(strokeSpan, that.strokeSpan)
+            && FillSpanHelper.fillSpanListsAreEqual(bgSpans, that.bgSpans)
+            && FillSpanHelper.borderFillSpanListsAreEqual(bdSpans, that.bdSpans);
     }
     
     /**
