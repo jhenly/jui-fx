@@ -1,4 +1,5 @@
-/** Copyright (c) 2021, JuiFX All rights reserved.
+/**
+ * Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -19,7 +20,8 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.jhenly.juifx.control;
 
 import com.jhenly.juifx.control.event.SelectionEvent;
@@ -216,41 +218,70 @@ public class SelectableButton extends Button implements Selectable {
      */
     @Override
     public void select() {
-        if (!isSelected() && !isDisabled()) {
-            setSelected(true);
-            setFocusTraversable(false);
-            fireEvent(new SelectionEvent(this, null, SelectionEvent.SELECTED));
-        }
+        if (selectedOrDisabled()) { return; }
+        
+        setSelected(true);
+        setFocusTraversable(false);
+        fireEvent(new SelectionEvent(this, null, SelectionEvent.SELECTED));
     }
     
     /**
-     * Takes this button out of the selected state if it's not disabled and
-     * it's in the selected state.
+     * Takes this button out of the selected state if it's in the selected
+     * state.
      * <p>
-     * If this button is not disabled or already deselected, then this method
-     * sets this button to not selected and fires a {@link SelectionEvent} with
-     * this button as the source and {@link SelectionEvent#DESELECTED} as the
-     * event type.
+     * If this button is selected, then this method sets this button to not
+     * selected and fires a {@link SelectionEvent} with this button as the
+     * source and {@link SelectionEvent#DESELECTED} as the event type.
      */
     @Override
     public void deselect() {
-        if (isSelected() && !isDisabled()) {
-            setSelected(false);
-            setFocusTraversable(true);
-            fireEvent(new SelectionEvent(this, null, SelectionEvent.DESELECTED));
-        }
+        if (!isSelected()) { return; }
+        
+        setSelected(false);
+        if (!isDisabled()) { setFocusTraversable(true); }
+        fireEvent(new SelectionEvent(this, null, SelectionEvent.DESELECTED));
     }
     
     
     /**
-     * Invokes this button's {@link #select()} method and then calls
+     * If this button is not selected or disabled, then this method invokes
+     * this button's {@link #select()} method and then calls
      * {@link Button#fire() super.fire()}.
      * @see #select()
      */
     @Override
     public void fire() {
+        if (selectedOrDisabled()) { return; }
+        
         select();
         super.fire();
+    }
+    
+    /**
+     * If this button is not selected or disabled, then this method invokes
+     * {@link Button#arm() super.arm()}.
+     */
+    @Override
+    public void arm() {
+        if (selectedOrDisabled()) { return; }
+        
+        super.arm();
+    }
+    
+    /**
+     * If this button is not selected or disabled, then this method invokes
+     * {@link Button#disarm() super.disarm()}.
+     */
+    @Override
+    public void disarm() {
+        if (selectedOrDisabled()) { return; }
+        
+        super.disarm();
+    }
+    
+    /** Helper method which returns true if this button is selected or disabled. */
+    private boolean selectedOrDisabled() {
+        return isSelected() || isDisabled();
     }
     
     
