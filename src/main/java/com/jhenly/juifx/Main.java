@@ -25,7 +25,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.stage.Stage;
@@ -164,11 +163,11 @@ public class Main extends Application {
         
         FillButton fb1 = new FillButton();
         fb1.getStyleClass().addAll("top-button");
-        StackPane sp1 = new StackPane();
+        // StackPane sp1 = new StackPane();
         Region fb1r = new Region();
         fb1r.getStyleClass().addAll("icon", "icon-cogs");
-        sp1.getChildren().add(fb1r);
-        fb1.setGraphic(sp1);
+        // sp1.getChildren().add(fb1r);
+        fb1.setGraphic(fb1r);
         
         FillButton fb2 = new FillButton();
         fb2.getStyleClass().addAll("top-button");

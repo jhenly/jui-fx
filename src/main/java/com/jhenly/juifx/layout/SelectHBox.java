@@ -1,4 +1,5 @@
-/** Copyright (c) 2021, JuiFX All rights reserved.
+/**
+ * Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -19,7 +20,8 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.jhenly.juifx.layout;
 
 import java.util.List;
@@ -31,8 +33,10 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 
 
 /**
@@ -85,7 +89,6 @@ public class SelectHBox extends HBox {
      * Constructor(s)                                                         *
      *                                                                        *
      *************************************************************************/
-    
     
     /** 
      * Creates a {@code SelectHBox} layout with no horizontal spacing between
@@ -172,8 +175,8 @@ public class SelectHBox extends HBox {
      */
     public final BooleanProperty consumeSelectedProperty() {
         if (consumeSelected == null) {
-            consumeSelected =
-            new SimpleBooleanProperty(SelectHBox.this, "consumeSelected", DEFAULT_CONSUME_DE_SELECTED);
+            consumeSelected
+                = new SimpleBooleanProperty(SelectHBox.this, "consumeSelected", DEFAULT_CONSUME_DE_SELECTED);
         }
         return consumeSelected;
     }
@@ -210,8 +213,8 @@ public class SelectHBox extends HBox {
      */
     public final BooleanProperty consumeDeselectedProperty() {
         if (consumeDeselected == null) {
-            consumeDeselected =
-            new SimpleBooleanProperty(SelectHBox.this, "consumeDeselected", DEFAULT_CONSUME_DE_SELECTED);
+            consumeDeselected
+                = new SimpleBooleanProperty(SelectHBox.this, "consumeDeselected", DEFAULT_CONSUME_DE_SELECTED);
         }
         return consumeDeselected;
     }
@@ -245,6 +248,60 @@ public class SelectHBox extends HBox {
     public void clearSelected() {
         if (selected != null) { selected.deselect(); }
     }
+    
+    @Override
+    protected void layoutChildren() { super.layoutChildren(); }
+    
+    
+    /**************************************************************************
+     *                                                                        *
+     * HBox API                                                               *
+     *                                                                        *
+     *************************************************************************/
+    
+    /**
+     * Sets the horizontal grow priority for the child when contained by an hbox.
+     * If set, the hbox will use the priority value to allocate additional space if the
+     * hbox is resized larger than its preferred width.
+     * If multiple hbox children have the same horizontal grow priority, then the
+     * extra space will be split evenly between them.
+     * If no horizontal grow priority is set on a child, the hbox will never
+     * allocate any additional horizontal space for that child.
+     * <p>
+     * Setting the value to {@code null} will remove the constraint.
+     * @param child the child of an hbox
+     * @param value the horizontal grow priority for the child
+     */
+    public static void setHgrow(Node child, Priority value) { HBox.setHgrow(child, value); }
+    
+    /**
+     * Returns the child's hgrow constraint if set.
+     * @param child the child node of an hbox
+     * @return the horizontal grow priority for the child or null if no priority was set
+     */
+    public static Priority getHgrow(Node child) { return HBox.getHgrow(child); }
+    
+    /**
+     * Sets the margin for the child when contained by an hbox.
+     * If set, the hbox will layout the child with the margin space around it.
+     * Setting the value to null will remove the constraint.
+     * @param child the child mode of the hbox
+     * @param value the margin of space around the child
+     */
+    public static void setMargin(Node child, Insets value) { HBox.setMargin(child, value); }
+    
+    /**
+     * Returns the child's margin constraint if set.
+     * @param child the child node of an hbox
+     * @return the margin for the child or null if no margin was set
+     */
+    public static Insets getMargin(Node child) { return HBox.getMargin(child); }
+    
+    /**
+     * Removes all hbox constraints from the child node.
+     * @param child the child node
+     */
+    public static void clearConstraints(Node child) { HBox.clearConstraints(child); }
     
     
     /***************************************************************************

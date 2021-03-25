@@ -1,4 +1,5 @@
-/** Copyright (c) 2021, JuiFX All rights reserved.
+/**
+ * Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -19,7 +20,8 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.jhenly.juifx.layout;
 
 import java.util.List;
@@ -31,7 +33,9 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 
@@ -172,8 +176,8 @@ public class SelectVBox extends VBox {
      */
     public final BooleanProperty consumeSelectedProperty() {
         if (consumeSelected == null) {
-            consumeSelected =
-            new SimpleBooleanProperty(SelectVBox.this, "consumeSelected", DEFAULT_CONSUME_DE_SELECTED);
+            consumeSelected
+                = new SimpleBooleanProperty(SelectVBox.this, "consumeSelected", DEFAULT_CONSUME_DE_SELECTED);
         }
         return consumeSelected;
     }
@@ -210,8 +214,8 @@ public class SelectVBox extends VBox {
      */
     public final BooleanProperty consumeDeselectedProperty() {
         if (consumeDeselected == null) {
-            consumeDeselected =
-            new SimpleBooleanProperty(SelectVBox.this, "consumeDeselected", DEFAULT_CONSUME_DE_SELECTED);
+            consumeDeselected
+                = new SimpleBooleanProperty(SelectVBox.this, "consumeDeselected", DEFAULT_CONSUME_DE_SELECTED);
         }
         return consumeDeselected;
     }
@@ -248,6 +252,57 @@ public class SelectVBox extends VBox {
     public void clearSelected() {
         if (selected != null) { selected.deselect(); }
     }
+    
+    
+    /**************************************************************************
+     *                                                                        *
+     * VBox API                                                               *
+     *                                                                        *
+     *************************************************************************/
+    
+    /**
+     * Sets the vertical grow priority for the child when contained by a vbox.
+     * If set, the vbox will use the priority value to allocate additional space if the
+     * vbox is resized larger than its preferred height.
+     * If multiple vbox children have the same vertical grow priority, then the
+     * extra space will be split evenly between them.
+     * If no vertical grow priority is set on a child, the vbox will never
+     * allocate any additional vertical space for that child.
+     * <p>
+     * Setting the value to {@code null} will remove the constraint.
+     * @param child the child of a vbox
+     * @param value the vertical grow priority for the child
+     */
+    public static void setVgrow(Node child, Priority value) { VBox.setVgrow(child, value); }
+    
+    /**
+     * Returns the child's vgrow property if set.
+     * @param child the child node of a vbox
+     * @return the vertical grow priority for the child or null if no priority was set
+     */
+    public static Priority getVgrow(Node child) { return VBox.getVgrow(child); }
+    
+    /**
+     * Sets the margin for the child when contained by a vbox.
+     * If set, the vbox will layout the child so that it has the margin space around it.
+     * Setting the value to null will remove the constraint.
+     * @param child the child mode of a vbox
+     * @param value the margin of space around the child
+     */
+    public static void setMargin(Node child, Insets value) { VBox.setMargin(child, value); }
+    
+    /**
+     * Returns the child's margin property if set.
+     * @param child the child node of a vbox
+     * @return the margin for the child or null if no margin was set
+     */
+    public static Insets getMargin(Node child) { return VBox.getMargin(child); }
+    
+    /**
+     * Removes all vbox constraints from the child node.
+     * @param child the child node
+     */
+    public static void clearConstraints(Node child) { VBox.clearConstraints(child); }
     
     
     /***************************************************************************
