@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.jhenly.juifx.control.skin.FillButtonSkin;
 import com.jhenly.juifx.control.skin.FillableSkin;
+import com.jhenly.juifx.control.skin.SelectableFillButtonSkin;
 
 import impl.com.jhenly.juifx.fill.Fill;
 import javafx.beans.property.BooleanProperty;
@@ -41,46 +41,77 @@ import javafx.util.Duration;
 /**
  * A button control that fills over time to a specified color on mouse hover
  * and changes back to a specified color on mouse exit.
+ * <p>
+ * This class extends {@code SelectButton} and does not override any of its
+ * public API.
  * 
  * @author Jonathan Henly
  * @since JuiFX 1.0
  * 
+ * @see SelectableButton
  * @see Fillable
  */
-public class FillButton extends Button implements Fillable {
-    
-    /***************************************************************************
-     *                                                                         *
-     * Constructor(s)                                                          *
-     *                                                                         *
-     **************************************************************************/
+public class SelectableFillButton extends SelectableButton implements Fillable {
     
     /**
-     * Creates a {@code FillButton} instance, with an empty string for its
-     * text.
+     * Creates a {@code SelectableFillButton} instance, with an empty string
+     * for its text, in the non-selected state.
      */
-    public FillButton() {
-        super();
+    public SelectableFillButton() {
         initialize();
     }
     
     /**
-     * Creates a {@code FillButton} instance with the specified text.
+     * Creates a {@code SelectableFillButton} instance, with an empty string
+     * for its text, in specified selected state.
+     * @param selected - the button's selected state
+     */
+    public SelectableFillButton(boolean selected) {
+        super(selected);
+        initialize();
+    }
+    
+    /**
+     * Creates a {@code SelectableFillButton} instance with the specified text,
+     * in the non-selected state.
      * @param text - the button's text
      */
-    public FillButton(String text) {
+    public SelectableFillButton(String text) {
         super(text);
         initialize();
     }
     
     /**
-     * Creates a {@code FillButton} instance with the specified text and
-     * graphic.
+     * Creates a {@code SelectableFillButton} instance with the specified text,
+     * in the specified selected state.
+     * @param text - the button's text
+     * @param selected - the button's selected state
+     */
+    public SelectableFillButton(String text, boolean selected) {
+        super(text, selected);
+        initialize();
+    }
+    
+    /**
+     * Creates a {SelectableFillButton} instance with the specified text and
+     * graphic, in the non-selected state.
      * @param text - the button's text
      * @param graphic - the button's graphic
      */
-    public FillButton(String text, Node graphic) {
+    public SelectableFillButton(String text, Node graphic) {
         super(text, graphic);
+        initialize();
+    }
+    
+    /**
+     * Creates a {SelectableFillButton} instance with the specified text,
+     * graphic, and selected state.
+     * @param text - the button's text
+     * @param graphic - the button's graphic
+     * @param selected - the button's selected state
+     */
+    public SelectableFillButton(String text, Node graphic, boolean selected) {
+        super(text, graphic, selected);
         initialize();
     }
     
@@ -110,7 +141,7 @@ public class FillButton extends Button implements Fillable {
                 @Override
                 protected void invalidated() { pseudoClassStateChanged(FILL_DISABLED_PSEUDO_CLASS, get()); }
                 @Override
-                public Object getBean() { return FillButton.this; }
+                public Object getBean() { return SelectableFillButton.this; }
                 @Override
                 public String getName() { return "fillEnabled"; } //$NON-NLS-1$
                 @Override
@@ -132,7 +163,7 @@ public class FillButton extends Button implements Fillable {
     @Override
     public final ObjectProperty<Duration> fillDurationProperty() {
         if (fillDuration == null) {
-            fillDuration = new StyleableObjectProperty<Duration>(Fillable.DEFAULT_DURATION)
+            fillDuration = new StyleableObjectProperty<Duration>(DEFAULT_DURATION)
             {
                 private Duration oldValue = get();
                 
@@ -149,7 +180,7 @@ public class FillButton extends Button implements Fillable {
                     oldValue = value;
                 }
                 @Override
-                public Object getBean() { return FillButton.this; }
+                public Object getBean() { return SelectableFillButton.this; }
                 @Override
                 public String getName() { return "fillDuration"; } //$NON-NLS-1$
                 @Override
@@ -173,12 +204,12 @@ public class FillButton extends Button implements Fillable {
     @Override
     public final ObjectProperty<Fill> fillProperty() {
         if (fill == null) {
-            fill = new StyleableObjectProperty<Fill>(Fillable.DEFAULT_FILL)
+            fill = new StyleableObjectProperty<Fill>(DEFAULT_FILL)
             {
                 @Override
                 public String getName() { return "fill"; } // $NON-NLS-1$
                 @Override
-                public Object getBean() { return FillButton.this; }
+                public Object getBean() { return SelectableFillButton.this; }
                 
                 @Override
                 public CssMetaData<Fillable, Fill> getCssMetaData() { return Fillable.StyleableProperties.FILL; }
@@ -187,8 +218,6 @@ public class FillButton extends Button implements Fillable {
         }
         return fill;
     }
-    @Override
-    public final void setFill(Fill value) { fillProperty().set(value); }
     @Override
     public final Fill getFill() { return fill == null ? Fillable.DEFAULT_FILL : fill.get(); }
     private ObjectProperty<Fill> fill;
@@ -202,7 +231,7 @@ public class FillButton extends Button implements Fillable {
                 @Override
                 public String getName() { return "fillOnFocus"; } // $NON-NLS-1$
                 @Override
-                public Object getBean() { return FillButton.this; }
+                public Object getBean() { return SelectableFillButton.this; }
                 
                 @Override
                 public CssMetaData<Fillable, Boolean> getCssMetaData() {
@@ -243,7 +272,7 @@ public class FillButton extends Button implements Fillable {
     
     @SuppressWarnings("unchecked")
     ReadOnlyObjectWrapper<? extends FillableSkin<? extends Fillable>> fillableSkin
-        = new ReadOnlyObjectWrapper<>(this, "fillableSkin", (FillButtonSkin<FillButton>) getSkin());
+        = new ReadOnlyObjectWrapper<>(this, "fillableSkin", (SelectableFillButtonSkin<SelectableFillButton>) getSkin());
     
     
     /***************************************************************************
@@ -255,7 +284,7 @@ public class FillButton extends Button implements Fillable {
     /** {@inheritDoc} */
     @Override
     protected Skin<?> createDefaultSkin() {
-        return new FillButtonSkin<FillButton>(this);
+        return new SelectableFillButtonSkin<SelectableFillButton>(this);
     }
     
     
@@ -266,7 +295,7 @@ public class FillButton extends Button implements Fillable {
      **************************************************************************/
     
     /** This control's CSS style class. */
-    private static final String DEFAULT_STYLE_CLASS = "fill-button"; //$NON-NLS-1$
+    private static final String DEFAULT_STYLE_CLASS = "selectable-fill-button"; //$NON-NLS-1$
     
     private static String stylesheet;
     
@@ -274,7 +303,7 @@ public class FillButton extends Button implements Fillable {
     @Override
     public String getUserAgentStylesheet() {
         if (stylesheet == null) {
-            stylesheet = FillButton.class.getResource("fillbutton.css").toExternalForm(); // $NON-NLS-1$
+            stylesheet = SelectableFillButton.class.getResource("selectablefillbutton.css").toExternalForm(); // $NON-NLS-1$
         }
         return stylesheet;
     }
@@ -303,8 +332,8 @@ public class FillButton extends Button implements Fillable {
     }
     
     /**
-     * Gets an unmodifiable list of this {@code FillButton} control's CSS
-     * styleable properties.
+     * Gets an unmodifiable list of this {@code SelectableFillButton} control's
+     * CSS styleable properties.
      *
      * @return unmodifiable list of this control's CSS styleable properties
      */

@@ -1,4 +1,5 @@
-/** Copyright (c) 2021, JuiFX All rights reserved.
+/**
+ * Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -19,7 +20,8 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.jhenly.juifx.control;
 
 import com.jhenly.juifx.control.event.SelectionEvent;
@@ -40,6 +42,7 @@ import javafx.event.EventTarget;
  * @author Jonathan Henly
  * @since JuiFX 1.0
  * @see SelectableButton
+ * @see SelectableFillButton
  * @see SelectVBox
  * @see SelectHBox
  * @see #selectedProperty()
@@ -72,7 +75,7 @@ public interface Selectable extends EventTarget, Styleable {
      * Gets whether or not this control is in the selected state.
      * @return this control's selected state
      */
-    boolean isSelected();
+    default boolean isSelected() { return selectedProperty().get(); }
     
     
     /* --- On Selected --- */
@@ -87,12 +90,12 @@ public interface Selectable extends EventTarget, Styleable {
      * Sets the control's on selected action event handler.
      * @param value - the control's new on selected action event handler
      */
-    void setOnSelected(EventHandler<? super SelectionEvent> value);
+    default void setOnSelected(EventHandler<? super SelectionEvent> value) { onSelectedProperty().set(value); }
     /**
      * Gets the control's on selected action event handler.
      * @return the control's on selected action event handler
      */
-    EventHandler<? super SelectionEvent> getOnSelected();
+    default EventHandler<? super SelectionEvent> getOnSelected() { return onSelectedProperty().get(); }
     
     
     /* --- On Deselected --- */
@@ -107,12 +110,12 @@ public interface Selectable extends EventTarget, Styleable {
      * Sets the control's on deselected action event handler.
      * @param value - the control's new on deselected action event handler
      */
-    void setOnDeselected(EventHandler<? super SelectionEvent> value);
+    default void setOnDeselected(EventHandler<? super SelectionEvent> value) { onDeselectedProperty().set(value); }
     /**
      * Gets the control's on deselected action event handler.
      * @return the control's on deselected action event handler
      */
-    EventHandler<? super SelectionEvent> getOnDeselected();
+    default EventHandler<? super SelectionEvent> getOnDeselected() { return onDeselectedProperty().get(); }
     
     
     /**************************************************************************

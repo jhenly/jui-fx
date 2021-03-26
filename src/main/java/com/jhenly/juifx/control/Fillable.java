@@ -1,4 +1,5 @@
-/** Licensed to the Apache Software Foundation (ASF) under one or more
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
  * licenses this file to you under the Apache License, Version 2.0 (the
@@ -11,7 +12,8 @@
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations under
- * the License. */
+ * the License.
+ */
 package com.jhenly.juifx.control;
 
 import java.util.List;
@@ -73,8 +75,9 @@ public interface Fillable extends Skinnable, Styleable {
      * @return {@code true} if the fill transition should run, otherwise
      *         {@code false}
      */
-    default boolean isFillEnabled() { return true; }
-    
+    default boolean isFillEnabled() { return DEFAULT_FILL_ENABLED; }
+    /** The default {@code fillEnabled} value. */
+    boolean DEFAULT_FILL_ENABLED = true;
     
     /* --- Fill Duration --- */
     /**
@@ -156,8 +159,9 @@ public interface Fillable extends Skinnable, Styleable {
      * @return {@code true} if the fill transition should run when it gains
      *         focus, otherwise {@code false}
      */
-    default boolean isFillOnFocus() { return false; }
-    
+    default boolean isFillOnFocus() { return DEFAULT_FILL_ON_FOCUS; }
+    /** The default {@code fillOnFocus} value. */
+    boolean DEFAULT_FILL_ON_FOCUS = false;
     
     /* --- Fillable Skin --- */
     /**
@@ -262,34 +266,34 @@ public interface Fillable extends Skinnable, Styleable {
     static class StyleableProperties {
         
         /* --- Fill Enabled --- */
-        public static final CssMetaData<Fillable, Boolean> FILL_ENABLED =
-        new CssMetaData<Fillable, Boolean>("-fill-enabled", BooleanConverter.getInstance(), true)
-        {
-            @Override
-            public boolean isSettable(Fillable fillable) {
-                return !fillable.fillEnabledProperty().isBound();
-            }
-            @SuppressWarnings("unchecked")
-            @Override
-            public StyleableProperty<Boolean> getStyleableProperty(Fillable fillable) {
-                return (StyleableProperty<Boolean>) fillable.fillEnabledProperty();
-            }
-        };
+        public static final CssMetaData<Fillable, Boolean> FILL_ENABLED
+            = new CssMetaData<Fillable, Boolean>("-fill-enabled", BooleanConverter.getInstance(), true)
+            {
+                @Override
+                public boolean isSettable(Fillable fillable) {
+                    return !fillable.fillEnabledProperty().isBound();
+                }
+                @SuppressWarnings("unchecked")
+                @Override
+                public StyleableProperty<Boolean> getStyleableProperty(Fillable fillable) {
+                    return (StyleableProperty<Boolean>) fillable.fillEnabledProperty();
+                }
+            };
         
         /* --- Fill Duration --- */
-        public static final CssMetaData<Fillable, Duration> FILL_DURATION =
-        new CssMetaData<Fillable, Duration>("-fill-duration", DurationConverter.getInstance(), DEFAULT_DURATION)
-        {
-            @Override
-            public boolean isSettable(Fillable fillable) {
-                return fillable.getFillDuration() == DEFAULT_DURATION || !fillable.fillDurationProperty().isBound();
-            }
-            @SuppressWarnings("unchecked")
-            @Override
-            public StyleableProperty<Duration> getStyleableProperty(Fillable fillable) {
-                return (StyleableProperty<Duration>) fillable.fillDurationProperty();
-            }
-        };
+        public static final CssMetaData<Fillable, Duration> FILL_DURATION
+            = new CssMetaData<Fillable, Duration>("-fill-duration", DurationConverter.getInstance(), DEFAULT_DURATION)
+            {
+                @Override
+                public boolean isSettable(Fillable fillable) {
+                    return fillable.getFillDuration() == DEFAULT_DURATION || !fillable.fillDurationProperty().isBound();
+                }
+                @SuppressWarnings("unchecked")
+                @Override
+                public StyleableProperty<Duration> getStyleableProperty(Fillable fillable) {
+                    return (StyleableProperty<Duration>) fillable.fillDurationProperty();
+                }
+            };
         
         /* --- Fill --- */
         public static final FillCssMetaData<Fillable> FILL = new FillCssMetaData<Fillable>("-fill", Fill.getDefault())
@@ -306,23 +310,23 @@ public interface Fillable extends Skinnable, Styleable {
         };
         
         /* --- Fill On Focus --- */
-        public static final CssMetaData<Fillable, Boolean> FILL_ON_FOCUS =
-        new CssMetaData<Fillable, Boolean>("-fill-on-focus", BooleanConverter.getInstance(), false)
-        {
-            @Override
-            public boolean isSettable(Fillable fillable) {
-                return !fillable.fillOnFocusProperty().isBound();
-            }
-            @SuppressWarnings("unchecked")
-            @Override
-            public StyleableProperty<Boolean> getStyleableProperty(Fillable fillable) {
-                return (StyleableProperty<Boolean>) fillable.fillOnFocusProperty();
-            }
-        };
+        public static final CssMetaData<Fillable, Boolean> FILL_ON_FOCUS
+            = new CssMetaData<Fillable, Boolean>("-fill-on-focus", BooleanConverter.getInstance(), false)
+            {
+                @Override
+                public boolean isSettable(Fillable fillable) {
+                    return !fillable.fillOnFocusProperty().isBound();
+                }
+                @SuppressWarnings("unchecked")
+                @Override
+                public StyleableProperty<Boolean> getStyleableProperty(Fillable fillable) {
+                    return (StyleableProperty<Boolean>) fillable.fillOnFocusProperty();
+                }
+            };
         
         /* --- Styleables --- */
-        private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES =
-        List.of(FILL_ENABLED, FILL_DURATION, FILL, FILL_ON_FOCUS);
+        private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES
+            = List.of(FILL_ENABLED, FILL_DURATION, FILL, FILL_ON_FOCUS);
     }
     
     /**

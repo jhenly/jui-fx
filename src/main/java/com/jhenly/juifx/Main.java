@@ -6,6 +6,7 @@ import java.util.List;
 import com.jhenly.juifx.control.FillButton;
 import com.jhenly.juifx.control.InsetToggleSwitch;
 import com.jhenly.juifx.control.SelectableButton;
+import com.jhenly.juifx.control.SelectableFillButton;
 import com.jhenly.juifx.control.TopPromptTextField;
 import com.jhenly.juifx.layout.SelectHBox;
 import com.jhenly.juifx.layout.SelectVBox;
@@ -49,16 +50,16 @@ public class Main extends Application {
     
     private static HBox createTPTFs() {
         
-        VBox left = new VBox();
+        VBox left = new SelectVBox();
         left.getStyleClass().add("left");
-        FillButton up = new FillButton("Button");
+        FillButton up = new FillButton("FillButton");
         up.getStyleClass().add("up");
         
 //        SelectableButton down = new SelectableButton("Fill'er down!");
-        Button down = new Button("Fill'er down!");
+        Button down = new SelectableFillButton("Fill'er down!");
         down.getStyleClass().add("down");
         
-        InsetToggleSwitch under = new InsetToggleSwitch();
+        Button under = new SelectableFillButton("SelectableFillButton");
         under.getStyleClass().add("under");
         
         Label text = new Label("Prompt Text");

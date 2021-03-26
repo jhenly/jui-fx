@@ -1,6 +1,6 @@
 /*******************************************************************************
  *                                                                            *
- * FillButton                                                                 *
+ * SelectableFillButton                                                                 *
  *                                                                            *
  * Fillable Attributes:                                                       *
  * -fill-enabled: <boolean>                                                   *
@@ -10,7 +10,7 @@
  * -fill-text-to: <Color | FillSpan Special Identifier>                       *
  *                                                                            *
  ******************************************************************************/
-.fill-button {
+.selectable-fill-button {
     -fx-background-color: #dfdfdf;
     -fx-background-insets:  0;
     -fx-background-radius: 4;
@@ -23,6 +23,8 @@
     -fill-bg-to: #a0a0a0;
 }
 
-.fill-button:armed {
-    -fx-background-color: #afafaf;
+.selectable-fill-button:selected {
+    -fx-background-color: #abc;
+    -fx-background-insets: 0;
+    -fx-background-radius: 4;
 }

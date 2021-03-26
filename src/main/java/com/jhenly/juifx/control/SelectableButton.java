@@ -135,8 +135,6 @@ public class SelectableButton extends Button implements Selectable {
     /** {@inheritDoc} */
     @Override
     public final ReadOnlyBooleanProperty selectedProperty() { return selected; }
-    @Override
-    public final boolean isSelected() { return selected.get(); }
     private void setSelected(boolean value) { selected.set(value); }
     private ReadOnlyBooleanWrapper selected = new ReadOnlyBooleanWrapper()
     {
@@ -169,10 +167,6 @@ public class SelectableButton extends Button implements Selectable {
         }
         return onSelected;
     }
-    @Override
-    public final void setOnSelected(EventHandler<? super SelectionEvent> value) { onSelectedProperty().set(value); }
-    @Override
-    public final EventHandler<? super SelectionEvent> getOnSelected() { return onSelectedProperty().get(); }
     private ObjectProperty<EventHandler<? super SelectionEvent>> onSelected;
     
     
@@ -194,10 +188,6 @@ public class SelectableButton extends Button implements Selectable {
         }
         return onDeselected;
     }
-    @Override
-    public final void setOnDeselected(EventHandler<? super SelectionEvent> value) { onDeselectedProperty().set(value); }
-    @Override
-    public final EventHandler<? super SelectionEvent> getOnDeselected() { return onDeselectedProperty().get(); }
     private ObjectProperty<EventHandler<? super SelectionEvent>> onDeselected;
     
     

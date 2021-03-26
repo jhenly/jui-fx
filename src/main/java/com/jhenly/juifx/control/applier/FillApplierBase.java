@@ -14,6 +14,8 @@ import impl.com.jhenly.juifx.fill.FillHelper;
 import impl.com.jhenly.juifx.fill.FillSpan;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
+import javafx.css.StyleOrigin;
+import javafx.css.StyleableObjectProperty;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -62,7 +64,7 @@ public abstract class FillApplierBase<F extends Fillable> implements FillApplier
      * @param fillable - the {@code Fillable} for which this
      *        {@code FillApplier} should attach to.
      */
-    protected FillApplierBase(F fillable) {
+    public FillApplierBase(F fillable) {
         if (fillable == null) { throw new IllegalArgumentException("the 'fillable' parameter cannot be null"); }
         
         fable = fillable;
@@ -246,7 +248,8 @@ public abstract class FillApplierBase<F extends Fillable> implements FillApplier
             return true;
         }
         
-        // does a simple circular reference check, applying should cover the rest
+        // does a simple circular reference check, applying should cover the
+        // rest
         return attached.add(applier);
     }
     
@@ -661,14 +664,16 @@ public abstract class FillApplierBase<F extends Fillable> implements FillApplier
             if (bgCache != null) {
                 List<BackgroundFill> interped = interpolateBgFillSpans(bgCache.getFills(), fill.getBgFillSpans(), frac);
                 
-                fable.setBackground(new Background(interped, fable.getBackground().getImages()));
+                StyleableObjectProperty<Background> fableBg
+                    = (StyleableObjectProperty<Background>) fable.backgroundProperty();
+                
+                fableBg.applyStyle(StyleOrigin.AUTHOR, new Background(interped, fable.getBackground().getImages()));
             }
         }
         
         /** Helper used by 'applyBgFillSpans'. */
-        private List<BackgroundFill>
-        interpolateBgFillSpans(List<BackgroundFill> bgFills, List<FillSpan> bgSpans, double frac)
-        {
+        private List<BackgroundFill> interpolateBgFillSpans(List<BackgroundFill> bgFills, List<FillSpan> bgSpans,
+            double frac) {
             final List<BackgroundFill> newBgFills = new ArrayList<>(bgFills);
             final int n = Math.min(bgSpans.size(), bgFills.size());
             
@@ -701,17 +706,16 @@ public abstract class FillApplierBase<F extends Fillable> implements FillApplier
         @Override
         public void interpolateAndApply(double frac) {
             if (bdCache != null) {
-                List<BorderStroke> interped =
-                interpolateBorderFillSpans(bdCache.getStrokes(), fill.getBorderFillSpans(), frac);
+                List<BorderStroke> interped
+                    = interpolateBorderFillSpans(bdCache.getStrokes(), fill.getBorderFillSpans(), frac);
                 
                 fable.setBorder(new Border(interped, fable.getBorder().getImages()));
             }
         }
         
         /** Helper used by 'applyBorderFillSpans'. */
-        private List<BorderStroke>
-        interpolateBorderFillSpans(List<BorderStroke> bdStrokes, List<BorderFillSpan> bdSpans, double frac)
-        {
+        private List<BorderStroke> interpolateBorderFillSpans(List<BorderStroke> bdStrokes,
+            List<BorderFillSpan> bdSpans, double frac) {
             final List<BorderStroke> newBdStrokes = new ArrayList<>(bdStrokes);
             final int n = Math.min(bdSpans.size(), bdStrokes.size());
             
@@ -720,7 +724,8 @@ public abstract class FillApplierBase<F extends Fillable> implements FillApplier
                 final int strokeIdx = (newBdStrokes.size() - 1) - i;
                 final int spanIdx = (bdSpans.size() - 1) - i;
                 
-                // set old stroke to new stroke created from old stroke and bd span
+                // set old stroke to new stroke created from old stroke and bd
+                // span
                 newBdStrokes.set(strokeIdx,
                     createBorderStroke(newBdStrokes.get(strokeIdx), bdSpans.get(spanIdx), frac));
             }
