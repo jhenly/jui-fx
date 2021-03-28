@@ -24,27 +24,32 @@
  */
 package com.jhenly.juifx.control.skin;
 
+
 import com.jhenly.juifx.control.TopPromptTextField;
 
 import javafx.animation.Animation;
 import javafx.animation.ScaleTransition;
 import javafx.animation.Transition;
 import javafx.animation.TranslateTransition;
+import javafx.beans.InvalidationListener;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.css.PseudoClass;
+import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.SkinBase;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -246,9 +251,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     /* prompt update children helper */
     private void updatePromptChild(Labeled newPrompt) {
         // we're here because prompt property changed, so...
-        removeChild(promptPane, promptNode);
-        cleanUpPromptTransitions();
-        removeChild(topPane, promptPane);
+        cleanUpPromptPane();
         
         if (newPrompt != null) {
             promptNode = newPrompt;
@@ -268,6 +271,15 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
             
             promptPane.setVisible(false);
             
+            // add click forwarder and text cursor listener
+            addPromptNodeClickHandler();
+//            addPromptPaneTextCursorListener();
+            
+            promptNode.setCursor(Cursor.TEXT);
+            
+//            promptPane.setPickOnBounds(false);
+//            promptNode.setPickOnBounds(false);
+            
             handlePromptAsPromptText(promptAsPromptText.get());
         } else {
             promptPane = null;
@@ -277,6 +289,61 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         }
         
     }
+    
+    /** Removes children, cleans up transitions, removes handlers and listeners. */
+    private void cleanUpPromptPane() {
+        removeChild(promptPane, promptNode);
+        cleanUpPromptTransitions();
+        removeChild(topPane, promptPane);
+        
+        removePromptNodeClickHandler(); // null-safe
+        removePromptPaneTextCursorListener(); // null-safe
+    }
+    
+    /** The click handler that sends click events to textfield. */
+    private EventHandler<MouseEvent> promptNodeClickHandler;
+    private void addPromptNodeClickHandler() {
+        if (promptNode == null) { return; }
+        
+        if (promptNodeClickHandler == null) {
+            promptNodeClickHandler = e -> {
+//                if (!promptNode.isVisible()) {
+                textField.requestFocus();
+//                }
+            };
+        }
+        
+        promptNode.addEventHandler(MouseEvent.MOUSE_CLICKED, promptNodeClickHandler);
+    }
+    private void removePromptNodeClickHandler() {
+        if (promptPane == null || promptNodeClickHandler == null) { return; }
+        
+        promptPane.removeEventHandler(MouseEvent.MOUSE_CLICKED, promptNodeClickHandler);
+        promptNodeClickHandler = null;
+    }
+    
+    /** Listener that changes textfield's cursor to text cursor when not visible. */
+    private InvalidationListener promptPaneTextCursorListener;
+    private void addPromptPaneTextCursorListener() {
+        if (promptNode == null) { return; }
+        
+        if (promptPaneTextCursorListener == null) {
+            promptPaneTextCursorListener = obv -> {
+                if (!promptNode.visibleProperty().get()) {
+                    promptNode.setCursor(Cursor.DEFAULT);
+                } else {
+                    promptNode.setCursor(Cursor.TEXT);
+                }
+            };
+        }
+    }
+    private void removePromptPaneTextCursorListener() {
+        if (promptPane == null || promptPaneTextCursorListener == null) { return; }
+        
+        promptPane.visibleProperty().removeListener(promptPaneTextCursorListener);
+        promptPaneTextCursorListener = null;
+    }
+    
     
     /* default stub update children helper */
     private void updateDefaultStubChild(Labeled newDefaultStub) {
