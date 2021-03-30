@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,8 +19,7 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.control.event;
 
 import com.jhenly.juifx.control.Selectable;
@@ -30,15 +28,19 @@ import javafx.event.Event;
 import javafx.event.EventTarget;
 import javafx.event.EventType;
 
+
 /**
- * An {@link Event} representing a selection event. This event type
- * is used to represent a {@link com.jhenly.juifx.control.Selectable
- * Selectable} control being selected or deselected. Such as when a
+ * An {@link Event} representing a selection event.
+ * <p>
+ * This event type is used to represent a
+ * {@link com.jhenly.juifx.control.Selectable Selectable} control being
+ * selected or deselected. Such as when a
  * {@link com.jhenly.juifx.control.SelectableButton SelectableButton} has been
  * selected or deselected.
  * 
  * @author Jonathan Henly
  * @since JuiFX 1.0
+ * 
  * @see #SELECTED
  * @see #DESELECTED
  * @see Selectable
@@ -67,8 +69,8 @@ public class SelectionEvent extends Event {
      * Selectable} control is
      * {@link com.jhenly.juifx.control.Selectable#deselect() deselected}.
      */
-    public static final EventType<SelectionEvent> DESELECTED
-        = new EventType<SelectionEvent>(SELECTION_ANY, "DESELECTED");
+    public static final EventType<SelectionEvent> DESELECTED =
+    new EventType<SelectionEvent>(SELECTION_ANY, "DESELECTED");
     
     
     /**************************************************************************
@@ -76,7 +78,7 @@ public class SelectionEvent extends Event {
      * Constructors                                                           *
      *                                                                        *
      *************************************************************************/
-    
+//                                                                               
     /**
      * Constructs a new {@code SelectionEvent} with the specified event type.
      * <p>
@@ -84,7 +86,9 @@ public class SelectionEvent extends Event {
      * {@code NULL_SOURCE_TARGET}.
      * @param eventType - the type of {@code SelectionEvent}
      */
-    public SelectionEvent(EventType<? extends SelectionEvent> eventType) { super(eventType); }
+    public SelectionEvent(EventType<? extends SelectionEvent> eventType) {
+        super(eventType);
+    }
     
     /**
      * Constructs a new {@code SelectionEvent} with the specified event source,
