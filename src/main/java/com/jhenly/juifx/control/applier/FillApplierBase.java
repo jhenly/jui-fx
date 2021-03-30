@@ -403,17 +403,18 @@ public abstract class FillApplierBase<F extends Fillable> implements FillApplier
         private static class AttachedApplier {
             private AttachedApplier next, prev;
             private FillApplier<?> attached;
-            private final ChangeListener<Skin<?>> skinChange;
-            private final ChangeListener<FillApplier<?>> applierChange;
+            
+            private final ChangeListener<Skin<?>> skinChange = (obv, o, n) -> dispose();
+            private final WeakChangeListener<Skin<?>> weakSkinChange = new WeakChangeListener<>(skinChange);
+            
+            private final ChangeListener<FillApplier<?>> applierChange = (obv, o, n) -> dispose();
+            private final WeakChangeListener<FillApplier<?>> weakApplierChange =
+            new WeakChangeListener<>(applierChange);
             
             AttachedApplier(FillApplier<?> toAttach) {
                 attached = toAttach;
-                
-                skinChange = (obv, o, n) -> dispose();
-                applierChange = (obv, o, n) -> dispose();
-                
-                attached.getFillable().skinProperty().addListener(skinChange);
-                attached.getFillable().getFillableSkin().fillApplierProperty().addListener(applierChange);
+                attached.getFillable().skinProperty().addListener(weakSkinChange);
+                attached.getFillable().getFillableSkin().fillApplierProperty().addListener(weakApplierChange);
             }
             
             void dispose() {
