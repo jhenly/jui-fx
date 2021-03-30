@@ -13,7 +13,9 @@ import impl.com.jhenly.juifx.fill.Fill;
 import impl.com.jhenly.juifx.fill.FillHelper;
 import impl.com.jhenly.juifx.fill.FillSpan;
 import javafx.beans.InvalidationListener;
+import javafx.beans.WeakInvalidationListener;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.WeakChangeListener;
 import javafx.css.StyleOrigin;
 import javafx.css.StyleableObjectProperty;
 import javafx.scene.control.Skin;
@@ -36,9 +38,6 @@ public abstract class FillApplierBase<F extends Fillable> implements FillApplier
     private F fable;
     private Fill fill;
     
-    private final InvalidationListener fillInvalidated;
-    private final InvalidationListener propInvalidated;
-    private final ChangeListener<Shape> shapeChanged;
     
     private boolean fillInvalid;
     private boolean applying;
@@ -50,6 +49,29 @@ public abstract class FillApplierBase<F extends Fillable> implements FillApplier
     protected Paint strokeCache;
     protected Background bgCache;
     protected Border bdCache;
+    
+    /***************************************************************************
+     *                                                                         *
+     * Listener(s)                                                             *
+     *                                                                         *
+     **************************************************************************/
+    
+    private final InvalidationListener fillInvalidated = obv -> updateFill();
+    private final WeakInvalidationListener weakFillInvalidated = new WeakInvalidationListener(fillInvalidated);
+    
+    private final InvalidationListener propInvalidated = obv -> {
+        if (applying || fillInvalid) { return; }
+        
+        // fill is invalid if any of its 5 properties change
+        fillInvalid = true;
+    };
+    private final WeakInvalidationListener weakPropInvalidated = new WeakInvalidationListener(propInvalidated);
+    
+    private final ChangeListener<Shape> shapeChanged = (obv, o, n) -> {
+        if (o != null) { o.strokeProperty().removeListener(weakPropInvalidated); }
+        if (n != null) { n.strokeProperty().addListener(weakPropInvalidated); }
+    };
+    private final WeakChangeListener<Shape> weakShapeChanged = new WeakChangeListener<>(shapeChanged);
     
     
     /***************************************************************************
@@ -69,24 +91,7 @@ public abstract class FillApplierBase<F extends Fillable> implements FillApplier
         
         fable = fillable;
         
-        //
-        fillInvalidated = obv -> updateFill();
-        
-        //
-        propInvalidated = obv -> {
-            if (applying || fillInvalid) { return; }
-            
-            // fill is invalid if any of its 5 properties change
-            fillInvalid = true;
-        };
-        
-        // handles shape's stroke property
-        shapeChanged = (obv, o, n) -> {
-            if (o != null) { o.strokeProperty().removeListener(propInvalidated); }
-            if (n != null) { n.strokeProperty().addListener(propInvalidated); }
-        };
-        
-        fable.fillProperty().addListener(fillInvalidated);
+        fable.fillProperty().addListener(weakFillInvalidated);
         
         fillInvalid = true;
         updateFill();
@@ -452,28 +457,28 @@ public abstract class FillApplierBase<F extends Fillable> implements FillApplier
     /** Adds 'propInvalidated' listeners to fillable's properties. */
     private void addPropListeners(boolean hasSpecial) {
         if (hasSpecial) {
-            fable.textFillProperty().addListener(propInvalidated);
-            fable.shapeProperty().addListener(propInvalidated);
+            fable.textFillProperty().addListener(weakPropInvalidated);
+            fable.shapeProperty().addListener(weakPropInvalidated);
             // handle fable's shape property's stroke property
-            fable.shapeProperty().addListener(shapeChanged);
+            fable.shapeProperty().addListener(weakShapeChanged);
         }
         
-        fable.borderProperty().addListener(propInvalidated);
-        fable.backgroundProperty().addListener(propInvalidated);
+        fable.borderProperty().addListener(weakPropInvalidated);
+        fable.backgroundProperty().addListener(weakPropInvalidated);
     }
     
     /** Removes 'propInvalidated' listeners from fillable's properties. */
     private void removePropListeners() {
-        fable.textFillProperty().removeListener(propInvalidated);
-        fable.shapeProperty().removeListener(propInvalidated);
-        fable.backgroundProperty().removeListener(propInvalidated);
-        fable.borderProperty().removeListener(propInvalidated);
+        fable.textFillProperty().removeListener(weakPropInvalidated);
+        fable.shapeProperty().removeListener(weakPropInvalidated);
+        fable.backgroundProperty().removeListener(weakPropInvalidated);
+        fable.borderProperty().removeListener(weakPropInvalidated);
         
         // handle fable's shape property's stroke property
-        fable.shapeProperty().removeListener(shapeChanged);
+        fable.shapeProperty().removeListener(weakShapeChanged);
         final Shape shape = fable.getShape();
         if (shape != null) {
-            shape.strokeProperty().removeListener(propInvalidated);
+            shape.strokeProperty().removeListener(weakPropInvalidated);
         }
     }
     
@@ -664,16 +669,17 @@ public abstract class FillApplierBase<F extends Fillable> implements FillApplier
             if (bgCache != null) {
                 List<BackgroundFill> interped = interpolateBgFillSpans(bgCache.getFills(), fill.getBgFillSpans(), frac);
                 
-                StyleableObjectProperty<Background> fableBg
-                    = (StyleableObjectProperty<Background>) fable.backgroundProperty();
+                StyleableObjectProperty<Background> fableBg =
+                (StyleableObjectProperty<Background>) fable.backgroundProperty();
                 
                 fableBg.applyStyle(StyleOrigin.AUTHOR, new Background(interped, fable.getBackground().getImages()));
             }
         }
         
         /** Helper used by 'applyBgFillSpans'. */
-        private List<BackgroundFill> interpolateBgFillSpans(List<BackgroundFill> bgFills, List<FillSpan> bgSpans,
-            double frac) {
+        private List<BackgroundFill>
+        interpolateBgFillSpans(List<BackgroundFill> bgFills, List<FillSpan> bgSpans, double frac)
+        {
             final List<BackgroundFill> newBgFills = new ArrayList<>(bgFills);
             final int n = Math.min(bgSpans.size(), bgFills.size());
             
@@ -706,16 +712,17 @@ public abstract class FillApplierBase<F extends Fillable> implements FillApplier
         @Override
         public void interpolateAndApply(double frac) {
             if (bdCache != null) {
-                List<BorderStroke> interped
-                    = interpolateBorderFillSpans(bdCache.getStrokes(), fill.getBorderFillSpans(), frac);
+                List<BorderStroke> interped =
+                interpolateBorderFillSpans(bdCache.getStrokes(), fill.getBorderFillSpans(), frac);
                 
                 fable.setBorder(new Border(interped, fable.getBorder().getImages()));
             }
         }
         
         /** Helper used by 'applyBorderFillSpans'. */
-        private List<BorderStroke> interpolateBorderFillSpans(List<BorderStroke> bdStrokes,
-            List<BorderFillSpan> bdSpans, double frac) {
+        private List<BorderStroke>
+        interpolateBorderFillSpans(List<BorderStroke> bdStrokes, List<BorderFillSpan> bdSpans, double frac)
+        {
             final List<BorderStroke> newBdStrokes = new ArrayList<>(bdStrokes);
             final int n = Math.min(bdSpans.size(), bdStrokes.size());
             
