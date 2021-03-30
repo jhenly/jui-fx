@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,16 +19,19 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.layout;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.jhenly.juifx.control.Selectable;
 import com.jhenly.juifx.control.event.SelectionEvent;
 
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;
@@ -73,15 +75,6 @@ public class SelectVBox extends VBox {
      *************************************************************************/
     
     private static final boolean DEFAULT_CONSUME_DE_SELECTED = true;
-    
-    
-    /**************************************************************************
-     *                                                                        *
-     * Private Members                                                        *
-     *                                                                        *
-     *************************************************************************/
-    
-    private Selectable selected;
     
     
     /**************************************************************************
@@ -141,18 +134,20 @@ public class SelectVBox extends VBox {
         addEventHandler(SelectionEvent.DESELECTED, event -> {
             if (getConsumeDeselected()) { event.consume(); }
             
-            if (selected == event.getTarget()) {
-                selected = null;
+            if (getSelected() == event.getTarget()) {
+                setSelected(null);
             }
         });
         
         addEventHandler(SelectionEvent.SELECTED, event -> {
             if (getConsumeSelected()) { event.consume(); }
             
-            Selectable oldSelected = selected;
-            selected = (Selectable) event.getTarget();
+            final Selectable oldSelected = getSelected();
+            setSelected((Selectable) event.getTarget());
             
-            if (oldSelected != null) { oldSelected.deselect(); }
+            if (oldSelected != null) {
+                oldSelected.deselect();
+            }
         });
     }
     
@@ -163,21 +158,46 @@ public class SelectVBox extends VBox {
      *                                                                        *
      *************************************************************************/
     
+    /* --- Selected --- */
+    /**
+     * Read only property containing the currently selected {@link Selectable}
+     * instance.
+     * <p>
+     * A value of {@code null} means nothing is currently selected. 
+     * 
+     * @defaultValue {@code null}
+     * @return the property representing the currently selected
+     *         {@code Selectable} instance
+     */
+    public final ReadOnlyObjectProperty<Selectable> selectedProperty() {
+        return selected.getReadOnlyProperty();
+    }
+    /**
+     * Gets the the currently selected {@link Selectable} instance, or
+     * {@code null} if nothing is selected.
+     * @return the currently selected {@code Selectable} instance, or
+     *         {@code null}
+     */
+    public final Selectable getSelected() { return selectedProperty().get(); }
+    private void setSelected(Selectable value) { selected.set(value); }
+    private ReadOnlyObjectWrapper<Selectable> selected = new ReadOnlyObjectWrapper<>(SelectVBox.this, "selected", null);
+    
     /* --- Consume Selected --- */
     /**
      * Property indicating whether or not the container consumes {@link
      * SelectionEvent#SELECTED} events.
-     * <p>
-     * This property's value is {@code true} by default.
+     * 
+     * @defaultValue {@code true}
      * 
      * @return the property indicating whether or not the container should
      *         consume selected events
+     * 
      * @see Selectable
      */
     public final BooleanProperty consumeSelectedProperty() {
         if (consumeSelected == null) {
-            consumeSelected
-                = new SimpleBooleanProperty(SelectVBox.this, "consumeSelected", DEFAULT_CONSUME_DE_SELECTED);
+            consumeSelected =
+            new SimpleBooleanProperty(SelectVBox.this, "consumeSelected", DEFAULT_CONSUME_DE_SELECTED);
         }
         return consumeSelected;
     }
@@ -188,7 +208,12 @@ public class SelectVBox extends VBox {
      * @param value - whether or not the container should consume selected
      *        events
      */
-    public final void setConsumeSelected(boolean value) { consumeSelectedProperty().set(value); }
+    public final void setConsumeSelected(boolean value) {
+        // only inflate property if value is different than default
+        if (consumeSelected == null && value == DEFAULT_CONSUME_DE_SELECTED) { return; }
+        
+        consumeSelectedProperty().set(value);
+    }
     /**
      * Gets whether or not the container consumes {@link
      * SelectionEvent#SELECTED} events.
@@ -205,17 +230,18 @@ public class SelectVBox extends VBox {
     /**
      * Property indicating whether or not the container consumes {@link
      * SelectionEvent#DESELECTED} events.
-     * <p>
-     * This property's value is {@code true} by default.
+     * 
+     * @defaultValue {@code true}
      * 
      * @return the property indicating whether or not the container should
      *         consume deselected events
+     *         
      * @see Selectable
      */
     public final BooleanProperty consumeDeselectedProperty() {
         if (consumeDeselected == null) {
-            consumeDeselected
-                = new SimpleBooleanProperty(SelectVBox.this, "consumeDeselected", DEFAULT_CONSUME_DE_SELECTED);
+            consumeDeselected =
+            new SimpleBooleanProperty(SelectVBox.this, "consumeDeselected", DEFAULT_CONSUME_DE_SELECTED);
         }
         return consumeDeselected;
     }
@@ -226,7 +252,12 @@ public class SelectVBox extends VBox {
      * @param value - whether or not the container should consume deselected
      *        events
      */
-    public final void setConsumeDeselected(boolean value) { consumeDeselectedProperty().set(value); }
+    public final void setConsumeDeselected(boolean value) {
+        // only inflate property if value is different than default
+        if (consumeDeselected == null && value == DEFAULT_CONSUME_DE_SELECTED) { return; }
+        
+        consumeDeselectedProperty().set(value);
+    }
     /**
      * Gets whether or not the container consumes {@link
      * SelectionEvent#DESELECTED} events.
@@ -250,7 +281,11 @@ public class SelectVBox extends VBox {
      * @see Selectable#deselect()
      */
     public void clearSelected() {
-        if (selected != null) { selected.deselect(); }
+        final Selectable curSelected = getSelected();
+        if (curSelected != null) {
+            curSelected.deselect();
+            setSelected(null);
+        }
     }
     
     
@@ -259,7 +294,7 @@ public class SelectVBox extends VBox {
      * VBox API                                                               *
      *                                                                        *
      *************************************************************************/
-    
+//                                                                               
     /**
      * Sets the vertical grow priority for the child when contained by a vbox.
      * If set, the vbox will use the priority value to allocate additional space if the
@@ -273,7 +308,9 @@ public class SelectVBox extends VBox {
      * @param child the child of a vbox
      * @param value the vertical grow priority for the child
      */
-    public static void setVgrow(Node child, Priority value) { VBox.setVgrow(child, value); }
+    public static void setVgrow(Node child, Priority value) {
+        VBox.setVgrow(child, value);
+    }
     
     /**
      * Returns the child's vgrow property if set.
@@ -313,7 +350,12 @@ public class SelectVBox extends VBox {
     
     /* Super-lazy instantiation pattern. */
     private static class StyleableProperties {
-        private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES = VBox.getClassCssMetaData();
+        private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
+        static {
+            final List<CssMetaData<? extends Styleable, ?>> styleables =
+            new ArrayList<CssMetaData<? extends Styleable, ?>>(VBox.getClassCssMetaData());
+            STYLEABLES = Collections.unmodifiableList(styleables);
+        }
     }
     
     /**
