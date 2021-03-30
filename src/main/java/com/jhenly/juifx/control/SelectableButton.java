@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,8 +19,7 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.control;
 
 import com.jhenly.juifx.control.event.SelectionEvent;
@@ -121,7 +119,8 @@ public class SelectableButton extends Button implements Selectable {
      */
     private void initialize(boolean selected) {
         getStyleClass().add(DEFAULT_STYLE_CLASS);
-        setSelected(selected);
+        
+        if (selected) { select(); }
     }
     
     
@@ -134,16 +133,14 @@ public class SelectableButton extends Button implements Selectable {
     /* --- Selected --- */
     /** {@inheritDoc} */
     @Override
-    public final ReadOnlyBooleanProperty selectedProperty() { return selected; }
+    public final ReadOnlyBooleanProperty selectedProperty() { return selected.getReadOnlyProperty(); }
     private void setSelected(boolean value) { selected.set(value); }
-    private ReadOnlyBooleanWrapper selected = new ReadOnlyBooleanWrapper()
+    @Override
+    public boolean isSelected() { return selected == null ? false : selected.get(); }
+    private ReadOnlyBooleanWrapper selected = new ReadOnlyBooleanWrapper(SelectableButton.this, "selected", false)
     {
         @Override
         protected void invalidated() { pseudoClassStateChanged(PSEUDO_CLASS_SELECTED, get()); }
-        @Override
-        public Object getBean() { return SelectableButton.this; }
-        @Override
-        public String getName() { return "selected"; }
     };
     
     
@@ -167,6 +164,10 @@ public class SelectableButton extends Button implements Selectable {
         }
         return onSelected;
     }
+    @Override
+    public EventHandler<? super SelectionEvent> getOnSelected() {
+        return onSelected == null ? null : onSelectedProperty().get();
+    }
     private ObjectProperty<EventHandler<? super SelectionEvent>> onSelected;
     
     
@@ -187,6 +188,10 @@ public class SelectableButton extends Button implements Selectable {
             };
         }
         return onDeselected;
+    }
+    @Override
+    public EventHandler<? super SelectionEvent> getOnDeselected() {
+        return onDeselected == null ? null : onDeselectedProperty().get();
     }
     private ObjectProperty<EventHandler<? super SelectionEvent>> onDeselected;
     
