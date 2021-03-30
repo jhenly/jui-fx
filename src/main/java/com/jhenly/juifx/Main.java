@@ -72,19 +72,37 @@ public class Main extends Application {
         one.getStyleClass().addAll("tp", "one");
         // VBox.setVgrow(one, Priority.ALWAYS);
         
-        twio = new TopPromptTextField(new Label("Prompt Text"), new Label("default:"), new Label("192.168.0.1/28"));
-        twio.setUseDefaultValue(false);
-        twio.setUsePromptAsPromptText(true);
-        twio.setDisable(false);
-        twio.getStyleClass().addAll("tp", "twio");
+//        twio = new TopPromptTextField(new Label("Prompt Text"), new Label("default:"), new Label("192.168.0.1/28"));
+//        twio.setUseDefaultValue(false);
+//        twio.setUsePromptAsPromptText(true);
+//        twio.setDisable(false);
+//        twio.getStyleClass().addAll("tp", "twio");
         
         left.getChildren().addAll(up, one, down, /* twio, */ under);
         
-        TopPromptTextField two = new TopPromptTextField();
-        two.setDisable(false);
-        two.setTFPromptText("Foo Bar Baz");
-        two.setDefaultStubText("def:");
-        two.getStyleClass().addAll("tp", "two");
+//        TopPromptTextField two = new TopPromptTextField();
+//        two.setDisable(false);
+//        two.setTFPromptText("Foo Bar Baz");
+//        two.setDefaultStubText("def:");
+//        two.getStyleClass().addAll("tp", "two");
+        
+        down.setOnAction(e -> {
+            left.getChildren().remove(one);
+            one = null;
+        });
+        
+        under.setOnAction(e -> {
+            if (one != null) { return; }
+            one = new TopPromptTextField(text, defaultStub, defaultText);
+            one.setUseDefaultValue(false);
+            one.setUsePromptAsPromptText(true);
+            one.setDisable(false);
+            one.getStyleClass().addAll("tp", "one");
+            left.getChildren().add(one);
+        });
+        
+        TextField regular = new TextField();
+        regular.setPromptText("Regular Prompt Text");
         
         
         Label a = new Label("Prompt Text");
@@ -95,7 +113,7 @@ public class Main extends Application {
         b.getStyleClass().add("bbb");
         c.getStyleClass().add("ccc");
         
-        VBox right = new VBox(a, /* two, */ b, c);
+        VBox right = new VBox(a, /* two, */ b, c, regular);
         
         
         HBox.setHgrow(left, Priority.ALWAYS);
@@ -111,6 +129,32 @@ public class Main extends Application {
     
     @Override
     public void start(Stage primaryStage) throws IOException {
+        BorderPane root = createBorderPane();
+        root.setMinWidth(ROOT_WIDTH);
+        root.setMinHeight(ROOT_HEIGHT);
+        
+//        VBox main = createMain();
+        
+        HBox topHbox = createTopHbox();
+        
+        HBox tptf = createTPTFs();
+        tptf.getChildren().add(topHbox);
+//        root.setCenter(main);
+        root.setCenter(tptf);
+        
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(getClass().getResource("main.css").toExternalForm());
+        
+        primaryStage.setScene(scene);
+        primaryStage.show();
+        
+        // System.out.println(" :: ONE HEIGHT :: one.getHeight() = " +
+        // one.getHeight());
+        // System.out.println(" :: TWIO HEIGHT :: twio.getHeight() = " +
+        // twio.getHeight());
+    }
+    
+    private static VBox createMain() {
         VBox main = new VBox();
         main.setFillWidth(true);
         main.setSpacing(10.0);
@@ -133,25 +177,7 @@ public class Main extends Application {
         
         main.getChildren().addAll(topHbox, center);
         
-        BorderPane root = createBorderPane();
-        root.setMinWidth(ROOT_WIDTH);
-        root.setMinHeight(ROOT_HEIGHT);
-        
-        HBox tptf = createTPTFs();
-        tptf.getChildren().add(topHbox);
-//        root.setCenter(main);
-        root.setCenter(tptf);
-        
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("main.css").toExternalForm());
-        
-        primaryStage.setScene(scene);
-        primaryStage.show();
-        
-        // System.out.println(" :: ONE HEIGHT :: one.getHeight() = " +
-        // one.getHeight());
-        // System.out.println(" :: TWIO HEIGHT :: twio.getHeight() = " +
-        // twio.getHeight());
+        return main;
     }
     
     
@@ -265,7 +291,7 @@ public class Main extends Application {
         its2.setPadding(new Insets(0, 0, 0, -20));
         
         
-        second.tfEditableProperty().bind(its2.selectedProperty().not());
+        second.editableProperty().bind(its2.selectedProperty().not());
         
         VBox container = new VBox(its, verticalSpacer, tf, tptf, its2, verticalSpacer2, foo, second);
         container.setFillWidth(true);
@@ -288,11 +314,11 @@ public class Main extends Application {
         foo.disableProperty().bind(its2.selectedProperty().not());
         second.disableProperty().bind(its2.selectedProperty().not());
         
-        tptf.tfTextProperty().addListener(change);
+        tptf.textProperty().addListener(change);
         
-        tptf.onTFActionProperty().set(e -> tf.setText(tptf.getTFText()));
+        tptf.onActionProperty().set(e -> tf.setText(tptf.getText()));
         
-        tf.setOnAction(action -> second.setTFText(tf.getText()));
+        tf.setOnAction(action -> second.setText(tf.getText()));
         
         return container;
     }
