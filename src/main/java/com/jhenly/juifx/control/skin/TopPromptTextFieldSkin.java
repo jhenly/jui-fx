@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,10 +19,8 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.control.skin;
-
 
 import com.jhenly.juifx.control.TopPromptTextField;
 
@@ -31,31 +28,29 @@ import javafx.animation.Animation;
 import javafx.animation.ScaleTransition;
 import javafx.animation.Transition;
 import javafx.animation.TranslateTransition;
-import javafx.beans.InvalidationListener;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableBooleanValue;
+import javafx.beans.value.WeakChangeListener;
 import javafx.css.PseudoClass;
-import javafx.event.EventHandler;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
-import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.SkinBase;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
 
@@ -92,13 +87,21 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     private ObservableBooleanValue textFieldHasText;
     private ObservableBooleanValue promptAsPromptText;
     
-    private ChangeListener<Boolean> usePromptTextChanged;
-    private ChangeListener<Boolean> editableChanged;
-    
     private String oldPromptText;
     private String currentPromptText;
     
     private boolean focusedWhenUseDefaultTextChanged;
+    
+    
+    private ChangeListener<Boolean> usePromptTextChanged = (observer, old, ne) -> { handlePromptAsPromptText(ne); };
+    private WeakChangeListener<Boolean> weakUsePromptTextChanged = new WeakChangeListener<>(usePromptTextChanged);
+    
+    private ChangeListener<Boolean> editableChanged = (observer, old, ne) -> {
+        textField.setFocusTraversable(ne);
+        underline.setVisible(ne);
+        getSkinnable().pseudoClassStateChanged(NOT_EDITABLE_PSEUDO_CLASS, !ne);
+    };
+    private WeakChangeListener<Boolean> weakEditableChanged = new WeakChangeListener<>(editableChanged);
     
     
     /**
@@ -124,6 +127,12 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
      */
     public abstract ObjectProperty<Labeled> defaultValueProperty();
     
+    /**
+     * Specifies the {@code TextField} that is to be displayed.
+     *
+     * @return the {@code TextField} to be displayed
+     */
+    public abstract TextField getTextField();
     
     /**
      * Skin constructor for a {@code TopPromptTextField} control.
@@ -138,7 +147,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         topPane = new StackPane();
         vbox = new VBox();
         defaultPane = new HBox();
-        textField = new TextField();
+        textField = getTextField();
         underline = new Line(0.0, 0.0, 1, 0.0);
         
         
@@ -183,7 +192,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
             }
         };
         
-        control.pseudoClassStateChanged(NOT_EDITABLE_PSEUDO_CLASS, !control.tfEditableProperty().get());
+        control.pseudoClassStateChanged(NOT_EDITABLE_PSEUDO_CLASS, !control.editableProperty().get());
         
         // add prompt, defaultStub and defaultText (if not null) to top pane
         updateChildren();
@@ -191,7 +200,6 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         getChildren().add(topPane);
         
         setUpListenersAndHandlers();
-        bindTextFieldProperties();
     }
     
     /* register most change listeners */
@@ -205,25 +213,10 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         registerChangeListener(defaultValueProperty(), e -> updateChildren());
         
         // listen for change in textField's editable state
-        editableChanged = (observer, old, ne) -> {
-            textField.setFocusTraversable(ne);
-            underline.setVisible(ne);
-            getSkinnable().pseudoClassStateChanged(NOT_EDITABLE_PSEUDO_CLASS, !ne);
-        };
-        getSkinnable().tfEditableProperty().addListener(editableChanged);
+        getSkinnable().editableProperty().addListener(weakEditableChanged);
         
         // allows us to be notified of when tf's prompt should change
-        usePromptTextChanged = (observer, old, ne) -> { handlePromptAsPromptText(ne); };
-        getSkinnable().usePromptAsPromptTextProperty().addListener(usePromptTextChanged);
-    }
-    
-    private void bindTextFieldProperties() {
-        final TopPromptTextField skinnable = getSkinnable();
-        
-        textField.textProperty().bindBidirectional(skinnable.tfTextProperty());
-        textField.alignmentProperty().bind(skinnable.tfAlignmentProperty());
-        textField.editableProperty().bind(skinnable.tfEditableProperty());
-        textField.onActionProperty().bind(skinnable.onTFActionProperty());
+        getSkinnable().usePromptAsPromptTextProperty().addListener(weakUsePromptTextChanged);
     }
     
     /* updates prompt, defaultStub and defaultText */
@@ -251,7 +244,9 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     /* prompt update children helper */
     private void updatePromptChild(Labeled newPrompt) {
         // we're here because prompt property changed, so...
-        cleanUpPromptPane();
+        removeChild(promptPane, promptNode);
+        cleanUpPromptTransitions();
+        removeChild(topPane, promptPane);
         
         if (newPrompt != null) {
             promptNode = newPrompt;
@@ -271,14 +266,14 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
             
             promptPane.setVisible(false);
             
-            // add click forwarder and text cursor listener
-            addPromptNodeClickHandler();
-//            addPromptPaneTextCursorListener();
+            Rectangle clip = new Rectangle();
+            clip.setSmooth(false);
+            clip.widthProperty().bind(textField.widthProperty());
+            clip.heightProperty().bind(textField.heightProperty());
             
-            promptNode.setCursor(Cursor.TEXT);
+            promptPane.setClip(clip);
             
-//            promptPane.setPickOnBounds(false);
-//            promptNode.setPickOnBounds(false);
+            // promptNode.clipProperty().bind(textField.clipProperty());
             
             handlePromptAsPromptText(promptAsPromptText.get());
         } else {
@@ -289,61 +284,6 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         }
         
     }
-    
-    /** Removes children, cleans up transitions, removes handlers and listeners. */
-    private void cleanUpPromptPane() {
-        removeChild(promptPane, promptNode);
-        cleanUpPromptTransitions();
-        removeChild(topPane, promptPane);
-        
-        removePromptNodeClickHandler(); // null-safe
-        removePromptPaneTextCursorListener(); // null-safe
-    }
-    
-    /** The click handler that sends click events to textfield. */
-    private EventHandler<MouseEvent> promptNodeClickHandler;
-    private void addPromptNodeClickHandler() {
-        if (promptNode == null) { return; }
-        
-        if (promptNodeClickHandler == null) {
-            promptNodeClickHandler = e -> {
-//                if (!promptNode.isVisible()) {
-                textField.requestFocus();
-//                }
-            };
-        }
-        
-        promptNode.addEventHandler(MouseEvent.MOUSE_CLICKED, promptNodeClickHandler);
-    }
-    private void removePromptNodeClickHandler() {
-        if (promptPane == null || promptNodeClickHandler == null) { return; }
-        
-        promptPane.removeEventHandler(MouseEvent.MOUSE_CLICKED, promptNodeClickHandler);
-        promptNodeClickHandler = null;
-    }
-    
-    /** Listener that changes textfield's cursor to text cursor when not visible. */
-    private InvalidationListener promptPaneTextCursorListener;
-    private void addPromptPaneTextCursorListener() {
-        if (promptNode == null) { return; }
-        
-        if (promptPaneTextCursorListener == null) {
-            promptPaneTextCursorListener = obv -> {
-                if (!promptNode.visibleProperty().get()) {
-                    promptNode.setCursor(Cursor.DEFAULT);
-                } else {
-                    promptNode.setCursor(Cursor.TEXT);
-                }
-            };
-        }
-    }
-    private void removePromptPaneTextCursorListener() {
-        if (promptPane == null || promptPaneTextCursorListener == null) { return; }
-        
-        promptPane.visibleProperty().removeListener(promptPaneTextCursorListener);
-        promptPaneTextCursorListener = null;
-    }
-    
     
     /* default stub update children helper */
     private void updateDefaultStubChild(Labeled newDefaultStub) {
@@ -398,8 +338,8 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
         }
     }
     
-    /* helper that handles prompt node and tf's prompt text when
-     * promptAsPromptText changes */
+    /* helper that handles prompt node and tf's prompt text when promptAsPromptText
+     * changes */
     private void handlePromptAsPromptText(boolean promptAsPromptText) {
         // check if we started using prompt as prompt text
         if (promptAsPromptText) {
@@ -537,8 +477,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
             updatePromptOnTextFieldInFocus();
         } else {
             // update textfield default text if it was focused when
-            // useDefaultTextChanged
-            // was called
+            // useDefaultTextChanged was called
             if (focusedWhenUseDefaultTextChanged) {
                 useDefaultTextChanged();
             }
@@ -615,7 +554,7 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
             }
             
             moveTransition.setOnFinished(event -> {
-                // promptPane.setVisible(false);
+                promptPane.setVisible(false);
                 if (promptAsPromptText.get()) {
                     textField.setPromptText(currentPromptText);
                 }
@@ -656,9 +595,8 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
             // layout the prompt pane over the textfield prompt, account for
             // textfield insets, add 1 so that snapPosition does not round down
             promptPane.setLayoutX(snapPositionX(textField.getLayoutX() + tfInsets.getLeft() + 1 + contentX));
-            promptPane.setLayoutY(snapPositionY(
-                vbox.getLayoutY() + textField.getLayoutY() + (textField.getHeight() - textField.getBaselineOffset())));
-            
+            promptPane.setLayoutY(snapPositionY(vbox.getLayoutY() + textField.getLayoutY() + 1
+                                                + (textField.getHeight() - textField.getBaselineOffset())));
             
             handleTransitionsInLayout(contentX, contentY, contentWidth, contentHeight);
         }
@@ -673,8 +611,9 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     }
     
     /** layoutChildren helper method that handles move and scale transitions */
-    private void handleTransitionsInLayout(double contentX, double contentY, double contentWidth,
-        double contentHeight) {
+    private void
+    handleTransitionsInLayout(double contentX, double contentY, double contentWidth, double contentHeight)
+    {
         final TopPromptTextField me = getSkinnable();
         final double textfieldHeight = snapSizeY(textField.prefHeight(-1));
         final Insets tfInsets = textField.getInsets();
@@ -698,7 +637,8 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     
     /* handleTransitionInLayout helper */
     private void handleTransition(Transition transition, Node node, double targetX, double targetY, double defX,
-        double defY, boolean translate) {
+                                  double defY, boolean translate)
+    {
         final boolean tfHasText = textFieldHasText.get();
         
         // if the transition is running, it must be restarted for the value to
@@ -723,23 +663,19 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     /** {@inheritDoc} */
     @Override
     public void dispose() {
+        System.out.println("-+-+ RUNNING TopPromptTextFieldSkin.dispose() +-+-");
         // clean up change listeners
-        getSkinnable().tfEditableProperty().removeListener(editableChanged);
+        getSkinnable().editableProperty().removeListener(editableChanged);
         getSkinnable().usePromptAsPromptTextProperty().removeListener(usePromptTextChanged);
-        
-        textField.onActionProperty().unbind();
-        textField.textProperty().unbind();
-        textField.alignmentProperty().unbind();
-        textField.editableProperty().unbind();
-        textField.onActionProperty().unbind();
         
         super.dispose();
     }
     
     /** {@inheritDoc} */
     @Override
-    protected double computeMinHeight(double width, double topInset, double rightInset, double bottomInset,
-        double leftInset) {
+    protected double
+    computeMinHeight(double width, double topInset, double rightInset, double bottomInset, double leftInset)
+    {
         // only care about vbox and prompt stack pane heights
         final double upph = vbox.prefHeight(-1);
         final double ptph = (promptPane == null) ? 0.0 : promptPane.prefHeight(-1);
@@ -749,8 +685,9 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     
     /** {@inheritDoc} */
     @Override
-    protected double computePrefHeight(double width, double topInset, double rightInset, double bottomInset,
-        double leftInset) {
+    protected double
+    computePrefHeight(double width, double topInset, double rightInset, double bottomInset, double leftInset)
+    {
         // prefHeight is minHeight plus wiggle room
         final double minHeight = computeMinHeight(width, topInset, rightInset, bottomInset, leftInset);
         
@@ -765,8 +702,9 @@ public abstract class TopPromptTextFieldSkin extends SkinBase<TopPromptTextField
     
     /** {@inheritDoc} */
     @Override
-    protected double computeMinWidth(double height, double topInset, double rightInset, double bottomInset,
-        double leftInset) {
+    protected double
+    computeMinWidth(double height, double topInset, double rightInset, double bottomInset, double leftInset)
+    {
         final double superMinWidth = super.computeMinWidth(height, topInset, rightInset, bottomInset, leftInset);
         
         // only care about vbox and prompt stack pane widths

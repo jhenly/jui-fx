@@ -34,8 +34,8 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -54,6 +54,7 @@ import javafx.scene.control.Labeled;
 import javafx.scene.control.Skin;
 import javafx.scene.control.SkinBase;
 import javafx.scene.control.TextField;
+import javafx.scene.text.Font;
 
 
 /**
@@ -117,6 +118,8 @@ public class TopPromptTextField extends Control {
     public TopPromptTextField() {
         super();
         
+        System.out.println("-+-+ CONSTRUCTOR TopPromptTextField() CALLED +-+-");
+        
         initialize();
     }
     
@@ -131,6 +134,8 @@ public class TopPromptTextField extends Control {
     public TopPromptTextField(Labeled prompt, Labeled stub, Labeled text) {
         super();
         
+        System.out.println("-+-+ CONSTRUCTOR TopPromptTextField(Labeled, Labeled, Labeled) CALLED +-+-");
+        
         initialize();
         setPrompt(prompt);
         setDefaultStub(stub);
@@ -139,6 +144,7 @@ public class TopPromptTextField extends Control {
     
     /** Helper method used by constructors. */
     private void initialize() {
+        System.out.println("-+-+ TopPromptTextField.initialize() CALLED +-+-");
         getStyleClass().add(DEFAULT_STYLE_CLASS);
     }
     
@@ -203,7 +209,7 @@ public class TopPromptTextField extends Control {
     
     
     /* --- Default Value --- */
-    private ObjectProperty<Labeled> defaultValue = new SimpleObjectProperty<>(TopPromptTextField.this, "defaultText"); //$NON-NLS-1$ ;
+    private ObjectProperty<Labeled> defaultValue = new SimpleObjectProperty<>(TopPromptTextField.this, "defaultValue"); //$NON-NLS-1$ ;
     /**
      * The {@linkplain Labeled} that is placed under this
      * {@code TopPromptTextField}'s {@code TextField}.
@@ -384,9 +390,9 @@ public class TopPromptTextField extends Control {
                         Labeled tmpDefValue = defaultValueProperty().get();
                         if (tmpDefValue == null || tmpDefValue.getText() == null) { return; }
                         
-                        String tmpTFText = tfTextProperty().get();
+                        String tmpTFText = textProperty().get();
                         if (tmpTFText == null || tmpTFText.isEmpty()) {
-                            tfTextProperty().set(tmpDefValue.getText());
+                            textProperty().set(tmpDefValue.getText());
                         }
                     }
                     
@@ -446,7 +452,13 @@ public class TopPromptTextField extends Control {
     public final boolean isSettled() { return settledProperty().get(); }
     
     
-    /* --- Text Field Properties --- */
+    /***************************************************************************
+     *                                                                         *
+     * TextField Properties                                                    *
+     *                                                                         *
+     **************************************************************************/
+    
+    private TextField textField = new TextField();
     
     /* --- TextField Editable --- */
     /**
@@ -455,31 +467,23 @@ public class TopPromptTextField extends Control {
      * <p>
      * @defaultValue {@code true}
      */
-    private BooleanProperty tfEditable;
-    public final BooleanProperty tfEditableProperty() {
-        if (tfEditable == null) {
-            tfEditable = new SimpleBooleanProperty(TopPromptTextField.this, "tfEditable", true); //$NON-NLS-1$
-        }
-        return tfEditable;
-    }
-    public final boolean isTFEditable() { return tfEditable == null ? true : tfEditable.get(); }
-    public final void setTFEditable(boolean value) { tfEditableProperty().set(value); }
+    public final BooleanProperty editableProperty() { return textField.editableProperty(); }
+    public final boolean isEditable() { return textField.isEditable(); }
+    public final void setEditable(boolean value) { textField.setEditable(value); }
     
     /* --- TextField Font --- */
-//    public final ObjectProperty<Font> fontProperty() { return skin.getTextField().fontProperty(); }
-//    public final Font getFont() { return fontProperty().get(); }
-//    public final void setFont(Font value) { fontProperty().set(value); }
+    public final ObjectProperty<Font> fontProperty() { return textField.fontProperty(); }
+    public final Font getFont() { return textField.getFont(); }
+    public final void setFont(Font value) { textField.setFont(value); }
     
     /* --- TextField Text --- */
-    private StringProperty tfText;
-    public final StringProperty tfTextProperty() {
-        if (tfText == null) {
-            tfText = new SimpleStringProperty(TopPromptTextField.this, "tfText", ""); //$NON-NLS-1$
-        }
-        return tfText;
-    }
-    public final String getTFText() { return tfText == null ? "" : tfText.get(); }
-    public final void setTFText(String value) { tfTextProperty().set(value); }
+    public final StringProperty textProperty() { return textField.textProperty(); }
+    public final String getText() { return textField.getText(); }
+    public final void setText(String value) { textField.setText(value); }
+    
+    /* --- TextField Length --- */
+    public final ReadOnlyIntegerProperty lengthProperty() { return textField.lengthProperty(); }
+    public final int getLength() { return textField.getLength(); }
     
     /* --- TextField Prompt Text --- */
     private StringProperty tfPromptText;
@@ -493,29 +497,14 @@ public class TopPromptTextField extends Control {
     public final void setTFPromptText(String value) { tfPromptTextProperty().set(value); }
     
     /* --- TextField Alignment --- */
-    private ObjectProperty<Pos> tfAlignment;
-    public final ObjectProperty<Pos> tfAlignmentProperty() {
-        if (tfAlignment == null) {
-            tfAlignment = new SimpleObjectProperty<>(TopPromptTextField.this, "alignment", Pos.CENTER_LEFT); //$NON-NLS-1$
-        }
-        return tfAlignment;
-    }
-    public final Pos getTFAlignment() { return tfAlignment == null ? Pos.CENTER_LEFT : tfAlignment.get(); }
-    public final void setTFAlignment(Pos value) { tfAlignmentProperty().set(value); }
+    public final ObjectProperty<Pos> alignmentProperty() { return textField.alignmentProperty(); }
+    public final Pos getAlignment() { return textField.getAlignment(); }
+    public final void setAlignment(Pos value) { textField.setAlignment(value); }
     
     /* --- TextField Preferred Column Count --- */
-    private IntegerProperty tfPrefColumnCount;
-    public final IntegerProperty tfPrefColumnCountProperty() {
-        if (tfPrefColumnCount == null) {
-            tfPrefColumnCount = new SimpleIntegerProperty(TopPromptTextField.this, "tfPrefColumnCount", //$NON-NLS-1$
-                TextField.DEFAULT_PREF_COLUMN_COUNT);
-        }
-        return tfPrefColumnCount;
-    }
-    public final int getTFPrefColumnCount() {
-        return tfPrefColumnCount == null ? TextField.DEFAULT_PREF_COLUMN_COUNT : tfPrefColumnCount.get();
-    }
-    public final void setTFPrefColumnCount(int value) { tfPrefColumnCountProperty().set(value); }
+    public final IntegerProperty prefColumnCountProperty() { return textField.prefColumnCountProperty(); }
+    public final int getPrefColumnCount() { return textField.getPrefColumnCount(); }
+    public final void setPrefColumnCount(int value) { textField.setPrefColumnCount(value); }
     
     /* --- TextField OnAction --- */
     /**
@@ -524,15 +513,11 @@ public class TopPromptTextField extends Control {
      * <p>
      * The action handler is normally called when the user types the ENTER key.
      */
-    private ObjectProperty<EventHandler<ActionEvent>> onTFAction;
-    public final ObjectProperty<EventHandler<ActionEvent>> onTFActionProperty() {
-        if (onTFAction == null) {
-            onTFAction = new SimpleObjectProperty<>(TopPromptTextField.this, "onTFAction"); //$NON-NLS-1$
-        }
-        return onTFAction;
+    public final ObjectProperty<EventHandler<ActionEvent>> onActionProperty() {
+        return textField.onActionProperty();
     }
-    public final EventHandler<ActionEvent> getOnTFAction() { return onTFAction == null ? null : onTFAction.get(); }
-    public final void setOnAction(EventHandler<ActionEvent> value) { onTFActionProperty().set(value); }
+    public final EventHandler<ActionEvent> getOnAction() { return textField.getOnAction(); }
+    public final void setOnAction(EventHandler<ActionEvent> value) { textField.setOnAction(value); }
     
     
     /* --- Prompt Transition Duration --- */
@@ -786,6 +771,8 @@ public class TopPromptTextField extends Control {
     /** {@inheritDoc} */
     @Override
     protected Skin<?> createDefaultSkin() {
+        System.out.println("-+-+ TopPromptTextField.createDefaultSkin() CALLED +-+-");
+        
         return new TopPromptTextFieldSkin(this)
         {
             @Override
@@ -800,6 +787,8 @@ public class TopPromptTextField extends Control {
             public ObjectProperty<Labeled> defaultValueProperty() {
                 return TopPromptTextField.this.defaultValueProperty();
             }
+            @Override
+            public TextField getTextField() { return textField; }
         };
     }
     
@@ -837,6 +826,7 @@ public class TopPromptTextField extends Control {
             public boolean isSettable(TopPromptTextField tptf) {
                 return tptf.promptTransitionDuration == null || !tptf.promptTransitionDuration.isBound();
             }
+            @SuppressWarnings("unchecked")
             @Override
             public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
                 return (StyleableProperty<Number>) tptf.promptTransitionDurationProperty();
@@ -852,6 +842,7 @@ public class TopPromptTextField extends Control {
             public boolean isSettable(TopPromptTextField tptf) {
                 return tptf.promptTranslateX == null || !tptf.promptTranslateX.isBound();
             }
+            @SuppressWarnings("unchecked")
             @Override
             public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
                 return (StyleableProperty<Number>) tptf.promptTranslateXProperty();
@@ -867,6 +858,7 @@ public class TopPromptTextField extends Control {
             public boolean isSettable(TopPromptTextField tptf) {
                 return tptf.promptTranslateY == null || !tptf.promptTranslateY.isBound();
             }
+            @SuppressWarnings("unchecked")
             @Override
             public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
                 return (StyleableProperty<Number>) tptf.promptTranslateYProperty();
@@ -882,6 +874,7 @@ public class TopPromptTextField extends Control {
             public boolean isSettable(TopPromptTextField tptf) {
                 return tptf.promptScaleX == null || !tptf.promptScaleX.isBound();
             }
+            @SuppressWarnings("unchecked")
             @Override
             public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
                 return (StyleableProperty<Number>) tptf.promptScaleXProperty();
@@ -897,6 +890,7 @@ public class TopPromptTextField extends Control {
             public boolean isSettable(TopPromptTextField tptf) {
                 return tptf.promptScaleY == null || !tptf.promptScaleY.isBound();
             }
+            @SuppressWarnings("unchecked")
             @Override
             public StyleableProperty<Number> getStyleableProperty(TopPromptTextField tptf) {
                 return (StyleableProperty<Number>) tptf.promptScaleYProperty();
