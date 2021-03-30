@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,8 +19,7 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.control;
 
 import com.jhenly.juifx.control.event.SelectionEvent;
@@ -80,40 +78,40 @@ public interface Selectable extends EventTarget, Styleable {
     
     /* --- On Selected --- */
     /**
-     * The control's selected action, which is invoked whenever the control is
+     * The control's selected event, which is invoked whenever the control is
      * selected.
-     * @return the property that represents the control's selected action,
+     * @return the property that represents the control's selected event,
      *         which is invoked whenever the control is selected
      */
     ObjectProperty<EventHandler<? super SelectionEvent>> onSelectedProperty();
     /**
-     * Sets the control's on selected action event handler.
-     * @param value - the control's new on selected action event handler
+     * Sets the control's on selected event handler.
+     * @param value - the control's new on selected event handler
      */
     default void setOnSelected(EventHandler<? super SelectionEvent> value) { onSelectedProperty().set(value); }
     /**
-     * Gets the control's on selected action event handler.
-     * @return the control's on selected action event handler
+     * Gets the control's on selected event handler.
+     * @return the control's on selected event handler
      */
     default EventHandler<? super SelectionEvent> getOnSelected() { return onSelectedProperty().get(); }
     
     
     /* --- On Deselected --- */
     /**
-     * The control's deselected action, which is invoked whenever the control
+     * The control's deselected event, which is invoked whenever the control
      * is deselected.
-     * @return the property that represents the control's deselected action,
+     * @return the property that represents the control's deselected event,
      *         which is invoked whenever the control is deselected
      */
     ObjectProperty<EventHandler<? super SelectionEvent>> onDeselectedProperty();
     /**
-     * Sets the control's on deselected action event handler.
-     * @param value - the control's new on deselected action event handler
+     * Sets the control's on deselected event handler.
+     * @param value - the control's new on deselected event handler
      */
     default void setOnDeselected(EventHandler<? super SelectionEvent> value) { onDeselectedProperty().set(value); }
     /**
-     * Gets the control's on deselected action event handler.
-     * @return the control's on deselected action event handler
+     * Gets the control's on deselected event handler.
+     * @return the control's on deselected event handler
      */
     default EventHandler<? super SelectionEvent> getOnDeselected() { return onDeselectedProperty().get(); }
     
