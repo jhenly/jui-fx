@@ -12,6 +12,8 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.WeakChangeListener;
+
 
 /**
  * Default skin implementation for the {@code FillButton} control.
@@ -23,7 +25,7 @@ import javafx.beans.value.ChangeListener;
  * @see FillButton
  */
 public class SelectableFillButtonSkin<C extends SelectableFillButton> extends SelectableButtonSkin<C>
-    implements FillableSkin<C>
+implements FillableSkin<C>
 {
     
     /***************************************************************************
@@ -34,7 +36,16 @@ public class SelectableFillButtonSkin<C extends SelectableFillButton> extends Se
     
     private JuiFillTransition jfTrans;
     private BooleanBinding fillDisabledOrSelected;
-    private ChangeListener<Boolean> focusChange;
+    
+    
+    /***************************************************************************
+     *                                                                         *
+     * Listener(s)                                                             *
+     *                                                                         *
+     **************************************************************************/
+    
+    private ChangeListener<Boolean> focusChange = (obv, o, n) -> onFocused(n);
+    private WeakChangeListener<Boolean> weakFocusChange = new WeakChangeListener<>(focusChange);
     
     
     /***************************************************************************
@@ -75,15 +86,15 @@ public class SelectableFillButtonSkin<C extends SelectableFillButton> extends Se
         focusChange = (obv, o, n) -> onFocused(n);
         
         // add focus change listener if fillOnFocus is true
-        if (control.isFillOnFocus()) { control.focusedProperty().addListener(focusChange); }
+        if (control.isFillOnFocus()) { control.focusedProperty().addListener(weakFocusChange); }
         
         // fill on focused listener
         registerChangeListener(control.fillOnFocusProperty(), o -> {
             final BooleanProperty fillOnFocus = getFillable().fillOnFocusProperty();
             if (fillOnFocus.get()) {
-                getFillable().focusedProperty().addListener(focusChange);
+                getFillable().focusedProperty().addListener(weakFocusChange);
             } else {
-                getFillable().focusedProperty().removeListener(focusChange);
+                getFillable().focusedProperty().removeListener(weakFocusChange);
             }
         });
     }
@@ -99,6 +110,8 @@ public class SelectableFillButtonSkin<C extends SelectableFillButton> extends Se
     @Override
     public void dispose() {
         if (getFillable() == null) { return; }
+        
+        getFillable().focusedProperty().removeListener(weakFocusChange);
         
         if (jfTrans != null) {
             jfTrans.dispose();
@@ -130,8 +143,8 @@ public class SelectableFillButtonSkin<C extends SelectableFillButton> extends Se
         return fillApplier.getReadOnlyProperty();
     }
     protected void setFillApplier(FillApplier<C> value) { fillApplier.set(value); }
-    private ReadOnlyObjectWrapper<FillApplier<C>> fillApplier
-        = new ReadOnlyObjectWrapper<FillApplier<C>>(this, "fillApplier", createDefaultFillApplier());
+    private ReadOnlyObjectWrapper<FillApplier<C>> fillApplier =
+    new ReadOnlyObjectWrapper<FillApplier<C>>(this, "fillApplier", createDefaultFillApplier());
     
     
     /***************************************************************************

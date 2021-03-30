@@ -1,5 +1,4 @@
-/**
- * Copyright (c) 2021, JuiFX All rights reserved.
+/** Copyright (c) 2021, JuiFX All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met: *
@@ -20,8 +19,7 @@
  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.jhenly.juifx.control.skin;
 
 import com.jhenly.juifx.animation.JuiFillTransition;
@@ -34,6 +32,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.WeakChangeListener;
 import javafx.event.EventHandler;
 import javafx.scene.control.skin.ButtonSkin;
 import javafx.scene.input.MouseEvent;
@@ -58,8 +57,17 @@ public class FillButtonSkin<C extends FillButton> extends ButtonSkin implements 
     
     private JuiFillTransition jfTrans;
     private BooleanBinding fillDisabled;
-    private ChangeListener<Boolean> focusChange;
     private EventHandler<MouseEvent> clickedHandler;
+    
+    
+    /***************************************************************************
+     *                                                                         *
+     * Listener(s)                                                             *
+     *                                                                         *
+     **************************************************************************/
+    
+    private ChangeListener<Boolean> focusChange = (obv, o, n) -> onFocused(n);
+    private WeakChangeListener<Boolean> weakFocusChange = new WeakChangeListener<>(focusChange);
     
     
     /***************************************************************************
@@ -90,23 +98,19 @@ public class FillButtonSkin<C extends FillButton> extends ButtonSkin implements 
         // register Node change listeners
         registerChangeListener(control.hoverProperty(), o -> onHover(getFillable().isHover()));
         
-        
         clickedHandler = e -> onMouseClicked();
         control.addEventHandler(MouseEvent.MOUSE_CLICKED, clickedHandler);
         
-        // focus change listener
-        focusChange = (obv, o, n) -> onFocused(n);
-        
         // add focus change listener if fillOnFocus is true
-        if (control.isFillOnFocus()) { control.focusedProperty().addListener(focusChange); }
+        if (control.isFillOnFocus()) { control.focusedProperty().addListener(weakFocusChange); }
         
         // fill on focused listener
         registerChangeListener(control.fillOnFocusProperty(), o -> {
             final BooleanProperty fillOnFocus = getFillable().fillOnFocusProperty();
             if (fillOnFocus.get()) {
-                getFillable().focusedProperty().addListener(focusChange);
+                getFillable().focusedProperty().addListener(weakFocusChange);
             } else {
-                getFillable().focusedProperty().removeListener(focusChange);
+                getFillable().focusedProperty().removeListener(weakFocusChange);
             }
         });
     }
@@ -124,6 +128,7 @@ public class FillButtonSkin<C extends FillButton> extends ButtonSkin implements 
         if (getFillable() == null) { return; }
         
         getFillable().removeEventHandler(MouseEvent.MOUSE_CLICKED, clickedHandler);
+        getFillable().focusedProperty().removeListener(weakFocusChange);
         
         if (jfTrans != null) {
             jfTrans.dispose();
@@ -157,8 +162,8 @@ public class FillButtonSkin<C extends FillButton> extends ButtonSkin implements 
         return fillApplier.getReadOnlyProperty();
     }
     protected void setFillApplier(FillApplier<C> value) { fillApplier.set(value); }
-    private ReadOnlyObjectWrapper<FillApplier<C>> fillApplier
-        = new ReadOnlyObjectWrapper<FillApplier<C>>(this, "fillApplier", createDefaultFillApplier());
+    private ReadOnlyObjectWrapper<FillApplier<C>> fillApplier =
+    new ReadOnlyObjectWrapper<FillApplier<C>>(this, "fillApplier", createDefaultFillApplier());
     
     
     /***************************************************************************
