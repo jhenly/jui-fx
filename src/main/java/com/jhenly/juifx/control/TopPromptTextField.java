@@ -118,8 +118,6 @@ public class TopPromptTextField extends Control {
     public TopPromptTextField() {
         super();
         
-        System.out.println("-+-+ CONSTRUCTOR TopPromptTextField() CALLED +-+-");
-        
         initialize();
     }
     
@@ -134,8 +132,6 @@ public class TopPromptTextField extends Control {
     public TopPromptTextField(Labeled prompt, Labeled stub, Labeled text) {
         super();
         
-        System.out.println("-+-+ CONSTRUCTOR TopPromptTextField(Labeled, Labeled, Labeled) CALLED +-+-");
-        
         initialize();
         setPrompt(prompt);
         setDefaultStub(stub);
@@ -144,7 +140,6 @@ public class TopPromptTextField extends Control {
     
     /** Helper method used by constructors. */
     private void initialize() {
-        System.out.println("-+-+ TopPromptTextField.initialize() CALLED +-+-");
         getStyleClass().add(DEFAULT_STYLE_CLASS);
     }
     
@@ -771,8 +766,6 @@ public class TopPromptTextField extends Control {
     /** {@inheritDoc} */
     @Override
     protected Skin<?> createDefaultSkin() {
-        System.out.println("-+-+ TopPromptTextField.createDefaultSkin() CALLED +-+-");
-        
         return new TopPromptTextFieldSkin(this)
         {
             @Override
